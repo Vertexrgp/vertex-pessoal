@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import {
   TrendingUp, TrendingDown, Minus, ChevronLeft, ChevronRight,
-  Star, AlertTriangle, BarChart3, Target, Pencil, Check, X
+  Star, AlertTriangle, BarChart3, Target, Pencil, Check, X, Zap,
 } from "lucide-react";
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -26,6 +26,10 @@ interface MonthData {
   notes: string | null;
   actualReceitas: number;
   actualDespesas: number;
+  forecastReceitas: number;
+  forecastDespesas: number;
+  forecastRecorrentes: number;
+  forecastParcelas: number;
 }
 
 async function fetchAnnualPlan(year: number): Promise<MonthData[]> {
@@ -143,17 +147,23 @@ export default function MonthlyPlanningPage() {
   const today = new Date();
   const currentMonth = today.getMonth() + 1;
 
-  // ─── KPIs ─────────────────────────────────────────────────────────────────
-  const results = months?.map(m => ({
-    month: m.month,
-    resultado: m.plannedReceitas - m.plannedDespesas - m.plannedInvestimentos,
-    actualResultado: m.actualReceitas - m.actualDespesas,
-    plannedReceitas: m.plannedReceitas,
-    plannedDespesas: m.plannedDespesas,
-    plannedInvestimentos: m.plannedInvestimentos,
-    actualReceitas: m.actualReceitas,
-    actualDespesas: m.actualDespesas,
-  })) ?? [];
+  // ─── KPIs ────────────────────────────────────────────────────────────────────
+  // Effective value = user-entered OR forecast from recurrences
+  const results = months?.map(m => {
+    const effReceitas = m.plannedReceitas > 0 ? m.plannedReceitas : m.forecastReceitas;
+    const effDespesas = m.plannedDespesas > 0 ? m.plannedDespesas : m.forecastDespesas;
+    const effInvest = m.plannedInvestimentos;
+    return {
+      month: m.month,
+      resultado: effReceitas - effDespesas - effInvest,
+      actualResultado: m.actualReceitas - m.actualDespesas,
+      plannedReceitas: effReceitas,
+      plannedDespesas: effDespesas,
+      plannedInvestimentos: effInvest,
+      actualReceitas: m.actualReceitas,
+      actualDespesas: m.actualDespesas,
+    };
+  }) ?? [];
 
   const withPlan = results.filter(r => r.plannedReceitas > 0 || r.plannedDespesas > 0);
   const melhorMes = withPlan.length > 0
@@ -171,52 +181,81 @@ export default function MonthlyPlanningPage() {
   const totalPlanejado = results.reduce((s, r) => s + r.resultado, 0);
   const totalInvestimentos = results.reduce((s, r) => s + r.plannedInvestimentos, 0);
 
-  const rows: { key: RowKey; label: string; color: string; actual?: (m: MonthData) => number }[] = [
-    { key: "plannedReceitas", label: "Receitas", color: "emerald", actual: m => m.actualReceitas },
-    { key: "plannedDespesas", label: "Despesas", color: "rose", actual: m => m.actualDespesas },
+  const rows: {
+    key: RowKey;
+    label: string;
+    color: string;
+    forecastKey?: keyof MonthData;
+    actual?: (m: MonthData) => number;
+  }[] = [
+    { key: "plannedReceitas", label: "Receitas", color: "emerald", forecastKey: "forecastReceitas", actual: m => m.actualReceitas },
+    { key: "plannedDespesas", label: "Despesas", color: "rose", forecastKey: "forecastDespesas", actual: m => m.actualDespesas },
     { key: "plannedInvestimentos", label: "Investimentos", color: "blue" },
   ];
 
-  function renderCell(m: MonthData, field: RowKey) {
+  function renderCell(m: MonthData, field: RowKey, forecastKey?: keyof MonthData) {
     const isEditing = editing?.month === m.month && editing?.field === field;
-    const val = m[field];
+    const val = m[field] as number;
+    const forecast = forecastKey ? (m[forecastKey] as number) : 0;
+    const isAuto = val === 0 && forecast > 0;
 
     if (isEditing) {
       return (
         <CellInput
-          value={String(val)}
+          value={String(val || forecast)}
           onConfirm={(v) => handleConfirm(m, field, v)}
           onCancel={() => setEditing(null)}
         />
       );
     }
 
+    const displayVal = val > 0 ? val : forecast;
+
     return (
       <button
         type="button"
-        onClick={() => setEditing({ month: m.month, field, value: String(val) })}
+        onClick={() => setEditing({ month: m.month, field, value: String(val || forecast) })}
         className={cn(
           "group relative w-full text-right text-xs font-mono py-0.5 px-1 rounded transition-colors",
-          val > 0 ? "text-slate-700" : "text-slate-300",
+          displayVal > 0 ? (isAuto ? "text-slate-400 italic" : "text-slate-700") : "text-slate-300",
           "hover:bg-slate-100 hover:text-slate-900"
         )}
       >
-        {val > 0 ? formatCurrency(val) : <span className="text-slate-200">—</span>}
+        <span className="inline-flex items-center gap-1 justify-end">
+          {isAuto && (
+            <Zap className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" title="Previsão automática via recorrências" />
+          )}
+          {displayVal > 0 ? formatCurrency(displayVal) : <span className="text-slate-200">—</span>}
+        </span>
         <Pencil className="w-2.5 h-2.5 absolute right-0.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-40 text-slate-500" />
       </button>
     );
   }
 
+  function getEffectiveDespesas(m: MonthData) {
+    return m.plannedDespesas > 0 ? m.plannedDespesas : m.forecastDespesas;
+  }
+  function getEffectiveReceitas(m: MonthData) {
+    return m.plannedReceitas > 0 ? m.plannedReceitas : m.forecastReceitas;
+  }
+
   function renderResultadoCell(m: MonthData) {
-    const r = m.plannedReceitas - m.plannedDespesas - m.plannedInvestimentos;
-    if (m.plannedReceitas === 0 && m.plannedDespesas === 0) {
-      return <span className="text-slate-200 text-xs">—</span>;
-    }
+    const effR = getEffectiveReceitas(m);
+    const effD = getEffectiveDespesas(m);
+    const r = effR - effD - m.plannedInvestimentos;
+    const hasData = effR > 0 || effD > 0;
+    const isAuto = (m.plannedReceitas === 0 && m.forecastReceitas > 0)
+      || (m.plannedDespesas === 0 && m.forecastDespesas > 0);
+
+    if (!hasData) return <span className="text-slate-200 text-xs">—</span>;
+
     return (
       <span className={cn(
-        "text-xs font-bold font-mono",
-        r > 0 ? "text-emerald-600" : r < 0 ? "text-rose-600" : "text-slate-400"
+        "text-xs font-bold font-mono inline-flex items-center gap-1 justify-end",
+        r > 0 ? "text-emerald-600" : r < 0 ? "text-rose-600" : "text-slate-400",
+        isAuto && "opacity-70"
       )}>
+        {isAuto && <Zap className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" />}
         {r > 0 ? "+" : ""}{formatCurrency(r)}
       </span>
     );
@@ -228,7 +267,13 @@ export default function MonthlyPlanningPage() {
       <div className="flex items-start justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-display font-bold text-slate-900">Planejamento Anual</h1>
-          <p className="text-slate-500 mt-1">Visão estratégica do ano — defina metas por mês e acompanhe a tendência.</p>
+          <p className="text-slate-500 mt-1">
+            Visão estratégica do ano.{" "}
+            <span className="inline-flex items-center gap-1">
+              <Zap className="w-3 h-3 text-amber-400" />
+              <span className="text-xs text-amber-600 font-medium">Preenchimento automático via Recorrências</span>
+            </span>
+          </p>
         </div>
         {/* Year picker */}
         <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm">
@@ -290,7 +335,7 @@ export default function MonthlyPlanningPage() {
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Média Mensal</p>
           </div>
           <p className="text-xl font-bold text-slate-800 font-mono">{formatCurrency(mediaReceitas)}</p>
-          <p className="text-xs text-slate-500 mt-0.5">receita planejada</p>
+          <p className="text-xs text-slate-500 mt-0.5">receita prevista</p>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
@@ -312,9 +357,14 @@ export default function MonthlyPlanningPage() {
 
       {/* Main Table */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mb-8">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
           <h2 className="font-semibold text-slate-900">Planejamento por Mês</h2>
-          <p className="text-xs text-slate-400">Clique em qualquer valor para editar</p>
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-slate-400 inline-flex items-center gap-1">
+              <Zap className="w-3 h-3 text-amber-400" /> = previsão automática (clique para personalizar)
+            </span>
+            <span className="text-xs text-slate-400">Clique nos valores para editar</span>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -350,7 +400,12 @@ export default function MonthlyPlanningPage() {
               </thead>
               <tbody>
                 {rows.map((row, rowIdx) => {
-                  const rowTotal = months?.reduce((s, m) => s + m[row.key], 0) ?? 0;
+                  const rowTotal = months?.reduce((s, m) => {
+                    const planned = m[row.key] as number;
+                    const forecast = row.forecastKey ? (m[row.forecastKey] as number) : 0;
+                    return s + (planned > 0 ? planned : forecast);
+                  }, 0) ?? 0;
+
                   return (
                     <tr
                       key={row.key}
@@ -368,9 +423,7 @@ export default function MonthlyPlanningPage() {
                           )} />
                           <span className="font-semibold text-slate-700 text-sm">{row.label}</span>
                         </div>
-                        {row.actual && (
-                          <p className="text-[10px] text-slate-400 ml-4 mt-0.5">Planejado</p>
-                        )}
+                        <p className="text-[10px] text-slate-400 ml-4 mt-0.5">Previsto</p>
                       </td>
                       {months?.map(m => {
                         const isCurrentMonth = m.month === currentMonth && year === currentYear;
@@ -382,7 +435,7 @@ export default function MonthlyPlanningPage() {
                               isCurrentMonth ? "bg-primary/5" : ""
                             )}
                           >
-                            {renderCell(m, row.key)}
+                            {renderCell(m, row.key, row.forecastKey)}
                           </td>
                         );
                       })}
@@ -477,13 +530,13 @@ export default function MonthlyPlanningPage() {
           {[
             {
               label: "Tendência de Receitas",
-              values: months.map(m => m.plannedReceitas),
+              values: months.map(m => m.plannedReceitas > 0 ? m.plannedReceitas : m.forecastReceitas),
               avg: mediaReceitas,
               color: "emerald",
             },
             {
               label: "Tendência de Despesas",
-              values: months.map(m => m.plannedDespesas),
+              values: months.map(m => m.plannedDespesas > 0 ? m.plannedDespesas : m.forecastDespesas),
               avg: mediaDespesas,
               color: "rose",
             },
@@ -539,8 +592,10 @@ export default function MonthlyPlanningPage() {
       {!isLoading && withPlan.length === 0 && (
         <div className="text-center py-10 text-slate-400">
           <BarChart3 className="w-10 h-10 mx-auto mb-3 text-slate-200" />
-          <p className="font-medium text-slate-600">Nenhuma meta definida para {year}</p>
-          <p className="text-sm mt-1">Clique em qualquer célula da tabela acima para definir os valores planejados.</p>
+          <p className="font-medium text-slate-600">Nenhuma meta para {year}</p>
+          <p className="text-sm mt-1 max-w-sm mx-auto">
+            Cadastre <a href="/recorrencias" className="text-amber-500 font-semibold hover:underline">Recorrências</a> para preencher automaticamente, ou clique em qualquer célula para definir um valor manualmente.
+          </p>
         </div>
       )}
     </AppLayout>

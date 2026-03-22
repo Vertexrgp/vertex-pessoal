@@ -1,0 +1,173 @@
+Quero evoluir o Vertex Finance OS para integrar Planejamento Mensal + Orçamento + Faturas + Despesas Fixas Recorrentes.
+
+OBJETIVO
+Transformar o sistema em um painel real de previsão financeira, onde compromissos fixos e parcelas futuras alimentem automaticamente a visão do ano e do mês.
+
+====================================================
+1) AJUSTAR O CONCEITO DOS MÓDULOS
+====================================================
+
+Quero deixar claro no sistema:
+
+- Planejamento Mensal = visão estratégica do ano
+- Orçamento = controle operacional do mês
+- Faturas = compromissos do cartão
+- Recorrências Fixas = base automática de previsão
+
+====================================================
+2) CRIAR MÓDULO / LÓGICA DE DESPESAS RECORRENTES
+====================================================
+
+Criar tabela:
+
+recurring_transactions
+
+Campos:
+- id
+- tipo (receita / despesa)
+- descricao
+- categoria
+- subcategoria
+- valor
+- formaPagamento
+- conta
+- diaVencimento
+- frequencia
+- dataInicio
+- dataFim (nullable)
+- ativo
+- observacoes
+- createdAt
+- updatedAt
+
+Frequência inicial:
+- mensal
+
+====================================================
+3) USO DAS RECORRÊNCIAS
+====================================================
+
+Quero poder cadastrar despesas fixas recorrentes, por exemplo:
+
+- aluguel
+- condomínio
+- academia
+- luz
+- internet
+- streaming
+- diarista
+- seguros
+- outras contas fixas
+
+Esses lançamentos devem aparecer automaticamente na previsão dos meses futuros.
+
+====================================================
+4) INTEGRAÇÃO COM O PLANEJAMENTO MENSAL
+====================================================
+
+O Planejamento Mensal NÃO deve duplicar o Orçamento.
+
+Transformar o Planejamento Mensal em visão anual por mês.
+
+Mostrar estrutura horizontal:
+
+Jan | Fev | Mar | Abr | Mai | Jun | Jul | Ago | Set | Out | Nov | Dez
+
+Linhas principais:
+- Receitas previstas
+- Despesas previstas
+- Investimentos previstos
+- Resultado previsto
+
+As recorrências fixas devem preencher automaticamente os meses futuros do planejamento.
+
+As parcelas futuras do cartão também devem entrar automaticamente no planejamento.
+
+====================================================
+5) INTEGRAÇÃO COM ORÇAMENTO
+====================================================
+
+O Orçamento continua sendo o controle do mês atual.
+
+Mas agora ele deve considerar automaticamente:
+- despesas fixas recorrentes do mês
+- parcelas da fatura que caem no mês
+- demais lançamentos já cadastrados
+
+====================================================
+6) INTEGRAÇÃO COM FATURAS
+====================================================
+
+As compras parceladas no cartão devem:
+- alimentar as faturas futuras
+- alimentar o planejamento mensal
+- impactar o orçamento dos meses futuros
+
+====================================================
+7) REGRAS IMPORTANTES
+====================================================
+
+1. Recorrências devem entrar primeiro como PREVISTO
+2. Não marcar automaticamente como pago
+3. Deve existir clareza entre:
+   - previsto
+   - realizado
+4. O sistema deve evitar duplicidade entre recorrência e lançamento real
+5. O usuário deve poder editar, pausar ou encerrar uma recorrência
+
+====================================================
+8) NOVAS TELAS / EXPERIÊNCIA
+====================================================
+
+Adicionar no menu, dentro de Financeiro ou Configurações:
+
+- Recorrências
+ou
+- Compromissos Fixos
+
+Tela deve permitir:
+- listar recorrências
+- criar nova
+- editar
+- pausar
+- ativar/inativar
+
+====================================================
+9) PLANEJAMENTO MENSAL — NOVO PAPEL
+====================================================
+
+Quero que essa tela deixe de ser parecida com o Orçamento.
+
+Ela deve mostrar:
+- comparação entre meses
+- visão anual
+- tendências
+- melhor mês
+- pior mês
+- média mensal
+- saldo previsto do ano
+
+====================================================
+10) VISUAL
+====================================================
+
+Quero visual premium, clean, executivo, sem cara de planilha.
+
+====================================================
+11) ENTREGAR
+====================================================
+
+Quero que você implemente agora:
+
+1. estrutura de recorrências fixas
+2. integração das recorrências com o planejamento
+3. integração das parcelas futuras com o planejamento
+4. ajuste do Planejamento Mensal para visão anual
+5. manutenção do Orçamento como visão operacional do mês
+6. separação clara entre Planejamento e Orçamento
+
+No final, me mostre:
+- o que foi criado
+- como as recorrências funcionam
+- como Planejamento, Orçamento e Faturas passaram a conversar
+- próximos ajustes recomendados

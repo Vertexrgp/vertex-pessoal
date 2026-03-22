@@ -15,6 +15,7 @@ import {
   FileText,
   ChevronRight,
   Building2,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +42,7 @@ const navSections: NavSection[] = [
     items: [
       { name: "Lançamentos", path: "/transactions", icon: ListTree },
       { name: "Planejamento Mensal", path: "/monthly-planning", icon: CalendarDays },
+      { name: "Recorrências", path: "/recorrencias", icon: RefreshCw },
       { name: "Orçamento", path: "/budget", icon: PieChart },
       { name: "Relatórios", path: "/reports", icon: BarChart3 },
     ],
