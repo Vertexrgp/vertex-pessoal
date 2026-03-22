@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Building2,
   RefreshCw,
+  HeartPulse,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +44,7 @@ const navSections: NavSection[] = [
       { name: "Lançamentos", path: "/transactions", icon: ListTree },
       { name: "Planejamento Mensal", path: "/monthly-planning", icon: CalendarDays },
       { name: "Recorrências", path: "/recorrencias", icon: RefreshCw },
+      { name: "Custo de Vida", path: "/custo-de-vida", icon: HeartPulse },
       { name: "Orçamento", path: "/budget", icon: PieChart },
       { name: "Relatórios", path: "/reports", icon: BarChart3 },
     ],

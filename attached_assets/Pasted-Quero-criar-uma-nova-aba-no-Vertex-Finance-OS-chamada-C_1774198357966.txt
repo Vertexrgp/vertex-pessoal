@@ -1,0 +1,164 @@
+Quero criar uma nova aba no Vertex Finance OS chamada "Custo de Vida".
+
+OBJETIVO
+Criar uma tela visual, clara e premium para mostrar rapidamente quanto custa minha vida por mês, separando custo essencial, custo fixo, custo real e autonomia financeira.
+
+====================================================
+1) NOVA ABA / MENU
+====================================================
+
+Adicionar no menu lateral, dentro de Financeiro ou Patrimônio:
+
+Custo de Vida
+
+Criar rota:
+ /custo-de-vida
+
+====================================================
+2) CONCEITO DA TELA
+====================================================
+
+Essa tela deve responder de forma imediata:
+
+- quanto custa minha vida por mês
+- quanto é essencial
+- quanto é fixo recorrente
+- quanto estou gastando de verdade
+- quantos meses consigo viver com meu patrimônio atual
+
+====================================================
+3) CARDS PRINCIPAIS NO TOPO
+====================================================
+
+Criar cards com:
+
+- Custo Essencial Mensal
+- Custo Fixo Mensal
+- Custo de Vida Real
+- Reserva para 6 meses
+- Reserva para 12 meses
+- Meses de autonomia com patrimônio atual
+
+====================================================
+4) CLASSIFICAÇÃO DOS CUSTOS
+====================================================
+
+Usar ou criar classificação para recorrências e categorias:
+
+tipoCustoVida:
+- essencial
+- fixo
+- variável média
+- investimento
+- luxo
+
+Campo adicional:
+- obrigatorio (sim / não)
+
+====================================================
+5) BLOCOS DA TELA
+====================================================
+
+Criar blocos visuais:
+
+1. Essenciais
+2. Fixos não essenciais
+3. Variáveis médias
+4. Investimentos recorrentes
+5. Luxo / conforto
+
+Cada bloco deve mostrar:
+- total mensal
+- percentual do total
+- lista resumida dos itens
+
+====================================================
+6) GRÁFICOS / VISUALIZAÇÕES
+====================================================
+
+Adicionar visualizações como:
+
+- gráfico de composição do custo de vida
+- barras por categoria
+- distribuição percentual por bloco
+
+Exemplos:
+- moradia
+- alimentação
+- saúde
+- transporte
+- serviços
+- assinaturas
+- investimentos
+- lazer
+
+====================================================
+7) AUTONOMIA FINANCEIRA
+====================================================
+
+Criar um bloco chamado "Autonomia Financeira"
+
+Mostrar:
+
+- quantos meses consigo viver com meu patrimônio atual considerando custo essencial
+- quantos meses consigo viver considerando custo fixo
+- valor necessário para bancar 6 meses
+- valor necessário para bancar 12 meses
+
+====================================================
+8) TABELA DETALHADA
+====================================================
+
+Criar uma tabela com:
+
+- Descrição
+- Categoria
+- Tipo de custo de vida
+- Valor mensal
+- Obrigatório?
+- Frequência
+- Conta/cartão vinculado
+
+====================================================
+9) FONTE DOS DADOS
+====================================================
+
+A tela deve ser alimentada principalmente por:
+
+- recurring_transactions
+- categorias
+- patrimônio / saldo disponível
+- médias de gastos recorrentes quando fizer sentido
+
+====================================================
+10) VISUAL
+====================================================
+
+Quero uma tela premium, elegante e muito clara.
+
+Objetivo:
+bater o olho e entender imediatamente meu custo de vida.
+
+Não quero cara de planilha.
+Quero cara de produto financeiro premium.
+
+====================================================
+11) ENTREGAR
+====================================================
+
+Quero que você implemente agora:
+
+1. nova rota /custo-de-vida
+2. aba no menu
+3. cards principais
+4. blocos por tipo de custo
+5. gráfico de composição
+6. bloco de autonomia financeira
+7. tabela detalhada
+8. integração com recorrências e patrimônio
+
+No final, me mostre:
+- como o custo essencial foi calculado
+- como o custo fixo foi calculado
+- como a autonomia financeira foi calculada
+- próximos ajustes recomendados

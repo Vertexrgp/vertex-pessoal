@@ -17,6 +17,8 @@ export const recurringTransactionsTable = pgTable("recurring_transactions", {
   dataInicio: date("data_inicio").notNull(),
   dataFim: date("data_fim"),
   ativo: boolean("ativo").notNull().default(true),
+  tipoCusto: text("tipo_custo").notNull().default("fixo"),
+  obrigatorio: boolean("obrigatorio").notNull().default(true),
   observacoes: text("observacoes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

@@ -17,6 +17,7 @@ import SettingsPage from "./pages/settings";
 import FaturasPage from "./pages/faturas";
 import CartoesPage from "./pages/cartoes";
 import RecorrenciasPage from "./pages/recorrencias";
+import CustoDeVidaPage from "./pages/custo-de-vida";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/faturas" component={FaturasPage} />
       <Route path="/cartoes" component={CartoesPage} />
       <Route path="/recorrencias" component={RecorrenciasPage} />
+      <Route path="/custo-de-vida" component={CustoDeVidaPage} />
       {/* Legacy redirect */}
       <Route path="/assets" component={PatrimonioPage} />
       <Route path="/credit-cards" component={FaturasPage} />

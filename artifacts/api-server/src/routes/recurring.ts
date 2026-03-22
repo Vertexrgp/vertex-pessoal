@@ -20,6 +20,8 @@ const selectFields = {
   dataInicio: recurringTransactionsTable.dataInicio,
   dataFim: recurringTransactionsTable.dataFim,
   ativo: recurringTransactionsTable.ativo,
+  tipoCusto: recurringTransactionsTable.tipoCusto,
+  obrigatorio: recurringTransactionsTable.obrigatorio,
   observacoes: recurringTransactionsTable.observacoes,
   createdAt: recurringTransactionsTable.createdAt,
 };
@@ -37,6 +39,8 @@ function parseBody(body: any) {
     dataInicio: String(body.dataInicio ?? new Date().toISOString().split("T")[0]),
     dataFim: body.dataFim ? String(body.dataFim) : null,
     ativo: body.ativo !== false,
+    tipoCusto: String(body.tipoCusto ?? "fixo"),
+    obrigatorio: body.obrigatorio !== false,
     observacoes: body.observacoes ? String(body.observacoes) : null,
   };
 }

@@ -25,9 +25,19 @@ interface Recorrencia {
   dataInicio: string;
   dataFim: string | null;
   ativo: boolean;
+  tipoCusto: string;
+  obrigatorio: boolean;
   observacoes: string | null;
   createdAt: string;
 }
+
+const TIPO_CUSTO_LABELS: Record<string, string> = {
+  essencial: "Essencial",
+  fixo: "Fixo",
+  variavel: "Variável",
+  investimento: "Investimento",
+  luxo: "Lazer/Luxo",
+};
 
 const FORMA_LABELS: Record<string, string> = {
   pix: "Pix",
@@ -53,6 +63,8 @@ const emptyForm = {
   formaPagamento: "debito",
   dataInicio: new Date().toISOString().split("T")[0],
   dataFim: "",
+  tipoCusto: "fixo",
+  obrigatorio: true,
   observacoes: "",
 };
 
@@ -150,6 +162,8 @@ export default function RecorrenciasPage() {
       formaPagamento: item.formaPagamento ?? "debito",
       dataInicio: item.dataInicio,
       dataFim: item.dataFim ?? "",
+      tipoCusto: item.tipoCusto ?? "fixo",
+      obrigatorio: item.obrigatorio ?? true,
       observacoes: item.observacoes ?? "",
     });
     setEditingId(item.id);
@@ -536,23 +550,71 @@ export default function RecorrenciasPage() {
                 </div>
               </div>
 
-              {/* Forma de Pagamento */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
-                  Forma de Pagamento
-                </label>
-                <select
-                  value={form.formaPagamento}
-                  onChange={e => setForm(f => ({ ...f, formaPagamento: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
-                >
-                  <option value="debito">Débito</option>
-                  <option value="pix">Pix</option>
-                  <option value="credito">Crédito</option>
-                  <option value="boleto">Boleto</option>
-                  <option value="transferencia">Transferência</option>
-                  <option value="dinheiro">Dinheiro</option>
-                </select>
+              {/* Tipo de Custo de Vida */}
+              {form.tipo === "despesa" && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
+                    Tipo de Custo de Vida
+                  </label>
+                  <select
+                    value={form.tipoCusto}
+                    onChange={e => setForm(f => ({ ...f, tipoCusto: e.target.value }))}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
+                  >
+                    <option value="essencial">Essencial (moradia, saúde, alimentação)</option>
+                    <option value="fixo">Fixo não essencial (assinaturas, serviços)</option>
+                    <option value="variavel">Variável recorrente</option>
+                    <option value="investimento">Investimento recorrente</option>
+                    <option value="luxo">Conforto / Lazer</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Obrigatorio + Forma de Pagamento */}
+              <div className="grid grid-cols-2 gap-4">
+                {form.tipo === "despesa" && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
+                      Obrigatório?
+                    </label>
+                    <div className="flex gap-2">
+                      {([true, false] as const).map(val => (
+                        <button
+                          key={String(val)}
+                          type="button"
+                          onClick={() => setForm(f => ({ ...f, obrigatorio: val }))}
+                          className={cn(
+                            "flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all border-2",
+                            form.obrigatorio === val
+                              ? val
+                                ? "bg-rose-50 border-rose-400 text-rose-700"
+                                : "bg-slate-100 border-slate-300 text-slate-600"
+                              : "border-slate-200 text-slate-500 hover:border-slate-300"
+                          )}
+                        >
+                          {val ? "Sim" : "Não"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className={form.tipo === "despesa" ? "" : "col-span-2"}>
+                  <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
+                    Forma de Pagamento
+                  </label>
+                  <select
+                    value={form.formaPagamento}
+                    onChange={e => setForm(f => ({ ...f, formaPagamento: e.target.value }))}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
+                  >
+                    <option value="debito">Débito</option>
+                    <option value="pix">Pix</option>
+                    <option value="credito">Crédito</option>
+                    <option value="boleto">Boleto</option>
+                    <option value="transferencia">Transferência</option>
+                    <option value="dinheiro">Dinheiro</option>
+                  </select>
+                </div>
               </div>
 
               {/* Data Início + Fim */}
