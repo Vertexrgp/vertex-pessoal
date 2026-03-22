@@ -1,0 +1,84 @@
+Quero ajustar o módulo de Planejamento Mensal para que ele NÃO seja um duplicado do Orçamento.
+
+OBJETIVO
+Transformar o Planejamento Mensal em uma visão estratégica do ano, e não um controle operacional do mês.
+
+====================================================
+CONCEITO
+====================================================
+
+Orçamento = controle do mês atual  
+Planejamento = visão do ano inteiro
+
+====================================================
+ALTERAÇÕES
+====================================================
+
+1) Mudar layout para visão por meses
+
+Criar tabela horizontal:
+
+Jan | Fev | Mar | Abr | Mai | Jun | Jul | Ago | Set | Out | Nov | Dez
+
+====================================================
+2) LINHAS PRINCIPAIS
+====================================================
+
+Receitas
+Despesas
+Resultado
+Investimentos
+
+====================================================
+3) PERMITIR EDITAR VALORES POR MÊS
+====================================================
+
+O usuário deve poder definir:
+
+- quanto pretende ganhar
+- quanto pretende gastar
+- quanto pretende investir
+
+====================================================
+4) ADICIONAR VISÃO DE TENDÊNCIA
+====================================================
+
+Mostrar:
+
+- melhor mês
+- pior mês
+- média mensal
+- tendência de crescimento ou queda
+
+====================================================
+5) NÃO DUPLICAR O ORÇAMENTO
+====================================================
+
+Não usar:
+
+- barras de progresso por categoria
+- status “no limite”
+- lógica de controle operacional
+
+Isso já existe no módulo Orçamento.
+
+====================================================
+6) VISUAL
+====================================================
+
+Quero:
+
+- layout clean
+- foco em comparação entre meses
+- leitura fácil
+- visual executivo
+
+====================================================
+ENTREGAR
+====================================================
+
+- nova estrutura do Planejamento Mensal
+- tabela por mês
+- edição por mês
+- indicadores de tendência
+- separação clara entre Planejamento e Orçamento
