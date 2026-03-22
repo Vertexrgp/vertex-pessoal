@@ -1,0 +1,219 @@
+Quero criar um novo módulo no Vertex Finance OS chamado:
+
+Simulador Financeiro
+
+OBJETIVO
+Permitir simular decisões financeiras e visualizar o impacto delas no mês, no ano e no patrimônio.
+
+O usuário deve conseguir testar cenários como:
+- e se eu reduzir gastos?
+- e se eu aumentar investimentos?
+- e se eu quitar uma dívida?
+- e se eu assumir uma nova despesa fixa?
+- e se eu parcelar uma compra?
+- e se minha renda cair ou subir?
+
+Quero que essa funcionalidade tenha visual premium, seja fácil de usar e ajude na tomada de decisão.
+
+====================================================
+1) NOVA ABA / MENU
+====================================================
+
+Adicionar no menu lateral:
+
+Planejamento e Simulação
+- Planejamento Mensal
+- Simulador Financeiro
+
+Ou, se ficar melhor na arquitetura atual:
+- deixar o Simulador Financeiro próximo da aba Custo de Vida
+
+Criar rota:
+/simulador-financeiro
+
+====================================================
+2) CONCEITO DA TELA
+====================================================
+
+A tela deve ter duas áreas principais:
+
+1. Cenário Atual
+2. Cenário Simulado
+
+O usuário deve ver claramente:
+- como está hoje
+- como ficaria se aplicasse a mudança simulada
+
+====================================================
+3) TIPOS DE SIMULAÇÃO
+====================================================
+
+Criar pelo menos os seguintes tipos de simulação:
+
+1. Redução de gastos
+2. Aumento de investimento mensal
+3. Nova despesa fixa
+4. Quitar dívida
+5. Alteração de renda mensal
+6. Compra parcelada no cartão
+7. Corte de custos recorrentes
+8. Meta de economia adicional
+
+====================================================
+4) FORMULÁRIO DE SIMULAÇÃO
+====================================================
+
+Criar painel lateral ou bloco de configuração da simulação com campos como:
+
+- tipo de simulação
+- valor
+- data de início
+- duração (quando aplicável)
+- categoria afetada
+- observação
+
+Exemplos:
+
+Redução de gasto:
+- categoria: lazer
+- redução: R$ 500/mês
+
+Aumento de investimento:
+- valor adicional: R$ 1.000/mês
+
+Nova despesa fixa:
+- descrição: novo aluguel
+- valor: R$ 2.500
+- data de início
+
+Quitar dívida:
+- dívida: financiamento X
+- valor da quitação
+- mês da quitação
+
+Compra parcelada:
+- valor da compra
+- número de parcelas
+- data inicial
+- cartão
+
+====================================================
+5) RESULTADOS DA SIMULAÇÃO
+====================================================
+
+Mostrar impacto simulado em:
+
+- saldo do mês
+- saldo anual
+- orçamento
+- custo de vida
+- patrimônio líquido
+- autonomia financeira
+- fatura do cartão
+- capacidade de investimento
+
+====================================================
+6) COMPARAÇÃO VISUAL
+====================================================
+
+Criar cards comparando:
+
+Atual vs Simulado
+
+Exemplos:
+- Saldo mensal atual / saldo mensal simulado
+- Investimento atual / investimento simulado
+- Patrimônio projetado atual / patrimônio projetado simulado
+- Autonomia atual / autonomia simulada
+
+====================================================
+7) GRÁFICOS
+====================================================
+
+Mostrar visualmente:
+
+- evolução do saldo por mês
+- impacto acumulado em 12 meses
+- impacto no patrimônio
+- comparação entre cenário atual e simulado
+
+====================================================
+8) SIMULAÇÕES PRONTAS
+====================================================
+
+Criar opções rápidas de simulação, tipo botões:
+
+- Reduzir lazer em 10%
+- Cortar custos não essenciais
+- Aumentar investimento em R$ 500
+- Simular queda de renda
+- Simular nova compra parcelada
+
+====================================================
+9) INTEGRAÇÃO COM OUTROS MÓDULOS
+====================================================
+
+O simulador deve usar dados de:
+
+- lançamentos
+- recorrências
+- orçamento
+- custo de vida
+- modo enxuto
+- modo otimização
+- cartões e faturas
+- dívidas
+- patrimônio
+
+====================================================
+10) REGRAS IMPORTANTES
+====================================================
+
+1. Simulação não altera dados reais.
+2. Simulação é temporária até o usuário decidir aplicar.
+3. Deve ficar muito claro o que é:
+- dado real
+- dado simulado
+4. O sistema deve permitir limpar a simulação e voltar ao cenário real.
+
+====================================================
+11) POSSIBILIDADE FUTURA
+====================================================
+
+Preparar a arquitetura para no futuro:
+- salvar cenários
+- comparar vários cenários
+- dar nome aos cenários
+- usar IA para sugerir melhores caminhos
+
+====================================================
+12) VISUAL
+====================================================
+
+Quero uma tela premium, elegante e muito clara.
+
+Objetivo:
+o usuário deve sentir que está testando decisões importantes com segurança.
+
+Nada com cara de planilha simples.
+Quero visual de produto financeiro premium.
+
+====================================================
+13) ENTREGAR
+====================================================
+
+Quero que você implemente agora:
+
+1. nova rota /simulador-financeiro
+2. estrutura da tela
+3. formulário de simulação
+4. comparação atual vs simulado
+5. impacto em mês / ano / patrimônio
+6. gráficos comparativos
+7. integração com os módulos financeiros já existentes
+
+No final, me mostre:
+- como a simulação funciona
+- quais tipos de simulação já estão prontos
+- como os resultados estão sendo calculados
+- próximos ajustes recomendados

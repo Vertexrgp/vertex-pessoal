@@ -18,6 +18,7 @@ import FaturasPage from "./pages/faturas";
 import CartoesPage from "./pages/cartoes";
 import RecorrenciasPage from "./pages/recorrencias";
 import CustoDeVidaPage from "./pages/custo-de-vida";
+import SimuladorPage from "./pages/simulador";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/cartoes" component={CartoesPage} />
       <Route path="/recorrencias" component={RecorrenciasPage} />
       <Route path="/custo-de-vida" component={CustoDeVidaPage} />
+      <Route path="/simulador-financeiro" component={SimuladorPage} />
       {/* Legacy redirect */}
       <Route path="/assets" component={PatrimonioPage} />
       <Route path="/credit-cards" component={FaturasPage} />

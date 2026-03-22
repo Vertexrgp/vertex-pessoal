@@ -17,6 +17,7 @@ import {
   Building2,
   RefreshCw,
   HeartPulse,
+  FlaskConical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +46,7 @@ const navSections: NavSection[] = [
       { name: "Planejamento Mensal", path: "/monthly-planning", icon: CalendarDays },
       { name: "Recorrências", path: "/recorrencias", icon: RefreshCw },
       { name: "Custo de Vida", path: "/custo-de-vida", icon: HeartPulse },
+      { name: "Simulador", path: "/simulador-financeiro", icon: FlaskConical },
       { name: "Orçamento", path: "/budget", icon: PieChart },
       { name: "Relatórios", path: "/reports", icon: BarChart3 },
     ],
