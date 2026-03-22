@@ -40,6 +40,7 @@ const singleSchema = z.object({
   creditCardId: z.coerce.number().nullable().optional(),
   paymentMethod: z.string().nullable().optional(),
   creditType: z.enum(["avista", "parcelado"]).nullable().optional(),
+  modoUsoCartao: z.enum(["fisico", "online"]).nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 
@@ -53,6 +54,7 @@ const installmentSchema = z.object({
   categoryId: z.coerce.number().nullable().optional(),
   accountId: z.coerce.number().nullable().optional(),
   creditCardId: z.coerce.number().nullable().optional(),
+  modoUsoCartao: z.enum(["fisico", "online"]).nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 
@@ -93,17 +95,24 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function PaymentBadge({ method }: { method: string | null | undefined }) {
+function PaymentBadge({ method, modoUso }: { method: string | null | undefined; modoUso?: string | null }) {
   if (!method) return <span className="text-slate-300 text-xs">—</span>;
   const isCredit = method === "Crédito";
   return (
-    <span className={cn(
-      "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium",
-      isCredit ? "bg-violet-50 text-violet-700 border border-violet-100" : "bg-slate-100 text-slate-600"
-    )}>
-      {isCredit && <CreditCard className="w-3 h-3" />}
-      {method}
-    </span>
+    <div className="flex flex-col gap-0.5">
+      <span className={cn(
+        "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium",
+        isCredit ? "bg-violet-50 text-violet-700 border border-violet-100" : "bg-slate-100 text-slate-600"
+      )}>
+        {isCredit && <CreditCard className="w-3 h-3" />}
+        {method}
+      </span>
+      {isCredit && modoUso && (
+        <span className="text-[10px] text-slate-400 pl-0.5">
+          {modoUso === "online" ? "🌐 Online" : "💳 Físico"}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -186,8 +195,9 @@ export default function TransactionsPage() {
           accountId: values.accountId ?? null,
           creditCardId: values.creditCardId ?? null,
           paymentMethod: "Crédito",
+          modoUsoCartao: (values as any).modoUsoCartao ?? null,
           notes: values.notes ?? null,
-        }
+        } as any
       });
     } else {
       createMutation.mutate({
@@ -203,8 +213,9 @@ export default function TransactionsPage() {
           creditCardId: values.creditCardId ?? null,
           paymentMethod: values.paymentMethod ?? null,
           creditType: values.creditType ?? null,
+          modoUsoCartao: (values as any).modoUsoCartao ?? null,
           notes: values.notes ?? null,
-        }
+        } as any
       });
     }
   };
@@ -324,7 +335,7 @@ export default function TransactionsPage() {
                       )}
                     </td>
                     <td className="px-5 py-3.5">
-                      <PaymentBadge method={tx.paymentMethod} />
+                      <PaymentBadge method={tx.paymentMethod} modoUso={(tx as any).modoUsoCartao} />
                     </td>
                     <td className="px-5 py-3.5 text-center">
                       <ParcelaBadge tx={tx} />
@@ -458,7 +469,14 @@ export default function TransactionsPage() {
                         <SelectContent>
                           {creditCards?.map(c => (
                             <SelectItem key={c.id} value={c.id.toString()}>
-                              {c.nomeCartao} · {c.banco}
+                              <span className="flex items-center gap-2">
+                                <span className="font-medium">{c.nomeCartao}</span>
+                                {(c as any).ultimos4Digitos ? (
+                                  <span className="text-slate-400 font-mono text-xs">•••• {(c as any).ultimos4Digitos}</span>
+                                ) : (
+                                  <span className="text-slate-400 text-xs">{c.banco}</span>
+                                )}
+                              </span>
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -466,32 +484,62 @@ export default function TransactionsPage() {
                       <FormMessage />
                     </FormItem>
                   )} />
-                  <FormField control={form.control} name={"creditType" as any} render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de Crédito</FormLabel>
-                      <div className="flex gap-2">
-                        {[
-                          { value: "avista", label: "À Vista" },
-                          { value: "parcelado", label: "Parcelado" },
-                        ].map(opt => (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => field.onChange(opt.value)}
-                            className={cn(
-                              "flex-1 py-2 rounded-lg border text-sm font-medium transition-all",
-                              field.value === opt.value
-                                ? "bg-primary text-white border-primary shadow-sm"
-                                : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-                            )}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField control={form.control} name={"creditType" as any} render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipo de Crédito</FormLabel>
+                        <div className="flex gap-2">
+                          {[
+                            { value: "avista", label: "À Vista" },
+                            { value: "parcelado", label: "Parcelado" },
+                          ].map(opt => (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => field.onChange(opt.value)}
+                              className={cn(
+                                "flex-1 py-2 rounded-lg border text-xs font-medium transition-all",
+                                field.value === opt.value
+                                  ? "bg-primary text-white border-primary shadow-sm"
+                                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                              )}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+
+                    <FormField control={form.control} name={"modoUsoCartao" as any} render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Modo de Uso</FormLabel>
+                        <div className="flex gap-2">
+                          {[
+                            { value: "fisico", label: "Físico" },
+                            { value: "online", label: "Online" },
+                          ].map(opt => (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => field.onChange(field.value === opt.value ? null : opt.value)}
+                              className={cn(
+                                "flex-1 py-2 rounded-lg border text-xs font-medium transition-all",
+                                field.value === opt.value
+                                  ? "bg-slate-700 text-white border-slate-700 shadow-sm"
+                                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                              )}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
                 </div>
               )}
 

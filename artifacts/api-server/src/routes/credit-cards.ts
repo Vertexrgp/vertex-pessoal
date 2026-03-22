@@ -12,6 +12,7 @@ function parseCardBody(body: any) {
     diaFechamento: Math.round(Number(body.diaFechamento ?? 5)),
     diaVencimento: Math.round(Number(body.diaVencimento ?? 10)),
     cor: String(body.cor ?? "#6366F1"),
+    ultimos4Digitos: String(body.ultimos4Digitos ?? ""),
     ativo: body.ativo !== false,
   };
 }

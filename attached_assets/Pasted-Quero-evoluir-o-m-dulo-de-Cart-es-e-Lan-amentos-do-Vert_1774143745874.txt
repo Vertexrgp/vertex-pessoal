@@ -1,0 +1,118 @@
+Quero evoluir o módulo de Cartões e Lançamentos do Vertex Finance OS com dois ajustes importantes de produto premium.
+
+OBJETIVO
+Melhorar a identificação dos cartões e o controle dos lançamentos no crédito.
+
+====================================================
+1) CARTÕES — ÚLTIMOS 4 DÍGITOS
+====================================================
+
+No cadastro de cartão de crédito:
+
+Adicionar campo obrigatório:
+- ultimos4Digitos
+
+Regras:
+- aceitar exatamente 4 dígitos
+- armazenar como string
+- mostrar visualmente no card do cartão
+- mostrar também na listagem de cartões cadastrados
+- usar os 4 dígitos para ajudar a identificar o cartão
+
+Exemplo visual no card:
+•••• 1234
+
+Também mostrar os 4 dígitos em:
+- detalhes do cartão
+- seleção de cartão no formulário de lançamento
+
+Exemplo no select:
+Itaú Platinum •••• 1234
+Nubank Roxinho •••• 9876
+
+====================================================
+2) LANÇAMENTOS — TIPO DE USO DO CARTÃO
+====================================================
+
+Quando formaPagamento = Crédito, adicionar novo campo:
+
+modoUsoCartao
+
+Opções:
+- Cartão físico
+- Compra online
+
+Esse campo deve aparecer no formulário de lançamento apenas quando o pagamento for no crédito.
+
+====================================================
+3) BANCO DE DADOS
+====================================================
+
+Atualizar tabela credit_cards:
+- ultimos4Digitos
+
+Atualizar tabela transactions:
+- modoUsoCartao (nullable)
+
+====================================================
+4) LISTAGEM E DETALHES
+====================================================
+
+Na tela de Lançamentos:
+- manter a coluna Pagamento
+- quando o lançamento for no crédito, permitir visualizar também o cartão usado
+- incluir o modo de uso do cartão nos detalhes do lançamento
+
+Nos detalhes do cartão:
+- mostrar banco
+- nome do cartão
+- bandeira
+- limite
+- fechamento
+- vencimento
+- últimos 4 dígitos
+
+====================================================
+5) EXPERIÊNCIA DO USUÁRIO
+====================================================
+
+No modal de Novo Cartão:
+- incluir campo visual para os 4 últimos dígitos
+- atualizar o preview do cartão em tempo real
+
+No modal de Novo Lançamento:
+Se formaPagamento = Crédito:
+- selecionar cartão
+- selecionar tipo de crédito (à vista / parcelado)
+- selecionar modo de uso do cartão (físico / online)
+
+====================================================
+6) VISUAL PREMIUM
+====================================================
+
+Quero manter a estética premium atual.
+
+Ajustar:
+- preview do cartão com os 4 dígitos mais elegantes
+- listagem de cartões mais clara
+- seleção de cartão no lançamento mais organizada
+- aparência coerente com um produto vendável
+
+====================================================
+7) ENTREGAR
+====================================================
+
+Quero que você implemente agora:
+
+1. campo de últimos 4 dígitos no cadastro de cartões
+2. exibição dos 4 dígitos nos cards e listas
+3. campo modoUsoCartao no lançamento
+4. exibição desse dado no lançamento
+5. integração com a lógica atual de cartão/fatura
+6. manutenção do visual premium
+
+No final, me mostre:
+- o que foi alterado no banco
+- o que foi alterado no cadastro de cartões
+- o que foi alterado no formulário de lançamentos
+- próximos ajustes recomendados

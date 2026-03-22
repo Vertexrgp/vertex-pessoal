@@ -14,6 +14,7 @@ export const transactionsTable = pgTable("transactions", {
   type: text("type").notNull(),
   paymentMethod: text("payment_method"),
   creditType: text("credit_type"),
+  modoUsoCartao: text("modo_uso_cartao"),
   creditCardId: integer("credit_card_id").references(() => creditCardsTable.id),
   description: text("description").notNull(),
   amount: numeric("amount", { precision: 15, scale: 2 }).notNull(),

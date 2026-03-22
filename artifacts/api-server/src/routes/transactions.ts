@@ -21,6 +21,7 @@ const selectFields = {
   type: transactionsTable.type,
   paymentMethod: transactionsTable.paymentMethod,
   creditType: transactionsTable.creditType,
+  modoUsoCartao: transactionsTable.modoUsoCartao,
   creditCardId: transactionsTable.creditCardId,
   description: transactionsTable.description,
   amount: transactionsTable.amount,
@@ -81,6 +82,7 @@ router.post("/transactions/installments", async (req, res) => {
     accountId: body.accountId ? Number(body.accountId) : null,
     creditCardId: body.creditCardId ? Number(body.creditCardId) : null,
     paymentMethod: String(body.paymentMethod ?? "Crédito"),
+    modoUsoCartao: body.modoUsoCartao ? String(body.modoUsoCartao) : null,
     notes: body.notes ? String(body.notes) : null,
   };
   if (!data.description || !data.totalAmount || data.totalInstallments < 2) {
@@ -106,6 +108,7 @@ router.post("/transactions/installments", async (req, res) => {
       type: "expense" as const,
       paymentMethod: data.paymentMethod,
       creditType: "parcelado",
+      modoUsoCartao: (data as any).modoUsoCartao ?? null,
       creditCardId: data.creditCardId ?? null,
       description: data.description,
       amount,

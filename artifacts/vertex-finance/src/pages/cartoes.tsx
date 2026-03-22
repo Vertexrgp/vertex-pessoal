@@ -41,6 +41,7 @@ const cardSchema = z.object({
   diaFechamento: z.coerce.number().int().min(1).max(31),
   diaVencimento: z.coerce.number().int().min(1).max(31),
   cor: z.string().default("#6366F1"),
+  ultimos4Digitos: z.string().regex(/^\d{4}$/, "Informe exatamente 4 dígitos").or(z.literal("")),
   ativo: z.boolean().default(true),
 });
 type CardForm = z.infer<typeof cardSchema>;
@@ -86,6 +87,8 @@ export function PremiumCard({
     lg: "w-72 h-44 p-6",
   };
 
+  const digits = card.ultimos4Digitos ? card.ultimos4Digitos : "——";
+
   return (
     <div
       role={onClick ? "button" : undefined}
@@ -93,42 +96,34 @@ export function PremiumCard({
       onKeyDown={onClick ? e => e.key === "Enter" && onClick() : undefined}
       onClick={onClick}
       className={cn(
-        "relative rounded-2xl cursor-default flex-shrink-0 overflow-hidden group transition-all duration-200",
+        "relative rounded-2xl flex-shrink-0 overflow-hidden group transition-all duration-200",
         sizeClasses[size],
-        onClick && "cursor-pointer",
+        onClick ? "cursor-pointer" : "cursor-default",
         selected ? "shadow-2xl scale-[1.04] ring-2 ring-white ring-offset-2" : onClick && "hover:scale-[1.02] hover:shadow-xl opacity-80 hover:opacity-100"
       )}
       style={{ backgroundColor: card.cor }}
     >
-      {/* Gradient overlay for premium depth */}
+      {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/30 pointer-events-none" />
       <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-8 translate-x-8 pointer-events-none" />
 
-      {/* Actions (hover) */}
+      {/* Actions on hover */}
       {(onEdit || onDelete) && (
         <div className="absolute top-2.5 right-2.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
           {onEdit && (
-            <button
-              type="button"
-              onClick={onEdit}
-              className="p-1.5 bg-black/20 backdrop-blur-sm rounded-lg hover:bg-black/40 transition-colors"
-            >
+            <button type="button" onClick={onEdit} className="p-1.5 bg-black/20 backdrop-blur-sm rounded-lg hover:bg-black/40 transition-colors">
               <Edit2 className="w-3 h-3 text-white" />
             </button>
           )}
           {onDelete && (
-            <button
-              type="button"
-              onClick={onDelete}
-              className="p-1.5 bg-black/20 backdrop-blur-sm rounded-lg hover:bg-red-500/60 transition-colors"
-            >
+            <button type="button" onClick={onDelete} className="p-1.5 bg-black/20 backdrop-blur-sm rounded-lg hover:bg-red-500/60 transition-colors">
               <Trash2 className="w-3 h-3 text-white" />
             </button>
           )}
         </div>
       )}
 
-      {/* Top row: chip + bandeira */}
+      {/* Chip + Bandeira */}
       <div className="relative flex items-start justify-between mb-auto">
         <div className="w-7 h-5 bg-white/30 rounded-sm border border-white/20 flex items-center justify-center">
           <div className="w-4 h-3 border border-white/40 rounded-[1px]" />
@@ -136,15 +131,18 @@ export function PremiumCard({
         <BandeiraBadge bandeira={card.bandeira} />
       </div>
 
-      {/* Bottom content */}
+      {/* Card info */}
       <div className="absolute bottom-4 left-5 right-5">
         <p className="text-white font-bold text-sm leading-tight truncate drop-shadow-sm">{card.nomeCartao}</p>
         <p className="text-white/60 text-xs mt-0.5">{card.banco}</p>
         {size !== "sm" && (
           <div className="flex items-center justify-between mt-2">
-            <p className="text-white/80 text-xs font-mono tracking-widest">•••• {card.diaVencimento.toString().padStart(2, "0")}</p>
+            <p className="text-white/80 text-xs font-mono tracking-widest">•••• {digits}</p>
             <p className="text-white/70 text-xs font-semibold">{formatCurrency(card.limiteTotal)}</p>
           </div>
+        )}
+        {size === "sm" && (
+          <p className="text-white/70 text-[10px] font-mono tracking-widest mt-1">•••• {digits}</p>
         )}
       </div>
 
@@ -177,10 +175,14 @@ export default function CartoesPage() {
 
   const form = useForm<CardForm>({
     resolver: zodResolver(cardSchema),
-    defaultValues: { cor: "#6366F1", ativo: true, bandeira: "Visa", limiteTotal: 5000, diaFechamento: 5, diaVencimento: 12 },
+    defaultValues: {
+      cor: "#6366F1", ativo: true, bandeira: "Visa",
+      limiteTotal: 5000, diaFechamento: 5, diaVencimento: 12,
+      ultimos4Digitos: "",
+    },
   });
 
-  const watchedCor = form.watch("cor");
+  const watchedValues = form.watch();
 
   const onSubmit = (values: CardForm) => {
     if (editingCard) {
@@ -192,7 +194,11 @@ export default function CartoesPage() {
 
   const openNew = () => {
     setEditingCard(null);
-    form.reset({ cor: "#6366F1", ativo: true, bandeira: "Visa", limiteTotal: 5000, diaFechamento: 5, diaVencimento: 12 });
+    form.reset({
+      cor: "#6366F1", ativo: true, bandeira: "Visa",
+      limiteTotal: 5000, diaFechamento: 5, diaVencimento: 12,
+      ultimos4Digitos: "",
+    });
     setIsModalOpen(true);
   };
 
@@ -206,6 +212,7 @@ export default function CartoesPage() {
       diaFechamento: card.diaFechamento,
       diaVencimento: card.diaVencimento,
       cor: card.cor,
+      ultimos4Digitos: card.ultimos4Digitos ?? "",
       ativo: card.ativo,
     });
     setIsModalOpen(true);
@@ -230,7 +237,7 @@ export default function CartoesPage() {
         </div>
       </div>
 
-      {/* KPI Summary */}
+      {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Cartões Cadastrados</p>
@@ -248,7 +255,7 @@ export default function CartoesPage() {
 
       {cards && cards.length > 0 ? (
         <>
-          {/* Premium Card Grid */}
+          {/* Card grid */}
           <div className="flex gap-5 mb-8 flex-wrap">
             {cards.map(card => (
               <PremiumCard
@@ -261,7 +268,7 @@ export default function CartoesPage() {
             ))}
           </div>
 
-          {/* Detail Table */}
+          {/* Detail table */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-semibold text-slate-900">Detalhes</h3>
@@ -274,6 +281,7 @@ export default function CartoesPage() {
                     <th className="px-6 py-3 text-left font-semibold">Cartão</th>
                     <th className="px-6 py-3 text-left font-semibold">Banco</th>
                     <th className="px-6 py-3 text-left font-semibold">Bandeira</th>
+                    <th className="px-6 py-3 text-center font-semibold">Últimos 4</th>
                     <th className="px-6 py-3 text-right font-semibold">Limite</th>
                     <th className="px-6 py-3 text-center font-semibold">Fechamento</th>
                     <th className="px-6 py-3 text-center font-semibold">Vencimento</th>
@@ -286,13 +294,16 @@ export default function CartoesPage() {
                     <tr key={card.id} className="hover:bg-slate-50/60 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-6 rounded-lg flex-shrink-0 shadow-sm border border-white/20" style={{ backgroundColor: card.cor }} />
+                          <div className="w-9 h-6 rounded-lg flex-shrink-0 shadow-sm" style={{ backgroundColor: card.cor }} />
                           <span className="font-semibold text-slate-900">{card.nomeCartao}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-slate-500 text-sm">{card.banco}</td>
-                      <td className="px-6 py-4">
-                        <BandeiraBadge bandeira={card.bandeira} />
+                      <td className="px-6 py-4"><BandeiraBadge bandeira={card.bandeira} /></td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="font-mono text-sm text-slate-700 tracking-widest">
+                          {card.ultimos4Digitos ? `•••• ${card.ultimos4Digitos}` : <span className="text-slate-300">—</span>}
+                        </span>
                       </td>
                       <td className="px-6 py-4 text-right font-bold text-slate-900">{formatCurrency(card.limiteTotal)}</td>
                       <td className="px-6 py-4 text-center text-slate-500 text-sm">Dia {card.diaFechamento}</td>
@@ -309,7 +320,10 @@ export default function CartoesPage() {
                           <button onClick={() => openEdit(card)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
                             <Edit2 className="w-4 h-4 text-slate-400 hover:text-slate-700" />
                           </button>
-                          <button onClick={() => { if (confirm(`Excluir "${card.nomeCartao}"?`)) deleteMutation.mutate({ id: card.id }); }} className="p-1.5 hover:bg-rose-50 rounded-lg transition-colors">
+                          <button
+                            onClick={() => { if (confirm(`Excluir "${card.nomeCartao}"?`)) deleteMutation.mutate({ id: card.id }); }}
+                            className="p-1.5 hover:bg-rose-50 rounded-lg transition-colors"
+                          >
                             <Trash2 className="w-4 h-4 text-slate-400 hover:text-rose-600" />
                           </button>
                         </div>
@@ -326,13 +340,11 @@ export default function CartoesPage() {
           <CreditCard className="w-14 h-14 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-600 font-semibold text-lg mb-2">Nenhum cartão cadastrado</p>
           <p className="text-slate-400 text-sm mb-6">Adicione seus cartões para controlar faturas e parcelamentos.</p>
-          <Button onClick={openNew} className="gap-2">
-            <Plus className="w-4 h-4" /> Adicionar Primeiro Cartão
-          </Button>
+          <Button onClick={openNew} className="gap-2"><Plus className="w-4 h-4" /> Adicionar Primeiro Cartão</Button>
         </div>
       )}
 
-      {/* Card Modal */}
+      {/* Modal */}
       <Dialog open={isModalOpen} onOpenChange={open => { setIsModalOpen(open); if (!open) setEditingCard(null); }}>
         <DialogContent className="sm:max-w-[500px] bg-white border-slate-200 max-h-[92vh] overflow-y-auto">
           <DialogHeader>
@@ -341,17 +353,18 @@ export default function CartoesPage() {
             </DialogTitle>
           </DialogHeader>
 
-          {/* Live preview */}
+          {/* Live card preview */}
           <div className="flex justify-center py-2">
             <PremiumCard
               size="lg"
               card={{
-                nomeCartao: form.watch("nomeCartao") || "Nome do Cartão",
-                banco: form.watch("banco") || "Banco",
-                bandeira: form.watch("bandeira") || "Visa",
-                cor: watchedCor || "#6366F1",
-                limiteTotal: form.watch("limiteTotal") || 0,
-                diaVencimento: form.watch("diaVencimento") || 12,
+                nomeCartao: watchedValues.nomeCartao || "Nome do Cartão",
+                banco: watchedValues.banco || "Banco",
+                bandeira: watchedValues.bandeira || "Visa",
+                cor: watchedValues.cor || "#6366F1",
+                limiteTotal: watchedValues.limiteTotal || 0,
+                diaVencimento: watchedValues.diaVencimento || 12,
+                ultimos4Digitos: watchedValues.ultimos4Digitos || "",
                 ativo: true,
               }}
             />
@@ -376,18 +389,38 @@ export default function CartoesPage() {
                 )} />
               </div>
 
-              <FormField control={form.control} name="bandeira" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bandeira</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      {BANDEIRAS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="bandeira" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bandeira</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {BANDEIRAS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="ultimos4Digitos" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Últimos 4 Dígitos</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-sm">••••</span>
+                        <Input
+                          placeholder="1234"
+                          maxLength={4}
+                          className="pl-12 font-mono tracking-widest"
+                          {...field}
+                          onChange={e => field.onChange(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
 
               <FormField control={form.control} name="limiteTotal" render={({ field }) => (
                 <FormItem>
