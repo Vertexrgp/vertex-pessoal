@@ -5,6 +5,7 @@
  * Vertex Finance OS API
  * OpenAPI spec version: 0.1.0
  */
+import type { CreateTransactionInputCreditType } from "./createTransactionInputCreditType";
 import type { CreateTransactionInputStatus } from "./createTransactionInputStatus";
 import type { CreateTransactionInputType } from "./createTransactionInputType";
 
@@ -15,9 +16,13 @@ export interface CreateTransactionInput {
   subcategoryId?: number | null;
   type: CreateTransactionInputType;
   paymentMethod?: string | null;
+  creditType?: CreateTransactionInputCreditType;
   description: string;
   amount: number;
   accountId?: number | null;
   status: CreateTransactionInputStatus;
   notes?: string | null;
+  totalInstallments?: number | null;
+  currentInstallment?: number | null;
+  installmentGroupId?: string | null;
 }

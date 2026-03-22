@@ -12,7 +12,7 @@ Full-stack personal finance management system built as a premium fintech product
 - **TypeScript version**: 5.9
 - **API framework**: Express 5
 - **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
+- **Validation**: Zod (`drizzle-zod` on DB layer; plain validation in API routes)
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (ESM bundle)
 - **Frontend**: React + Vite + Tailwind CSS + shadcn/ui

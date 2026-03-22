@@ -319,6 +319,42 @@ paths:
               schema:
                 $ref: "#/components/schemas/Transaction"
 
+  /transactions/installments:
+    post:
+      operationId: createInstallments
+      tags: [transactions]
+      summary: Create installment transactions (parcelamento)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInstallmentInput"
+      responses:
+        "201":
+          description: Created installments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+
+  /transactions/group/{groupId}:
+    delete:
+      operationId: deleteInstallmentGroup
+      tags: [transactions]
+      summary: Delete all installments of a group
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
   # ─── MONTHLY PLANS ───────────────────────────────────────────────────────────
   /monthly-plans:
     get:
@@ -1088,6 +1124,10 @@ components:
         paymentMethod:
           type: string
           nullable: true
+        creditType:
+          type: string
+          enum: [avista, parcelado]
+          nullable: true
         description:
           type: string
         amount:
@@ -1102,6 +1142,15 @@ components:
           type: string
           enum: [planned, paid, received]
         notes:
+          type: string
+          nullable: true
+        totalInstallments:
+          type: integer
+          nullable: true
+        currentInstallment:
+          type: integer
+          nullable: true
+        installmentGroupId:
           type: string
           nullable: true
         createdAt:
@@ -1130,6 +1179,10 @@ components:
         paymentMethod:
           type: string
           nullable: true
+        creditType:
+          type: string
+          enum: [avista, parcelado]
+          nullable: true
         description:
           type: string
         amount:
@@ -1143,7 +1196,47 @@ components:
         notes:
           type: string
           nullable: true
+        totalInstallments:
+          type: integer
+          nullable: true
+        currentInstallment:
+          type: integer
+          nullable: true
+        installmentGroupId:
+          type: string
+          nullable: true
       required: [competenceDate, movementDate, type, description, amount, status]
+
+    CreateInstallmentInput:
+      type: object
+      properties:
+        description:
+          type: string
+        totalAmount:
+          type: number
+        totalInstallments:
+          type: integer
+        firstInstallmentDate:
+          type: string
+          format: date
+        firstInstallmentStatus:
+          type: string
+          enum: [planned, paid]
+        categoryId:
+          type: integer
+          nullable: true
+        subcategoryId:
+          type: integer
+          nullable: true
+        accountId:
+          type: integer
+          nullable: true
+        paymentMethod:
+          type: string
+        notes:
+          type: string
+          nullable: true
+      required: [description, totalAmount, totalInstallments, firstInstallmentDate, firstInstallmentStatus, paymentMethod]
 
     MonthlyPlan:
       type: object

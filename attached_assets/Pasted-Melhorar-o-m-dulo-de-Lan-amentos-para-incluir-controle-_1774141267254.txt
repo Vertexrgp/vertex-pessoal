@@ -1,0 +1,142 @@
+Melhorar o módulo de Lançamentos para incluir controle completo de formas de pagamento e parcelamento de cartão de crédito.
+
+OBJETIVO
+Permitir registrar corretamente gastos feitos em:
+- dinheiro
+- débito
+- crédito (à vista ou parcelado)
+
+E automaticamente gerar previsões futuras no caso de parcelamento.
+
+====================================================
+PARTE 1 — FORMA DE PAGAMENTO
+====================================================
+
+Adicionar campo obrigatório:
+
+formaPagamento
+
+Opções:
+
+- Dinheiro
+- Débito
+- Crédito
+- Pix
+- Transferência
+- Outros
+
+====================================================
+PARTE 2 — LÓGICA DE CARTÃO DE CRÉDITO
+====================================================
+
+Se formaPagamento = "Crédito":
+
+Mostrar campo:
+
+tipoCredito
+
+Opções:
+
+- À vista
+- Parcelado
+
+====================================================
+PARTE 3 — PARCELAMENTO
+====================================================
+
+Se tipoCredito = "Parcelado":
+
+Mostrar campos:
+
+- numeroParcelas (inteiro)
+- dataPrimeiraParcela (opcional, default = data do lançamento)
+
+====================================================
+PARTE 4 — GERAÇÃO AUTOMÁTICA DE PARCELAS
+====================================================
+
+Quando usuário salvar um lançamento parcelado:
+
+Criar automaticamente N registros na tabela transactions:
+
+Para cada parcela:
+
+- valorParcela = valorTotal / numeroParcelas
+- dataCompetencia = mês atual + i meses
+- manter mesma categoria, descrição, conta, etc
+- tipo = despesa
+- status = previsto (exceto primeira parcela, que pode ser pago se o usuário quiser)
+
+====================================================
+PARTE 5 — AGRUPAMENTO DAS PARCELAS
+====================================================
+
+Adicionar campo:
+
+grupoParcelaId
+
+- todas as parcelas da mesma compra devem compartilhar o mesmo grupoParcelaId
+- isso permite:
+  - editar todas juntas
+  - excluir todas
+  - identificar que são da mesma compra
+
+====================================================
+PARTE 6 — IMPACTO NOS MÓDULOS
+====================================================
+
+Planejamento Mensal:
+- mostrar parcelas futuras automaticamente
+
+Dashboard:
+- incluir despesas futuras no mês
+
+Orçamento:
+- considerar parcelas no cálculo
+
+Relatórios:
+- incluir parcelas futuras
+
+====================================================
+PARTE 7 — VISUAL
+====================================================
+
+Na lista de lançamentos:
+
+- identificar parcelas com label:
+  "Parcela 2/6"
+- agrupar visualmente quando possível
+
+====================================================
+PARTE 8 — BANCO DE DADOS
+====================================================
+
+Atualizar tabela transactions:
+
+Adicionar campos:
+
+- formaPagamento
+- tipoCredito (nullable)
+- numeroParcelas (nullable)
+- parcelaAtual (nullable)
+- grupoParcelaId (nullable)
+
+====================================================
+PARTE 9 — REGRAS IMPORTANTES
+====================================================
+
+1) valor total dividido igualmente
+2) arredondamento tratado na última parcela
+3) permitir editar lançamento principal e refletir nas parcelas
+4) permitir excluir todas parcelas de uma vez
+5) evitar duplicação de parcelas
+
+====================================================
+ENTREGAR
+====================================================
+
+- novos campos no formulário
+- lógica de parcelamento
+- geração automática de parcelas
+- atualização da tabela transactions
+- impacto refletido em dashboard e planejamento

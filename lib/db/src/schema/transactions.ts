@@ -1,4 +1,4 @@
-import { pgTable, serial, text, numeric, integer, date, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, numeric, integer, date, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { categoriesTable, subcategoriesTable } from "./categories";
@@ -12,11 +12,15 @@ export const transactionsTable = pgTable("transactions", {
   subcategoryId: integer("subcategory_id").references(() => subcategoriesTable.id),
   type: text("type").notNull(),
   paymentMethod: text("payment_method"),
+  creditType: text("credit_type"),
   description: text("description").notNull(),
   amount: numeric("amount", { precision: 15, scale: 2 }).notNull(),
   accountId: integer("account_id").references(() => accountsTable.id),
   status: text("status").notNull().default("planned"),
   notes: text("notes"),
+  totalInstallments: integer("total_installments"),
+  currentInstallment: integer("current_installment"),
+  installmentGroupId: text("installment_group_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

@@ -31,6 +31,7 @@ import type {
   CreateCategoryInput,
   CreateDebtInput,
   CreateIncomeInput,
+  CreateInstallmentInput,
   CreateMonthlyPlanInput,
   CreateReceivableInput,
   CreateSubcategoryInput,
@@ -1362,6 +1363,176 @@ export const useDuplicateTransaction = <
   TContext
 > => {
   return useMutation(getDuplicateTransactionMutationOptions(options));
+};
+
+/**
+ * @summary Create installment transactions (parcelamento)
+ */
+export const getCreateInstallmentsUrl = () => {
+  return `/api/transactions/installments`;
+};
+
+export const createInstallments = async (
+  createInstallmentInput: CreateInstallmentInput,
+  options?: RequestInit,
+): Promise<Transaction[]> => {
+  return customFetch<Transaction[]>(getCreateInstallmentsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createInstallmentInput),
+  });
+};
+
+export const getCreateInstallmentsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInstallments>>,
+    TError,
+    { data: BodyType<CreateInstallmentInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createInstallments>>,
+  TError,
+  { data: BodyType<CreateInstallmentInput> },
+  TContext
+> => {
+  const mutationKey = ["createInstallments"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createInstallments>>,
+    { data: BodyType<CreateInstallmentInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createInstallments(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateInstallmentsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createInstallments>>
+>;
+export type CreateInstallmentsMutationBody = BodyType<CreateInstallmentInput>;
+export type CreateInstallmentsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create installment transactions (parcelamento)
+ */
+export const useCreateInstallments = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInstallments>>,
+    TError,
+    { data: BodyType<CreateInstallmentInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createInstallments>>,
+  TError,
+  { data: BodyType<CreateInstallmentInput> },
+  TContext
+> => {
+  return useMutation(getCreateInstallmentsMutationOptions(options));
+};
+
+/**
+ * @summary Delete all installments of a group
+ */
+export const getDeleteInstallmentGroupUrl = (groupId: string) => {
+  return `/api/transactions/group/${groupId}`;
+};
+
+export const deleteInstallmentGroup = async (
+  groupId: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteInstallmentGroupUrl(groupId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteInstallmentGroupMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteInstallmentGroup>>,
+    TError,
+    { groupId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteInstallmentGroup>>,
+  TError,
+  { groupId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteInstallmentGroup"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteInstallmentGroup>>,
+    { groupId: string }
+  > = (props) => {
+    const { groupId } = props ?? {};
+
+    return deleteInstallmentGroup(groupId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteInstallmentGroupMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteInstallmentGroup>>
+>;
+
+export type DeleteInstallmentGroupMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete all installments of a group
+ */
+export const useDeleteInstallmentGroup = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteInstallmentGroup>>,
+    TError,
+    { groupId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteInstallmentGroup>>,
+  TError,
+  { groupId: string },
+  TContext
+> => {
+  return useMutation(getDeleteInstallmentGroupMutationOptions(options));
 };
 
 /**

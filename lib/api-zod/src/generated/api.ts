@@ -167,12 +167,16 @@ export const ListTransactionsResponseItem = zod.object({
   subcategoryName: zod.string().nullish(),
   type: zod.enum(["income", "expense", "transfer"]),
   paymentMethod: zod.string().nullish(),
+  creditType: zod.enum(["avista", "parcelado"]).nullish(),
   description: zod.string(),
   amount: zod.number(),
   accountId: zod.number().nullish(),
   accountName: zod.string().nullish(),
   status: zod.enum(["planned", "paid", "received"]),
   notes: zod.string().nullish(),
+  totalInstallments: zod.number().nullish(),
+  currentInstallment: zod.number().nullish(),
+  installmentGroupId: zod.string().nullish(),
   createdAt: zod.date(),
 });
 export const ListTransactionsResponse = zod.array(ListTransactionsResponseItem);
@@ -187,11 +191,15 @@ export const CreateTransactionBody = zod.object({
   subcategoryId: zod.number().nullish(),
   type: zod.enum(["income", "expense", "transfer"]),
   paymentMethod: zod.string().nullish(),
+  creditType: zod.enum(["avista", "parcelado"]).nullish(),
   description: zod.string(),
   amount: zod.number(),
   accountId: zod.number().nullish(),
   status: zod.enum(["planned", "paid", "received"]),
   notes: zod.string().nullish(),
+  totalInstallments: zod.number().nullish(),
+  currentInstallment: zod.number().nullish(),
+  installmentGroupId: zod.string().nullish(),
 });
 
 export const GetTransactionParams = zod.object({
@@ -208,12 +216,16 @@ export const GetTransactionResponse = zod.object({
   subcategoryName: zod.string().nullish(),
   type: zod.enum(["income", "expense", "transfer"]),
   paymentMethod: zod.string().nullish(),
+  creditType: zod.enum(["avista", "parcelado"]).nullish(),
   description: zod.string(),
   amount: zod.number(),
   accountId: zod.number().nullish(),
   accountName: zod.string().nullish(),
   status: zod.enum(["planned", "paid", "received"]),
   notes: zod.string().nullish(),
+  totalInstallments: zod.number().nullish(),
+  currentInstallment: zod.number().nullish(),
+  installmentGroupId: zod.string().nullish(),
   createdAt: zod.date(),
 });
 
@@ -228,11 +240,15 @@ export const UpdateTransactionBody = zod.object({
   subcategoryId: zod.number().nullish(),
   type: zod.enum(["income", "expense", "transfer"]),
   paymentMethod: zod.string().nullish(),
+  creditType: zod.enum(["avista", "parcelado"]).nullish(),
   description: zod.string(),
   amount: zod.number(),
   accountId: zod.number().nullish(),
   status: zod.enum(["planned", "paid", "received"]),
   notes: zod.string().nullish(),
+  totalInstallments: zod.number().nullish(),
+  currentInstallment: zod.number().nullish(),
+  installmentGroupId: zod.string().nullish(),
 });
 
 export const UpdateTransactionResponse = zod.object({
@@ -245,12 +261,16 @@ export const UpdateTransactionResponse = zod.object({
   subcategoryName: zod.string().nullish(),
   type: zod.enum(["income", "expense", "transfer"]),
   paymentMethod: zod.string().nullish(),
+  creditType: zod.enum(["avista", "parcelado"]).nullish(),
   description: zod.string(),
   amount: zod.number(),
   accountId: zod.number().nullish(),
   accountName: zod.string().nullish(),
   status: zod.enum(["planned", "paid", "received"]),
   notes: zod.string().nullish(),
+  totalInstallments: zod.number().nullish(),
+  currentInstallment: zod.number().nullish(),
+  installmentGroupId: zod.string().nullish(),
   createdAt: zod.date(),
 });
 
@@ -260,6 +280,29 @@ export const DeleteTransactionParams = zod.object({
 
 export const DuplicateTransactionParams = zod.object({
   id: zod.coerce.number(),
+});
+
+/**
+ * @summary Create installment transactions (parcelamento)
+ */
+export const CreateInstallmentsBody = zod.object({
+  description: zod.string(),
+  totalAmount: zod.number(),
+  totalInstallments: zod.number(),
+  firstInstallmentDate: zod.date(),
+  firstInstallmentStatus: zod.enum(["planned", "paid"]),
+  categoryId: zod.number().nullish(),
+  subcategoryId: zod.number().nullish(),
+  accountId: zod.number().nullish(),
+  paymentMethod: zod.string(),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Delete all installments of a group
+ */
+export const DeleteInstallmentGroupParams = zod.object({
+  groupId: zod.coerce.string(),
 });
 
 /**
@@ -799,12 +842,16 @@ export const GetReportTopExpensesResponseItem = zod.object({
   subcategoryName: zod.string().nullish(),
   type: zod.enum(["income", "expense", "transfer"]),
   paymentMethod: zod.string().nullish(),
+  creditType: zod.enum(["avista", "parcelado"]).nullish(),
   description: zod.string(),
   amount: zod.number(),
   accountId: zod.number().nullish(),
   accountName: zod.string().nullish(),
   status: zod.enum(["planned", "paid", "received"]),
   notes: zod.string().nullish(),
+  totalInstallments: zod.number().nullish(),
+  currentInstallment: zod.number().nullish(),
+  installmentGroupId: zod.string().nullish(),
   createdAt: zod.date(),
 });
 export const GetReportTopExpensesResponse = zod.array(

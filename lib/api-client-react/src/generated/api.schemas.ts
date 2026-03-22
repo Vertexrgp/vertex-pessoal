@@ -132,6 +132,15 @@ export const TransactionType = {
   transfer: "transfer",
 } as const;
 
+export type TransactionCreditType =
+  | (typeof TransactionCreditType)[keyof typeof TransactionCreditType]
+  | null;
+
+export const TransactionCreditType = {
+  avista: "avista",
+  parcelado: "parcelado",
+} as const;
+
 export type TransactionStatus =
   (typeof TransactionStatus)[keyof typeof TransactionStatus];
 
@@ -151,12 +160,16 @@ export interface Transaction {
   subcategoryName?: string | null;
   type: TransactionType;
   paymentMethod?: string | null;
+  creditType?: TransactionCreditType;
   description: string;
   amount: number;
   accountId?: number | null;
   accountName?: string | null;
   status: TransactionStatus;
   notes?: string | null;
+  totalInstallments?: number | null;
+  currentInstallment?: number | null;
+  installmentGroupId?: string | null;
   createdAt: string;
 }
 
@@ -167,6 +180,15 @@ export const CreateTransactionInputType = {
   income: "income",
   expense: "expense",
   transfer: "transfer",
+} as const;
+
+export type CreateTransactionInputCreditType =
+  | (typeof CreateTransactionInputCreditType)[keyof typeof CreateTransactionInputCreditType]
+  | null;
+
+export const CreateTransactionInputCreditType = {
+  avista: "avista",
+  parcelado: "parcelado",
 } as const;
 
 export type CreateTransactionInputStatus =
@@ -185,10 +207,35 @@ export interface CreateTransactionInput {
   subcategoryId?: number | null;
   type: CreateTransactionInputType;
   paymentMethod?: string | null;
+  creditType?: CreateTransactionInputCreditType;
   description: string;
   amount: number;
   accountId?: number | null;
   status: CreateTransactionInputStatus;
+  notes?: string | null;
+  totalInstallments?: number | null;
+  currentInstallment?: number | null;
+  installmentGroupId?: string | null;
+}
+
+export type CreateInstallmentInputFirstInstallmentStatus =
+  (typeof CreateInstallmentInputFirstInstallmentStatus)[keyof typeof CreateInstallmentInputFirstInstallmentStatus];
+
+export const CreateInstallmentInputFirstInstallmentStatus = {
+  planned: "planned",
+  paid: "paid",
+} as const;
+
+export interface CreateInstallmentInput {
+  description: string;
+  totalAmount: number;
+  totalInstallments: number;
+  firstInstallmentDate: string;
+  firstInstallmentStatus: CreateInstallmentInputFirstInstallmentStatus;
+  categoryId?: number | null;
+  subcategoryId?: number | null;
+  accountId?: number | null;
+  paymentMethod: string;
   notes?: string | null;
 }
 
