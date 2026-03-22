@@ -1,0 +1,167 @@
+Quero evoluir o módulo de Cartões e Lançamentos do Vertex Finance OS com melhorias de usabilidade e identificação de cartões.
+
+OBJETIVO
+Melhorar a identificação dos cartões e enriquecer os lançamentos com mais contexto, deixando o produto com padrão premium.
+
+====================================================
+1) CARTÕES — APELIDO + ÚLTIMOS 4 DÍGITOS
+====================================================
+
+No cadastro de cartão de crédito, adicionar:
+
+- apelidoCartao (string opcional)
+- ultimos4Digitos (string obrigatória)
+
+Regras:
+
+- ultimos4Digitos deve aceitar exatamente 4 dígitos
+- apelidoCartao é opcional, mas recomendado
+
+Exemplo de uso:
+Banco: Itaú
+Nome do cartão: Platinum
+Apelido: Azul
+Últimos 4 dígitos: 1234
+
+====================================================
+2) EXIBIÇÃO DO CARTÃO
+====================================================
+
+Atualizar visual dos cards:
+
+Mostrar:
+
+- apelido (se existir)
+- nome do cartão
+- banco
+- bandeira
+- últimos 4 dígitos
+
+Regra de exibição:
+
+Se houver apelido:
+Exemplo:
+Itaú Azul
+•••• 1234
+
+Se não houver apelido:
+Exemplo:
+Itaú Platinum
+•••• 1234
+
+====================================================
+3) SELEÇÃO DE CARTÃO NOS LANÇAMENTOS
+====================================================
+
+No formulário de lançamento (quando Crédito):
+
+Mostrar opções assim:
+
+Itaú Azul •••• 1234
+Nubank Roxinho •••• 9876
+
+Ordenar cartões ativos primeiro.
+
+====================================================
+4) MODO DE USO DO CARTÃO
+====================================================
+
+Quando formaPagamento = Crédito:
+
+Adicionar campo:
+
+modoUsoCartao
+
+Opções:
+- Cartão físico
+- Compra online
+
+Campo obrigatório quando for crédito.
+
+====================================================
+5) BANCO DE DADOS
+====================================================
+
+Atualizar tabela credit_cards:
+
+Adicionar:
+- apelidoCartao (nullable)
+- ultimos4Digitos
+
+Atualizar tabela transactions:
+
+Adicionar:
+- modoUsoCartao (nullable)
+
+====================================================
+6) LISTAGEM DE LANÇAMENTOS
+====================================================
+
+Na tabela de lançamentos:
+
+Manter colunas:
+- Data
+- Descrição
+- Categoria
+- Pagamento
+- Parcela
+- Valor
+- Status
+
+Melhorias:
+
+- Exibir o cartão usado (com apelido + 4 dígitos)
+- Exibir tipo de pagamento (crédito, débito, etc)
+- Exibir parcela corretamente (1/12, 2/12, etc)
+- Exibir modoUsoCartao nos detalhes do lançamento
+
+====================================================
+7) FORMULÁRIO DE NOVO LANÇAMENTO
+====================================================
+
+Se formaPagamento = Crédito:
+
+Mostrar:
+
+- Seleção de cartão
+- Tipo de crédito (à vista / parcelado)
+- Número de parcelas (se parcelado)
+- Modo de uso (físico / online)
+
+====================================================
+8) UX / VISUAL
+====================================================
+
+Manter padrão premium:
+
+- layout limpo
+- cards elegantes
+- hierarquia clara
+- visual consistente com fintech pessoal
+
+Melhorar:
+
+- preview do cartão com apelido
+- legibilidade dos 4 dígitos
+- seleção de cartão mais intuitiva
+
+====================================================
+9) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. campo apelidoCartao
+2. campo ultimos4Digitos
+3. exibição desses dados nos cards
+4. ajuste no select de cartões
+5. campo modoUsoCartao no lançamento
+6. integração com faturas e parcelamento
+7. melhoria visual mantendo padrão premium
+
+No final, me mostre:
+
+- alterações no banco
+- alterações nas telas
+- exemplos de exibição
+- próximos ajustes recomendados

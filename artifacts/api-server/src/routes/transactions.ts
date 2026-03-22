@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { transactionsTable, categoriesTable, subcategoriesTable, accountsTable, insertTransactionSchema } from "@workspace/db/schema";
+import { transactionsTable, categoriesTable, subcategoriesTable, accountsTable, insertTransactionSchema, creditCardsTable } from "@workspace/db/schema";
 import { eq, and, sql, ilike } from "drizzle-orm";
 import crypto from "crypto";
 
@@ -23,6 +23,10 @@ const selectFields = {
   creditType: transactionsTable.creditType,
   modoUsoCartao: transactionsTable.modoUsoCartao,
   creditCardId: transactionsTable.creditCardId,
+  creditCardNome: creditCardsTable.nomeCartao,
+  creditCardApelido: creditCardsTable.apelidoCartao,
+  creditCardDigitos: creditCardsTable.ultimos4Digitos,
+  creditCardCor: creditCardsTable.cor,
   description: transactionsTable.description,
   amount: transactionsTable.amount,
   accountId: transactionsTable.accountId,
@@ -44,7 +48,8 @@ router.get("/transactions", async (req, res) => {
     .from(transactionsTable)
     .leftJoin(categoriesTable, eq(transactionsTable.categoryId, categoriesTable.id))
     .leftJoin(subcategoriesTable, eq(transactionsTable.subcategoryId, subcategoriesTable.id))
-    .leftJoin(accountsTable, eq(transactionsTable.accountId, accountsTable.id));
+    .leftJoin(accountsTable, eq(transactionsTable.accountId, accountsTable.id))
+    .leftJoin(creditCardsTable, eq(transactionsTable.creditCardId, creditCardsTable.id));
 
   const conditions = [];
 

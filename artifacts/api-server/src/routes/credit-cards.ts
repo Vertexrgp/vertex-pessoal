@@ -6,6 +6,7 @@ import { eq, and, gte, lte, sql } from "drizzle-orm";
 function parseCardBody(body: any) {
   return {
     nomeCartao: String(body.nomeCartao ?? ""),
+    apelidoCartao: body.apelidoCartao ? String(body.apelidoCartao) : null,
     banco: String(body.banco ?? ""),
     bandeira: String(body.bandeira ?? "Outros"),
     limiteTotal: String(Number(body.limiteTotal ?? 0).toFixed(2)),

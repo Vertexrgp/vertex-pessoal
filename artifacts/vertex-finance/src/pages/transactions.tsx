@@ -95,9 +95,22 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function PaymentBadge({ method, modoUso }: { method: string | null | undefined; modoUso?: string | null }) {
+function PaymentBadge({
+  method, modoUso, cardNome, cardApelido, cardDigitos, cardCor,
+}: {
+  method: string | null | undefined;
+  modoUso?: string | null;
+  cardNome?: string | null;
+  cardApelido?: string | null;
+  cardDigitos?: string | null;
+  cardCor?: string | null;
+}) {
   if (!method) return <span className="text-slate-300 text-xs">—</span>;
   const isCredit = method === "Crédito";
+  const cardLabel = cardApelido
+    ? `${cardNome?.split(" ")[0] ?? ""} ${cardApelido}`.trim()
+    : cardNome ?? null;
+
   return (
     <div className="flex flex-col gap-0.5">
       <span className={cn(
@@ -107,6 +120,13 @@ function PaymentBadge({ method, modoUso }: { method: string | null | undefined; 
         {isCredit && <CreditCard className="w-3 h-3" />}
         {method}
       </span>
+      {isCredit && cardLabel && (
+        <span className="flex items-center gap-1 text-[10px] text-slate-500 pl-0.5">
+          {cardCor && <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: cardCor }} />}
+          <span className="font-medium">{cardLabel}</span>
+          {cardDigitos && <span className="font-mono text-slate-400">•••• {cardDigitos}</span>}
+        </span>
+      )}
       {isCredit && modoUso && (
         <span className="text-[10px] text-slate-400 pl-0.5">
           {modoUso === "online" ? "🌐 Online" : "💳 Físico"}
@@ -335,7 +355,14 @@ export default function TransactionsPage() {
                       )}
                     </td>
                     <td className="px-5 py-3.5">
-                      <PaymentBadge method={tx.paymentMethod} modoUso={(tx as any).modoUsoCartao} />
+                      <PaymentBadge
+                        method={tx.paymentMethod}
+                        modoUso={(tx as any).modoUsoCartao}
+                        cardNome={(tx as any).creditCardNome}
+                        cardApelido={(tx as any).creditCardApelido}
+                        cardDigitos={(tx as any).creditCardDigitos}
+                        cardCor={(tx as any).creditCardCor}
+                      />
                     </td>
                     <td className="px-5 py-3.5 text-center">
                       <ParcelaBadge tx={tx} />
@@ -467,18 +494,31 @@ export default function TransactionsPage() {
                       <Select onValueChange={field.onChange} value={field.value?.toString() ?? ""}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Selecione o cartão" /></SelectTrigger></FormControl>
                         <SelectContent>
-                          {creditCards?.map(c => (
-                            <SelectItem key={c.id} value={c.id.toString()}>
-                              <span className="flex items-center gap-2">
-                                <span className="font-medium">{c.nomeCartao}</span>
-                                {(c as any).ultimos4Digitos ? (
-                                  <span className="text-slate-400 font-mono text-xs">•••• {(c as any).ultimos4Digitos}</span>
-                                ) : (
-                                  <span className="text-slate-400 text-xs">{c.banco}</span>
-                                )}
-                              </span>
-                            </SelectItem>
-                          ))}
+                          {[...(creditCards ?? [])]
+                            .sort((a, b) => (a.ativo === b.ativo ? 0 : a.ativo ? -1 : 1))
+                            .map(c => {
+                              const label = (c as any).apelidoCartao
+                                ? `${c.banco} ${(c as any).apelidoCartao}`
+                                : `${c.nomeCartao}`;
+                              const digits = (c as any).ultimos4Digitos;
+                              return (
+                                <SelectItem key={c.id} value={c.id.toString()}>
+                                  <span className="flex items-center gap-2">
+                                    <span
+                                      className="w-2.5 h-2.5 rounded-full flex-shrink-0 inline-block"
+                                      style={{ backgroundColor: c.cor }}
+                                    />
+                                    <span className="font-medium">{label}</span>
+                                    {digits ? (
+                                      <span className="text-slate-400 font-mono text-xs">•••• {digits}</span>
+                                    ) : (
+                                      <span className="text-slate-400 text-xs">{c.banco}</span>
+                                    )}
+                                    {!c.ativo && <span className="text-xs text-slate-400">(inativo)</span>}
+                                  </span>
+                                </SelectItem>
+                              );
+                            })}
                         </SelectContent>
                       </Select>
                       <FormMessage />

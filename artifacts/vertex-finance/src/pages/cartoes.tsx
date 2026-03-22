@@ -35,13 +35,14 @@ export const CARD_COLORS = [
 
 const cardSchema = z.object({
   nomeCartao: z.string().min(2, "Nome obrigatório"),
+  apelidoCartao: z.string().max(30).optional().or(z.literal("")).transform(v => v || undefined),
   banco: z.string().min(2, "Banco obrigatório"),
   bandeira: z.enum(["Visa", "Mastercard", "Elo", "American Express", "Hipercard", "Diners", "Outra"]),
   limiteTotal: z.coerce.number().min(0),
   diaFechamento: z.coerce.number().int().min(1).max(31),
   diaVencimento: z.coerce.number().int().min(1).max(31),
   cor: z.string().default("#6366F1"),
-  ultimos4Digitos: z.string().regex(/^\d{4}$/, "Informe exatamente 4 dígitos").or(z.literal("")),
+  ultimos4Digitos: z.string().regex(/^\d{4}$/, "Informe exatamente 4 dígitos"),
   ativo: z.boolean().default(true),
 });
 type CardForm = z.infer<typeof cardSchema>;
@@ -133,8 +134,19 @@ export function PremiumCard({
 
       {/* Card info */}
       <div className="absolute bottom-4 left-5 right-5">
-        <p className="text-white font-bold text-sm leading-tight truncate drop-shadow-sm">{card.nomeCartao}</p>
-        <p className="text-white/60 text-xs mt-0.5">{card.banco}</p>
+        {card.apelidoCartao ? (
+          <>
+            <p className="text-white font-bold text-sm leading-tight truncate drop-shadow-sm">
+              {card.banco} {card.apelidoCartao}
+            </p>
+            <p className="text-white/60 text-xs mt-0.5">{card.nomeCartao}</p>
+          </>
+        ) : (
+          <>
+            <p className="text-white font-bold text-sm leading-tight truncate drop-shadow-sm">{card.nomeCartao}</p>
+            <p className="text-white/60 text-xs mt-0.5">{card.banco}</p>
+          </>
+        )}
         {size !== "sm" && (
           <div className="flex items-center justify-between mt-2">
             <p className="text-white/80 text-xs font-mono tracking-widest">•••• {digits}</p>
@@ -178,7 +190,7 @@ export default function CartoesPage() {
     defaultValues: {
       cor: "#6366F1", ativo: true, bandeira: "Visa",
       limiteTotal: 5000, diaFechamento: 5, diaVencimento: 12,
-      ultimos4Digitos: "",
+      ultimos4Digitos: "", apelidoCartao: "",
     },
   });
 
@@ -197,7 +209,7 @@ export default function CartoesPage() {
     form.reset({
       cor: "#6366F1", ativo: true, bandeira: "Visa",
       limiteTotal: 5000, diaFechamento: 5, diaVencimento: 12,
-      ultimos4Digitos: "",
+      ultimos4Digitos: "", apelidoCartao: "",
     });
     setIsModalOpen(true);
   };
@@ -206,6 +218,7 @@ export default function CartoesPage() {
     setEditingCard(card);
     form.reset({
       nomeCartao: card.nomeCartao,
+      apelidoCartao: card.apelidoCartao ?? "",
       banco: card.banco,
       bandeira: card.bandeira,
       limiteTotal: card.limiteTotal,
@@ -295,7 +308,16 @@ export default function CartoesPage() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-6 rounded-lg flex-shrink-0 shadow-sm" style={{ backgroundColor: card.cor }} />
-                          <span className="font-semibold text-slate-900">{card.nomeCartao}</span>
+                          <div>
+                            <p className="font-semibold text-slate-900">
+                              {(card as any).apelidoCartao
+                                ? <>{card.banco} <span className="text-primary">{(card as any).apelidoCartao}</span></>
+                                : card.nomeCartao}
+                            </p>
+                            {(card as any).apelidoCartao && (
+                              <p className="text-xs text-slate-400">{card.nomeCartao}</p>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-slate-500 text-sm">{card.banco}</td>
@@ -359,6 +381,7 @@ export default function CartoesPage() {
               size="lg"
               card={{
                 nomeCartao: watchedValues.nomeCartao || "Nome do Cartão",
+                apelidoCartao: watchedValues.apelidoCartao || undefined,
                 banco: watchedValues.banco || "Banco",
                 bandeira: watchedValues.bandeira || "Visa",
                 cor: watchedValues.cor || "#6366F1",
@@ -388,6 +411,16 @@ export default function CartoesPage() {
                   </FormItem>
                 )} />
               </div>
+
+              <FormField control={form.control} name="apelidoCartao" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Apelido <span className="text-slate-400 font-normal text-xs ml-1">(opcional — aparece no cartão)</span>
+                  </FormLabel>
+                  <FormControl><Input placeholder="Ex: Azul, Principal, Viagens" {...field} value={field.value ?? ""} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="bandeira" render={({ field }) => (
