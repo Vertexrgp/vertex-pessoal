@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "0cXBO-rHcjT0nnwg95FyW"
+uri = "file://VERTEX_OS_MASTER_DOC.md"
+type = "text"
+title = "VERTEX_OS_MASTER_DOC.md"
