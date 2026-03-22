@@ -1,0 +1,160 @@
+Criar módulo completo de Fatura do Cartão dentro do Vertex Finance OS.
+
+OBJETIVO
+Adicionar controle real de cartões de crédito, faturas mensais, limite e previsões futuras.
+
+====================================================
+PARTE 1 — CADASTRO DE CARTÕES
+====================================================
+
+Criar tabela:
+
+credit_cards
+
+Campos:
+- id
+- nomeCartao
+- banco
+- bandeira
+- limiteTotal
+- diaFechamento
+- diaVencimento
+- cor
+- ativo
+- createdAt
+- updatedAt
+
+Criar tela:
+Configurações > Cartões
+
+Permitir:
+- criar cartão
+- editar cartão
+- ativar/inativar
+
+====================================================
+PARTE 2 — INTEGRAÇÃO COM LANÇAMENTOS
+====================================================
+
+Na tabela transactions, adicionar:
+
+- creditCardId (nullable)
+
+Regra:
+Se formaPagamento = "Crédito", o cartão deve ser obrigatório.
+
+====================================================
+PARTE 3 — LÓGICA DE FATURA
+====================================================
+
+Criar tela:
+
+/cartoes/fatura
+
+Ou no menu:
+Cartões
+- Faturas
+- Cartões cadastrados
+
+A tela deve permitir filtrar por:
+- cartão
+- mês
+- ano
+
+====================================================
+PARTE 4 — CÁLCULO DA FATURA
+====================================================
+
+A fatura de um cartão deve considerar:
+
+1) compras à vista lançadas dentro do ciclo da fatura
+2) parcelas cujo mês de competência cai naquela fatura
+
+O sistema deve respeitar:
+- dia de fechamento
+- dia de vencimento
+
+====================================================
+PARTE 5 — DASHBOARD DA FATURA
+====================================================
+
+Mostrar cards:
+
+- valor total da fatura atual
+- valor pago
+- valor em aberto
+- limite total
+- limite utilizado
+- limite disponível
+- total parcelado futuro
+- valor previsto da próxima fatura
+
+====================================================
+PARTE 6 — LISTA DE ITENS DA FATURA
+====================================================
+
+Mostrar tabela com:
+
+- data
+- descrição
+- categoria
+- valor
+- cartão
+- tipo (à vista / parcelado)
+- parcela atual (ex: 2/6)
+- status
+
+====================================================
+PARTE 7 — PREVISÃO FUTURA
+====================================================
+
+Criar bloco:
+
+Próximas Faturas
+
+Mostrar:
+- próximo mês
+- valor previsto
+- quantidade de parcelas que cairão
+- total à vista previsto
+
+Exemplo:
+Abril: R$ 2.350
+Maio: R$ 1.980
+Junho: R$ 1.720
+
+====================================================
+PARTE 8 — LIMITES
+====================================================
+
+Calcular automaticamente:
+
+limiteUtilizado =
+soma das compras em aberto no cartão
+
+limiteDisponivel =
+limiteTotal - limiteUtilizado
+
+====================================================
+PARTE 9 — UX / VISUAL
+====================================================
+
+Quero layout premium, estilo fintech pessoal:
+
+- cards elegantes
+- visual limpo
+- boa hierarquia
+- sem poluição
+- com sensação de app financeiro moderno
+
+====================================================
+PARTE 10 — ENTREGAR
+====================================================
+
+- tabela credit_cards
+- cadastro de cartões
+- integração com transactions
+- tela de fatura
+- cálculo de limite
+- previsão de próximas faturas
+- dashboard da fatura

@@ -15,6 +15,197 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary List all credit cards
+ */
+export const ListCreditCardsResponseItem = zod.object({
+  id: zod.number(),
+  nomeCartao: zod.string(),
+  banco: zod.string(),
+  bandeira: zod.enum([
+    "Visa",
+    "Mastercard",
+    "Elo",
+    "Amex",
+    "Hipercard",
+    "Outros",
+  ]),
+  limiteTotal: zod.number(),
+  diaFechamento: zod.number(),
+  diaVencimento: zod.number(),
+  cor: zod.string(),
+  ativo: zod.boolean(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+export const ListCreditCardsResponse = zod.array(ListCreditCardsResponseItem);
+
+/**
+ * @summary Create a credit card
+ */
+export const CreateCreditCardBody = zod.object({
+  nomeCartao: zod.string(),
+  banco: zod.string(),
+  bandeira: zod.enum([
+    "Visa",
+    "Mastercard",
+    "Elo",
+    "Amex",
+    "Hipercard",
+    "Outros",
+  ]),
+  limiteTotal: zod.number(),
+  diaFechamento: zod.number(),
+  diaVencimento: zod.number(),
+  cor: zod.string().optional(),
+  ativo: zod.boolean().optional(),
+});
+
+export const GetCreditCardParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetCreditCardResponse = zod.object({
+  id: zod.number(),
+  nomeCartao: zod.string(),
+  banco: zod.string(),
+  bandeira: zod.enum([
+    "Visa",
+    "Mastercard",
+    "Elo",
+    "Amex",
+    "Hipercard",
+    "Outros",
+  ]),
+  limiteTotal: zod.number(),
+  diaFechamento: zod.number(),
+  diaVencimento: zod.number(),
+  cor: zod.string(),
+  ativo: zod.boolean(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+export const UpdateCreditCardParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateCreditCardBody = zod.object({
+  nomeCartao: zod.string(),
+  banco: zod.string(),
+  bandeira: zod.enum([
+    "Visa",
+    "Mastercard",
+    "Elo",
+    "Amex",
+    "Hipercard",
+    "Outros",
+  ]),
+  limiteTotal: zod.number(),
+  diaFechamento: zod.number(),
+  diaVencimento: zod.number(),
+  cor: zod.string().optional(),
+  ativo: zod.boolean().optional(),
+});
+
+export const UpdateCreditCardResponse = zod.object({
+  id: zod.number(),
+  nomeCartao: zod.string(),
+  banco: zod.string(),
+  bandeira: zod.enum([
+    "Visa",
+    "Mastercard",
+    "Elo",
+    "Amex",
+    "Hipercard",
+    "Outros",
+  ]),
+  limiteTotal: zod.number(),
+  diaFechamento: zod.number(),
+  diaVencimento: zod.number(),
+  cor: zod.string(),
+  ativo: zod.boolean(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+export const DeleteCreditCardParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Get invoice (fatura) for a credit card in a given month/year
+ */
+export const GetCreditCardFaturaParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetCreditCardFaturaQueryParams = zod.object({
+  month: zod.coerce.number().optional(),
+  year: zod.coerce.number().optional(),
+});
+
+export const GetCreditCardFaturaResponse = zod.object({
+  card: zod.object({
+    id: zod.number(),
+    nomeCartao: zod.string(),
+    banco: zod.string(),
+    bandeira: zod.enum([
+      "Visa",
+      "Mastercard",
+      "Elo",
+      "Amex",
+      "Hipercard",
+      "Outros",
+    ]),
+    limiteTotal: zod.number(),
+    diaFechamento: zod.number(),
+    diaVencimento: zod.number(),
+    cor: zod.string(),
+    ativo: zod.boolean(),
+    createdAt: zod.date(),
+    updatedAt: zod.date(),
+  }),
+  fatura: zod.object({
+    month: zod.number(),
+    year: zod.number(),
+    cycleStart: zod.string(),
+    cycleEnd: zod.string(),
+    vencimento: zod.string(),
+    totalFatura: zod.number(),
+    totalPago: zod.number(),
+    totalAberto: zod.number(),
+    limiteTotal: zod.number(),
+    limiteUtilizado: zod.number(),
+    limiteDisponivel: zod.number(),
+    totalParceladoFuturo: zod.number(),
+    proximaFatura: zod.number(),
+  }),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      competenceDate: zod.date(),
+      description: zod.string(),
+      categoryId: zod.number().nullish(),
+      categoryName: zod.string().nullish(),
+      amount: zod.number(),
+      creditType: zod.string().nullish(),
+      currentInstallment: zod.number().nullish(),
+      totalInstallments: zod.number().nullish(),
+      status: zod.string(),
+      creditCardId: zod.number().nullish(),
+    }),
+  ),
+  nextInvoices: zod.array(
+    zod.object({
+      month: zod.number(),
+      year: zod.number(),
+      total: zod.number(),
+      installmentCount: zod.number(),
+    }),
+  ),
+});
+
+/**
  * @summary List all accounts
  */
 export const ListAccountsResponseItem = zod.object({
@@ -177,6 +368,7 @@ export const ListTransactionsResponseItem = zod.object({
   totalInstallments: zod.number().nullish(),
   currentInstallment: zod.number().nullish(),
   installmentGroupId: zod.string().nullish(),
+  creditCardId: zod.number().nullish(),
   createdAt: zod.date(),
 });
 export const ListTransactionsResponse = zod.array(ListTransactionsResponseItem);
@@ -200,6 +392,7 @@ export const CreateTransactionBody = zod.object({
   totalInstallments: zod.number().nullish(),
   currentInstallment: zod.number().nullish(),
   installmentGroupId: zod.string().nullish(),
+  creditCardId: zod.number().nullish(),
 });
 
 export const GetTransactionParams = zod.object({
@@ -226,6 +419,7 @@ export const GetTransactionResponse = zod.object({
   totalInstallments: zod.number().nullish(),
   currentInstallment: zod.number().nullish(),
   installmentGroupId: zod.string().nullish(),
+  creditCardId: zod.number().nullish(),
   createdAt: zod.date(),
 });
 
@@ -249,6 +443,7 @@ export const UpdateTransactionBody = zod.object({
   totalInstallments: zod.number().nullish(),
   currentInstallment: zod.number().nullish(),
   installmentGroupId: zod.string().nullish(),
+  creditCardId: zod.number().nullish(),
 });
 
 export const UpdateTransactionResponse = zod.object({
@@ -271,6 +466,7 @@ export const UpdateTransactionResponse = zod.object({
   totalInstallments: zod.number().nullish(),
   currentInstallment: zod.number().nullish(),
   installmentGroupId: zod.string().nullish(),
+  creditCardId: zod.number().nullish(),
   createdAt: zod.date(),
 });
 
@@ -295,6 +491,7 @@ export const CreateInstallmentsBody = zod.object({
   subcategoryId: zod.number().nullish(),
   accountId: zod.number().nullish(),
   paymentMethod: zod.string(),
+  creditCardId: zod.number().nullish(),
   notes: zod.string().nullish(),
 });
 
@@ -852,6 +1049,7 @@ export const GetReportTopExpensesResponseItem = zod.object({
   totalInstallments: zod.number().nullish(),
   currentInstallment: zod.number().nullish(),
   installmentGroupId: zod.string().nullish(),
+  creditCardId: zod.number().nullish(),
   createdAt: zod.date(),
 });
 export const GetReportTopExpensesResponse = zod.array(

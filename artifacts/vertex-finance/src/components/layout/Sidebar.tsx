@@ -6,13 +6,15 @@ import {
   Landmark, 
   PieChart, 
   BarChart3, 
-  Settings 
+  Settings,
+  CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { name: "Dashboard", path: "/", icon: LayoutDashboard },
   { name: "Lançamentos", path: "/transactions", icon: ListTree },
+  { name: "Cartões", path: "/credit-cards", icon: CreditCard },
   { name: "Planejamento", path: "/monthly-planning", icon: CalendarDays },
   { name: "Patrimônio", path: "/assets", icon: Landmark },
   { name: "Orçamento", path: "/budget", icon: PieChart },

@@ -29,6 +29,7 @@ import type {
   CreateBudgetGroupInput,
   CreateBudgetItemInput,
   CreateCategoryInput,
+  CreateCreditCardInput,
   CreateDebtInput,
   CreateIncomeInput,
   CreateInstallmentInput,
@@ -36,9 +37,12 @@ import type {
   CreateReceivableInput,
   CreateSubcategoryInput,
   CreateTransactionInput,
+  CreditCard,
   DashboardSummary,
   Debt,
+  FaturaResponse,
   GetCategoryChartParams,
+  GetCreditCardFaturaParams,
   GetDashboardSummaryParams,
   GetMonthlyChartParams,
   GetReportExpensesByCategoryParams,
@@ -135,6 +139,519 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all credit cards
+ */
+export const getListCreditCardsUrl = () => {
+  return `/api/credit-cards`;
+};
+
+export const listCreditCards = async (
+  options?: RequestInit,
+): Promise<CreditCard[]> => {
+  return customFetch<CreditCard[]>(getListCreditCardsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCreditCardsQueryKey = () => {
+  return [`/api/credit-cards`] as const;
+};
+
+export const getListCreditCardsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCreditCards>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCreditCards>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCreditCardsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listCreditCards>>> = ({
+    signal,
+  }) => listCreditCards({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCreditCards>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCreditCardsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCreditCards>>
+>;
+export type ListCreditCardsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all credit cards
+ */
+
+export function useListCreditCards<
+  TData = Awaited<ReturnType<typeof listCreditCards>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCreditCards>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCreditCardsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a credit card
+ */
+export const getCreateCreditCardUrl = () => {
+  return `/api/credit-cards`;
+};
+
+export const createCreditCard = async (
+  createCreditCardInput: CreateCreditCardInput,
+  options?: RequestInit,
+): Promise<CreditCard> => {
+  return customFetch<CreditCard>(getCreateCreditCardUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createCreditCardInput),
+  });
+};
+
+export const getCreateCreditCardMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCreditCard>>,
+    TError,
+    { data: BodyType<CreateCreditCardInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCreditCard>>,
+  TError,
+  { data: BodyType<CreateCreditCardInput> },
+  TContext
+> => {
+  const mutationKey = ["createCreditCard"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCreditCard>>,
+    { data: BodyType<CreateCreditCardInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createCreditCard(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCreditCardMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCreditCard>>
+>;
+export type CreateCreditCardMutationBody = BodyType<CreateCreditCardInput>;
+export type CreateCreditCardMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a credit card
+ */
+export const useCreateCreditCard = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCreditCard>>,
+    TError,
+    { data: BodyType<CreateCreditCardInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createCreditCard>>,
+  TError,
+  { data: BodyType<CreateCreditCardInput> },
+  TContext
+> => {
+  return useMutation(getCreateCreditCardMutationOptions(options));
+};
+
+export const getGetCreditCardUrl = (id: number) => {
+  return `/api/credit-cards/${id}`;
+};
+
+export const getCreditCard = async (
+  id: number,
+  options?: RequestInit,
+): Promise<CreditCard> => {
+  return customFetch<CreditCard>(getGetCreditCardUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCreditCardQueryKey = (id: number) => {
+  return [`/api/credit-cards/${id}`] as const;
+};
+
+export const getGetCreditCardQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCreditCard>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCreditCard>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCreditCardQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCreditCard>>> = ({
+    signal,
+  }) => getCreditCard(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCreditCard>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCreditCardQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCreditCard>>
+>;
+export type GetCreditCardQueryError = ErrorType<unknown>;
+
+export function useGetCreditCard<
+  TData = Awaited<ReturnType<typeof getCreditCard>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCreditCard>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCreditCardQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getUpdateCreditCardUrl = (id: number) => {
+  return `/api/credit-cards/${id}`;
+};
+
+export const updateCreditCard = async (
+  id: number,
+  createCreditCardInput: CreateCreditCardInput,
+  options?: RequestInit,
+): Promise<CreditCard> => {
+  return customFetch<CreditCard>(getUpdateCreditCardUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createCreditCardInput),
+  });
+};
+
+export const getUpdateCreditCardMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCreditCard>>,
+    TError,
+    { id: number; data: BodyType<CreateCreditCardInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCreditCard>>,
+  TError,
+  { id: number; data: BodyType<CreateCreditCardInput> },
+  TContext
+> => {
+  const mutationKey = ["updateCreditCard"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCreditCard>>,
+    { id: number; data: BodyType<CreateCreditCardInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateCreditCard(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCreditCardMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCreditCard>>
+>;
+export type UpdateCreditCardMutationBody = BodyType<CreateCreditCardInput>;
+export type UpdateCreditCardMutationError = ErrorType<unknown>;
+
+export const useUpdateCreditCard = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCreditCard>>,
+    TError,
+    { id: number; data: BodyType<CreateCreditCardInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateCreditCard>>,
+  TError,
+  { id: number; data: BodyType<CreateCreditCardInput> },
+  TContext
+> => {
+  return useMutation(getUpdateCreditCardMutationOptions(options));
+};
+
+export const getDeleteCreditCardUrl = (id: number) => {
+  return `/api/credit-cards/${id}`;
+};
+
+export const deleteCreditCard = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteCreditCardUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteCreditCardMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCreditCard>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteCreditCard>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteCreditCard"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteCreditCard>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteCreditCard(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteCreditCardMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteCreditCard>>
+>;
+
+export type DeleteCreditCardMutationError = ErrorType<unknown>;
+
+export const useDeleteCreditCard = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCreditCard>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteCreditCard>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteCreditCardMutationOptions(options));
+};
+
+/**
+ * @summary Get invoice (fatura) for a credit card in a given month/year
+ */
+export const getGetCreditCardFaturaUrl = (
+  id: number,
+  params?: GetCreditCardFaturaParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/credit-cards/${id}/fatura?${stringifiedParams}`
+    : `/api/credit-cards/${id}/fatura`;
+};
+
+export const getCreditCardFatura = async (
+  id: number,
+  params?: GetCreditCardFaturaParams,
+  options?: RequestInit,
+): Promise<FaturaResponse> => {
+  return customFetch<FaturaResponse>(getGetCreditCardFaturaUrl(id, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCreditCardFaturaQueryKey = (
+  id: number,
+  params?: GetCreditCardFaturaParams,
+) => {
+  return [
+    `/api/credit-cards/${id}/fatura`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetCreditCardFaturaQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCreditCardFatura>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  params?: GetCreditCardFaturaParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCreditCardFatura>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetCreditCardFaturaQueryKey(id, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCreditCardFatura>>
+  > = ({ signal }) =>
+    getCreditCardFatura(id, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCreditCardFatura>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCreditCardFaturaQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCreditCardFatura>>
+>;
+export type GetCreditCardFaturaQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get invoice (fatura) for a credit card in a given month/year
+ */
+
+export function useGetCreditCardFatura<
+  TData = Awaited<ReturnType<typeof getCreditCardFatura>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  params?: GetCreditCardFaturaParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCreditCardFatura>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCreditCardFaturaQueryOptions(id, params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

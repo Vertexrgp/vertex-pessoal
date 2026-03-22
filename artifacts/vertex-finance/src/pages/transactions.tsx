@@ -17,6 +17,7 @@ import {
   useCreateInstallments,
   useListCategories,
   useListAccounts,
+  useListCreditCards,
   useDeleteTransaction,
   useDeleteInstallmentGroup,
 } from "@workspace/api-client-react";
@@ -35,6 +36,7 @@ const singleSchema = z.object({
   movementDate: z.string().min(10),
   categoryId: z.coerce.number().nullable().optional(),
   accountId: z.coerce.number().nullable().optional(),
+  creditCardId: z.coerce.number().nullable().optional(),
   paymentMethod: z.string().nullable().optional(),
   creditType: z.enum(["avista", "parcelado"]).nullable().optional(),
   notes: z.string().nullable().optional(),
@@ -49,6 +51,7 @@ const installmentSchema = z.object({
   firstInstallmentStatus: z.enum(["planned", "paid"]),
   categoryId: z.coerce.number().nullable().optional(),
   accountId: z.coerce.number().nullable().optional(),
+  creditCardId: z.coerce.number().nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 
@@ -93,6 +96,7 @@ export default function TransactionsPage() {
   });
   const { data: categories } = useListCategories();
   const { data: accounts } = useListAccounts();
+  const { data: creditCards } = useListCreditCards();
 
   const createMutation = useCreateTransaction({
     mutation: { onSuccess: () => { toast({ title: "Lançamento criado!" }); setIsModalOpen(false); refetch(); } }
@@ -161,6 +165,7 @@ export default function TransactionsPage() {
           firstInstallmentStatus: values.firstInstallmentStatus,
           categoryId: values.categoryId ?? null,
           accountId: values.accountId ?? null,
+          creditCardId: values.creditCardId ?? null,
           paymentMethod: "Crédito",
           notes: values.notes ?? null,
         }
@@ -176,6 +181,7 @@ export default function TransactionsPage() {
           movementDate: values.movementDate,
           categoryId: values.categoryId ?? null,
           accountId: values.accountId ?? null,
+          creditCardId: values.creditCardId ?? null,
           paymentMethod: values.paymentMethod ?? null,
           creditType: values.creditType ?? null,
           notes: values.notes ?? null,
@@ -381,27 +387,41 @@ export default function TransactionsPage() {
 
               {/* Crédito: à vista ou parcelado */}
               {paymentMethod === "Crédito" && (
-                <FormField control={form.control} name={"creditType" as any} render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de Crédito</FormLabel>
-                    <div className="flex gap-3">
-                      {[
-                        { value: "avista", label: "À Vista" },
-                        { value: "parcelado", label: "Parcelado" },
-                      ].map(opt => (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => field.onChange(opt.value)}
-                          className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${field.value === opt.value ? "bg-primary text-white border-primary shadow-sm" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"}`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                <>
+                  <FormField control={form.control} name={"creditCardId" as any} render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cartão</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value?.toString() ?? ""}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Selecione o cartão" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          {creditCards?.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.nomeCartao} ({c.banco})</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name={"creditType" as any} render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Crédito</FormLabel>
+                      <div className="flex gap-3">
+                        {[
+                          { value: "avista", label: "À Vista" },
+                          { value: "parcelado", label: "Parcelado" },
+                        ].map(opt => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => field.onChange(opt.value)}
+                            className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${field.value === opt.value ? "bg-primary text-white border-primary shadow-sm" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"}`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </>
               )}
 
               {/* Parcelamento fields */}

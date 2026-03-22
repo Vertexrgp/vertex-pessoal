@@ -11,6 +11,7 @@ import AssetsPage from "./pages/assets";
 import BudgetPage from "./pages/budget";
 import ReportsPage from "./pages/reports";
 import SettingsPage from "./pages/settings";
+import CreditCardsPage from "./pages/credit-cards";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/budget" component={BudgetPage} />
       <Route path="/reports" component={ReportsPage} />
       <Route path="/settings" component={SettingsPage} />
+      <Route path="/credit-cards" component={CreditCardsPage} />
       <Route component={NotFound} />
     </Switch>
   );

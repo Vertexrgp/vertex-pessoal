@@ -43,7 +43,8 @@ Tables:
 - `accounts` — bank accounts (checking, savings, investment, wallet, other)
 - `categories` — transaction categories with group (fixed/variable/leisure/investment)
 - `subcategories` — subcategories linked to categories
-- `transactions` — financial transactions (income/expense/transfer) with full metadata
+- `transactions` — financial transactions (income/expense/transfer) with full metadata; includes `creditCardId`, `creditType`, `installmentNumber`, `totalInstallments`, `groupId`
+- `credit_cards` — credit card records (name, bank, bandeira, limit, fechamento/vencimento day, color)
 - `monthly_plans` — monthly planning by category
 - `assets` — investment portfolio entries
 - `receivables` — money to be received
@@ -55,12 +56,13 @@ Tables:
 ## Modules
 
 1. **Dashboard** — 8 summary cards + bar chart (income vs expenses) + donut chart (by category)
-2. **Lançamentos** — Full transaction ledger with filters, search, CRUD + duplicate
-3. **Planejamento Mensal** — Monthly view by category with planned vs actual
-4. **Patrimônio** — 4 tabs: Investimentos, Recebíveis, Dívidas, Fontes de Renda
-5. **Orçamento** — Budget groups with progress bars and status indicators
-6. **Relatórios** — 4 report types: by category, monthly evolution, top expenses, planned vs realized
-7. **Configurações** — Category and account management
+2. **Lançamentos** — Full transaction ledger with filters, search, CRUD + duplicate + parcelamentos (installments with group delete)
+3. **Cartões** — Credit card management with visual card selector, fatura (billing cycle) dashboard, limit utilization, installment badges, next 3 invoices forecast, CRUD modal with color picker. Route: `/credit-cards`
+4. **Planejamento Mensal** — Monthly view by category with planned vs actual
+5. **Patrimônio** — 4 tabs: Investimentos, Recebíveis, Dívidas, Fontes de Renda
+6. **Orçamento** — Budget groups with progress bars and status indicators
+7. **Relatórios** — 4 report types: by category, monthly evolution, top expenses, planned vs realized
+8. **Configurações** — Category and account management
 
 ## API Routes
 
@@ -78,6 +80,8 @@ All routes under `/api`:
 - `/reports/monthly-evolution` — cumulative evolution
 - `/reports/top-expenses` — top N expenses
 - `/reports/planned-vs-realized` — budget comparison
+- `/credit-cards` — CRUD + fatura endpoint (`GET /credit-cards/:id/fatura?month&year`)
+- `/transactions/installments` — create installment series; `DELETE /transactions/group/:groupId`
 
 ## Development Commands
 
@@ -88,7 +92,7 @@ All routes under `/api`:
 ## Future Roadmap (not yet built)
 
 - Financial goals module
-- Credit card tracking
+- ~~Credit card tracking~~ ✅ Done
 - Recurring subscription management
 - Bank statement import (CSV/OFX)
 - Multi-user / SaaS

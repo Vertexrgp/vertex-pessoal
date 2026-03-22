@@ -29,5 +29,6 @@ export interface Transaction {
   totalInstallments?: number | null;
   currentInstallment?: number | null;
   installmentGroupId?: string | null;
+  creditCardId?: number | null;
   createdAt: Date;
 }

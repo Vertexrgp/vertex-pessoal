@@ -9,6 +9,99 @@ export interface HealthStatus {
   status: string;
 }
 
+export type CreditCardBandeira =
+  (typeof CreditCardBandeira)[keyof typeof CreditCardBandeira];
+
+export const CreditCardBandeira = {
+  Visa: "Visa",
+  Mastercard: "Mastercard",
+  Elo: "Elo",
+  Amex: "Amex",
+  Hipercard: "Hipercard",
+  Outros: "Outros",
+} as const;
+
+export interface CreditCard {
+  id: number;
+  nomeCartao: string;
+  banco: string;
+  bandeira: CreditCardBandeira;
+  limiteTotal: number;
+  diaFechamento: number;
+  diaVencimento: number;
+  cor: string;
+  ativo: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateCreditCardInputBandeira =
+  (typeof CreateCreditCardInputBandeira)[keyof typeof CreateCreditCardInputBandeira];
+
+export const CreateCreditCardInputBandeira = {
+  Visa: "Visa",
+  Mastercard: "Mastercard",
+  Elo: "Elo",
+  Amex: "Amex",
+  Hipercard: "Hipercard",
+  Outros: "Outros",
+} as const;
+
+export interface CreateCreditCardInput {
+  nomeCartao: string;
+  banco: string;
+  bandeira: CreateCreditCardInputBandeira;
+  limiteTotal: number;
+  diaFechamento: number;
+  diaVencimento: number;
+  cor?: string;
+  ativo?: boolean;
+}
+
+export interface FaturaItem {
+  id: number;
+  competenceDate: string;
+  description: string;
+  categoryId?: number | null;
+  categoryName?: string | null;
+  amount: number;
+  creditType?: string | null;
+  currentInstallment?: number | null;
+  totalInstallments?: number | null;
+  status: string;
+  creditCardId?: number | null;
+}
+
+export interface FaturaSummary {
+  month: number;
+  year: number;
+  cycleStart: string;
+  cycleEnd: string;
+  vencimento: string;
+  totalFatura: number;
+  totalPago: number;
+  totalAberto: number;
+  limiteTotal: number;
+  limiteUtilizado: number;
+  limiteDisponivel: number;
+  totalParceladoFuturo: number;
+  proximaFatura: number;
+}
+
+export interface NextInvoice {
+  month: number;
+  year: number;
+  total: number;
+  installmentCount: number;
+}
+
+export interface FaturaResponse {
+  card: CreditCard;
+  fatura: FaturaSummary;
+  items: FaturaItem[];
+  nextInvoices: NextInvoice[];
+}
+
 export type AccountType = (typeof AccountType)[keyof typeof AccountType];
 
 export const AccountType = {
@@ -170,6 +263,7 @@ export interface Transaction {
   totalInstallments?: number | null;
   currentInstallment?: number | null;
   installmentGroupId?: string | null;
+  creditCardId?: number | null;
   createdAt: string;
 }
 
@@ -216,6 +310,7 @@ export interface CreateTransactionInput {
   totalInstallments?: number | null;
   currentInstallment?: number | null;
   installmentGroupId?: string | null;
+  creditCardId?: number | null;
 }
 
 export type CreateInstallmentInputFirstInstallmentStatus =
@@ -236,6 +331,7 @@ export interface CreateInstallmentInput {
   subcategoryId?: number | null;
   accountId?: number | null;
   paymentMethod: string;
+  creditCardId?: number | null;
   notes?: string | null;
 }
 
@@ -560,6 +656,11 @@ export interface PlannedVsRealizedItem {
   percentageUsed: number;
   status: PlannedVsRealizedItemStatus;
 }
+
+export type GetCreditCardFaturaParams = {
+  month?: number;
+  year?: number;
+};
 
 export type ListTransactionsParams = {
   month?: number;

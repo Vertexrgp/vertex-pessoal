@@ -15,6 +15,8 @@ tags:
     description: Categories and subcategories
   - name: accounts
     description: Bank accounts
+  - name: credit-cards
+    description: Credit cards and invoices (Cartões e Faturas)
   - name: monthly-plans
     description: Monthly planning (Planejamento Mensal)
   - name: assets
@@ -39,6 +41,118 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── CREDIT CARDS ────────────────────────────────────────────────────────────
+  /credit-cards:
+    get:
+      operationId: listCreditCards
+      tags: [credit-cards]
+      summary: List all credit cards
+      responses:
+        "200":
+          description: Credit cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CreditCard"
+    post:
+      operationId: createCreditCard
+      tags: [credit-cards]
+      summary: Create a credit card
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCreditCardInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditCard"
+
+  /credit-cards/{id}:
+    get:
+      operationId: getCreditCard
+      tags: [credit-cards]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Credit card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditCard"
+    put:
+      operationId: updateCreditCard
+      tags: [credit-cards]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCreditCardInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditCard"
+    delete:
+      operationId: deleteCreditCard
+      tags: [credit-cards]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /credit-cards/{id}/fatura:
+    get:
+      operationId: getCreditCardFatura
+      tags: [credit-cards]
+      summary: Get invoice (fatura) for a credit card in a given month/year
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: query
+          schema:
+            type: integer
+        - name: year
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Fatura details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FaturaResponse"
 
   # ─── ACCOUNTS ────────────────────────────────────────────────────────────────
   /accounts:
@@ -986,6 +1100,153 @@ components:
       required:
         - status
 
+    CreditCard:
+      type: object
+      properties:
+        id:
+          type: integer
+        nomeCartao:
+          type: string
+        banco:
+          type: string
+        bandeira:
+          type: string
+          enum: [Visa, Mastercard, Elo, Amex, Hipercard, Outros]
+        limiteTotal:
+          type: number
+        diaFechamento:
+          type: integer
+        diaVencimento:
+          type: integer
+        cor:
+          type: string
+        ativo:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, nomeCartao, banco, bandeira, limiteTotal, diaFechamento, diaVencimento, cor, ativo, createdAt, updatedAt]
+
+    CreateCreditCardInput:
+      type: object
+      properties:
+        nomeCartao:
+          type: string
+        banco:
+          type: string
+        bandeira:
+          type: string
+          enum: [Visa, Mastercard, Elo, Amex, Hipercard, Outros]
+        limiteTotal:
+          type: number
+        diaFechamento:
+          type: integer
+        diaVencimento:
+          type: integer
+        cor:
+          type: string
+        ativo:
+          type: boolean
+      required: [nomeCartao, banco, bandeira, limiteTotal, diaFechamento, diaVencimento]
+
+    FaturaItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        competenceDate:
+          type: string
+          format: date
+        description:
+          type: string
+        categoryId:
+          type: integer
+          nullable: true
+        categoryName:
+          type: string
+          nullable: true
+        amount:
+          type: number
+        creditType:
+          type: string
+          nullable: true
+        currentInstallment:
+          type: integer
+          nullable: true
+        totalInstallments:
+          type: integer
+          nullable: true
+        status:
+          type: string
+        creditCardId:
+          type: integer
+          nullable: true
+      required: [id, competenceDate, description, amount, status]
+
+    FaturaSummary:
+      type: object
+      properties:
+        month:
+          type: integer
+        year:
+          type: integer
+        cycleStart:
+          type: string
+        cycleEnd:
+          type: string
+        vencimento:
+          type: string
+        totalFatura:
+          type: number
+        totalPago:
+          type: number
+        totalAberto:
+          type: number
+        limiteTotal:
+          type: number
+        limiteUtilizado:
+          type: number
+        limiteDisponivel:
+          type: number
+        totalParceladoFuturo:
+          type: number
+        proximaFatura:
+          type: number
+      required: [month, year, cycleStart, cycleEnd, vencimento, totalFatura, totalPago, totalAberto, limiteTotal, limiteUtilizado, limiteDisponivel, totalParceladoFuturo, proximaFatura]
+
+    NextInvoice:
+      type: object
+      properties:
+        month:
+          type: integer
+        year:
+          type: integer
+        total:
+          type: number
+        installmentCount:
+          type: integer
+      required: [month, year, total, installmentCount]
+
+    FaturaResponse:
+      type: object
+      properties:
+        card:
+          $ref: "#/components/schemas/CreditCard"
+        fatura:
+          $ref: "#/components/schemas/FaturaSummary"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/FaturaItem"
+        nextInvoices:
+          type: array
+          items:
+            $ref: "#/components/schemas/NextInvoice"
+      required: [card, fatura, items, nextInvoices]
+
     Account:
       type: object
       properties:
@@ -1153,6 +1414,9 @@ components:
         installmentGroupId:
           type: string
           nullable: true
+        creditCardId:
+          type: integer
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -1205,6 +1469,9 @@ components:
         installmentGroupId:
           type: string
           nullable: true
+        creditCardId:
+          type: integer
+          nullable: true
       required: [competenceDate, movementDate, type, description, amount, status]
 
     CreateInstallmentInput:
@@ -1233,6 +1500,9 @@ components:
           nullable: true
         paymentMethod:
           type: string
+        creditCardId:
+          type: integer
+          nullable: true
         notes:
           type: string
           nullable: true

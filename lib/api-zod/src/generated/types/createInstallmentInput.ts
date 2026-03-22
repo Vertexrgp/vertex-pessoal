@@ -17,5 +17,6 @@ export interface CreateInstallmentInput {
   subcategoryId?: number | null;
   accountId?: number | null;
   paymentMethod: string;
+  creditCardId?: number | null;
   notes?: string | null;
 }

@@ -25,4 +25,5 @@ export interface CreateTransactionInput {
   totalInstallments?: number | null;
   currentInstallment?: number | null;
   installmentGroupId?: string | null;
+  creditCardId?: number | null;
 }
