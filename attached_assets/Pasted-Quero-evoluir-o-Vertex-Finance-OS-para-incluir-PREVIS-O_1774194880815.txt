@@ -1,0 +1,159 @@
+Quero evoluir o Vertex Finance OS para incluir PREVISÃO DE SALDO POR MÊS, integrando:
+
+- Planejamento Mensal
+- Orçamento
+- Faturas
+- Recorrências Fixas
+- Lançamentos já realizados
+
+OBJETIVO
+Fazer o sistema mostrar, mês a mês, quanto vai sobrar ou faltar de dinheiro, considerando compromissos fixos, parcelas futuras e movimentações previstas.
+
+====================================================
+1) CONCEITO
+====================================================
+
+Quero que o sistema passe a calcular:
+
+Saldo Previsto do Mês =
+Receitas Previstas
+- Despesas Recorrentes
+- Parcelas de Cartão
+- Outros Gastos Previstos
+- Investimentos Planejados
+
+Quero enxergar isso mês a mês, ao longo do ano.
+
+====================================================
+2) NOVOS INDICADORES NO PLANEJAMENTO MENSAL
+====================================================
+
+Na tela de Planejamento Mensal, adicionar para cada mês:
+
+- Receitas Previstas
+- Despesas Previstas
+- Investimentos Previstos
+- Resultado Previsto
+- Saldo Previsto Final
+
+Também adicionar indicadores consolidados:
+- melhor mês do ano
+- pior mês do ano
+- média mensal de sobra
+- meses em risco
+- meses negativos
+
+====================================================
+3) PREVISÃO VISUAL
+====================================================
+
+Quero uma visualização clara por mês:
+
+Jan | Fev | Mar | Abr | Mai | Jun | Jul | Ago | Set | Out | Nov | Dez
+
+Para cada mês, mostrar:
+- total previsto de entradas
+- total previsto de saídas
+- saldo previsto
+- status do mês
+
+Status:
+- Positivo
+- Atenção
+- Negativo
+
+====================================================
+4) REGRA DE CÁLCULO
+====================================================
+
+O saldo previsto de cada mês deve considerar:
+
+1. Receitas recorrentes previstas
+2. Despesas fixas recorrentes
+3. Parcelas futuras do cartão
+4. Lançamentos previstos
+5. Investimentos planejados
+6. Dívidas/obrigações do mês, se existirem
+
+Não considerar como realizado aquilo que ainda é apenas previsto.
+
+====================================================
+5) ALERTAS AUTOMÁTICOS
+====================================================
+
+Quero que o sistema destaque automaticamente:
+
+- meses com saldo negativo
+- meses com sobra muito baixa
+- meses com aumento relevante de despesas
+- meses impactados por muitas parcelas
+
+Exemplos de alerta:
+- Abril está com saldo previsto negativo
+- Maio será pressionado por aumento de parcelas
+- Junho tem pouca folga financeira
+
+====================================================
+6) DASHBOARD / BLOCO VISUAL
+====================================================
+
+Criar na tela de Planejamento Mensal um bloco visual com:
+
+- gráfico de saldo previsto por mês
+ou
+- cards mensais mostrando saldo
+
+Quero algo visualmente fácil de entender:
+- verde = sobra positiva
+- amarelo = atenção
+- vermelho = saldo negativo
+
+====================================================
+7) INTEGRAÇÃO ENTRE MÓDULOS
+====================================================
+
+Garantir que conversem entre si:
+
+- Recorrências Fixas
+- Faturas
+- Orçamento
+- Planejamento Mensal
+- Lançamentos
+
+====================================================
+8) EXPERIÊNCIA DO USUÁRIO
+====================================================
+
+Quero que essa previsão me responda perguntas como:
+
+- Em qual mês vou ficar mais apertado?
+- Qual mês terá maior sobra?
+- As parcelas do cartão estão pressionando quais meses?
+- Se eu mantiver esse padrão, como o ano ficará?
+
+====================================================
+9) VISUAL
+====================================================
+
+Quero visual premium, executivo, clean e fácil de interpretar.
+Nada com cara de planilha simples.
+
+====================================================
+10) ENTREGAR
+====================================================
+
+Quero que você implemente agora:
+
+1. cálculo de saldo previsto por mês
+2. integração com recorrências fixas
+3. integração com parcelas futuras do cartão
+4. integração com lançamentos previstos
+5. alertas automáticos de meses críticos
+6. bloco visual de previsão por mês
+7. melhoria da tela de Planejamento Mensal para virar visão de futuro
+
+No final, me mostre:
+- como o saldo previsto está sendo calculado
+- como os módulos se conectam
+- como ficaram os alertas
+- próximos ajustes recomendados
