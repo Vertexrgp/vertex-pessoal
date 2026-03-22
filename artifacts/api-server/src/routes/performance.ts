@@ -8,6 +8,9 @@ import {
   performanceWorkoutsTable,
   performanceNutritionTable,
   performanceProgressTable,
+  performanceExamMarkersTable,
+  performanceMealPlansTable,
+  performanceMealsTable,
 } from "@workspace/db";
 import { desc, eq } from "drizzle-orm";
 
@@ -273,6 +276,147 @@ router.post("/performance/progress", async (req, res) => {
 
 router.delete("/performance/progress/:id", async (req, res) => {
   await db.delete(performanceProgressTable).where(eq(performanceProgressTable.id, Number(req.params.id)));
+  res.json({ ok: true });
+});
+
+/* ─── Exam Markers ───────────────────────────────────────────────────── */
+router.get("/performance/exam-markers", async (req, res) => {
+  const examId = req.query.examId ? Number(req.query.examId) : null;
+  const query = examId
+    ? db.select().from(performanceExamMarkersTable).where(eq(performanceExamMarkersTable.examId, examId))
+    : db.select().from(performanceExamMarkersTable);
+  const rows = await query;
+  res.json(rows);
+});
+
+router.get("/performance/exam-markers/evolution", async (_req, res) => {
+  const markers = await db
+    .select({
+      id: performanceExamMarkersTable.id,
+      examId: performanceExamMarkersTable.examId,
+      marcador: performanceExamMarkersTable.marcador,
+      valor: performanceExamMarkersTable.valor,
+      unidade: performanceExamMarkersTable.unidade,
+      status: performanceExamMarkersTable.status,
+      refMin: performanceExamMarkersTable.refMin,
+      refMax: performanceExamMarkersTable.refMax,
+      data: performanceExamsTable.data,
+      examTipo: performanceExamsTable.tipo,
+    })
+    .from(performanceExamMarkersTable)
+    .leftJoin(performanceExamsTable, eq(performanceExamMarkersTable.examId, performanceExamsTable.id))
+    .orderBy(performanceExamsTable.data);
+
+  const grouped: Record<string, any[]> = {};
+  for (const m of markers) {
+    if (!grouped[m.marcador]) grouped[m.marcador] = [];
+    grouped[m.marcador].push(m);
+  }
+  res.json(grouped);
+});
+
+router.post("/performance/exam-markers", async (req, res) => {
+  const b = req.body;
+  if (!b.examId || !b.marcador || b.valor === undefined) {
+    return res.status(400).json({ error: "examId, marcador e valor são obrigatórios" });
+  }
+  const [row] = await db.insert(performanceExamMarkersTable).values({
+    examId: Number(b.examId),
+    marcador: String(b.marcador),
+    valor: String(parseFloat(b.valor)),
+    unidade: b.unidade ? String(b.unidade) : null,
+    refMin: b.refMin !== undefined && b.refMin !== null ? String(b.refMin) : null,
+    refMax: b.refMax !== undefined && b.refMax !== null ? String(b.refMax) : null,
+    status: b.status ? String(b.status) : "normal",
+  }).returning();
+  res.json(row);
+});
+
+router.delete("/performance/exam-markers/:id", async (req, res) => {
+  await db.delete(performanceExamMarkersTable).where(eq(performanceExamMarkersTable.id, Number(req.params.id)));
+  res.json({ ok: true });
+});
+
+/* ─── Meal Plans ─────────────────────────────────────────────────────── */
+router.get("/performance/meal-plans", async (_req, res) => {
+  const rows = await db.select().from(performanceMealPlansTable).orderBy(desc(performanceMealPlansTable.createdAt));
+  res.json(rows);
+});
+
+router.post("/performance/meal-plans", async (req, res) => {
+  const b = req.body;
+  if (!b.nome) return res.status(400).json({ error: "nome é obrigatório" });
+  const [row] = await db.insert(performanceMealPlansTable).values({
+    nome: String(b.nome),
+    prescritoPor: b.prescritoPor ? String(b.prescritoPor) : null,
+    dataInicio: b.dataInicio ? String(b.dataInicio) : null,
+    dataFim: b.dataFim ? String(b.dataFim) : null,
+    objetivo: b.objetivo ? String(b.objetivo) : null,
+    ativo: b.ativo !== false,
+    observacoes: b.observacoes ? String(b.observacoes) : null,
+  }).returning();
+  res.json(row);
+});
+
+router.put("/performance/meal-plans/:id", async (req, res) => {
+  const b = req.body;
+  const [row] = await db.update(performanceMealPlansTable)
+    .set({ ...b, updatedAt: new Date() })
+    .where(eq(performanceMealPlansTable.id, Number(req.params.id)))
+    .returning();
+  res.json(row);
+});
+
+router.patch("/performance/meal-plans/:id/toggle", async (req, res) => {
+  const [current] = await db.select().from(performanceMealPlansTable).where(eq(performanceMealPlansTable.id, Number(req.params.id)));
+  const [row] = await db.update(performanceMealPlansTable)
+    .set({ ativo: !current.ativo, updatedAt: new Date() })
+    .where(eq(performanceMealPlansTable.id, Number(req.params.id)))
+    .returning();
+  res.json(row);
+});
+
+router.delete("/performance/meal-plans/:id", async (req, res) => {
+  await db.delete(performanceMealsTable).where(eq(performanceMealsTable.planoId, Number(req.params.id)));
+  await db.delete(performanceMealPlansTable).where(eq(performanceMealPlansTable.id, Number(req.params.id)));
+  res.json({ ok: true });
+});
+
+/* ─── Meals ──────────────────────────────────────────────────────────── */
+router.get("/performance/meals", async (req, res) => {
+  const planoId = req.query.planoId ? Number(req.query.planoId) : null;
+  if (!planoId) return res.status(400).json({ error: "planoId é obrigatório" });
+  const rows = await db.select().from(performanceMealsTable)
+    .where(eq(performanceMealsTable.planoId, planoId))
+    .orderBy(performanceMealsTable.ordem);
+  res.json(rows);
+});
+
+router.post("/performance/meals", async (req, res) => {
+  const b = req.body;
+  if (!b.planoId || !b.nome) return res.status(400).json({ error: "planoId e nome são obrigatórios" });
+  const [row] = await db.insert(performanceMealsTable).values({
+    planoId: Number(b.planoId),
+    nome: String(b.nome),
+    horario: b.horario ? String(b.horario) : null,
+    alimentos: Array.isArray(b.alimentos) ? b.alimentos : [],
+    observacoes: b.observacoes ? String(b.observacoes) : null,
+    ordem: b.ordem ? Number(b.ordem) : 0,
+  }).returning();
+  res.json(row);
+});
+
+router.put("/performance/meals/:id", async (req, res) => {
+  const b = req.body;
+  const [row] = await db.update(performanceMealsTable)
+    .set({ ...b, updatedAt: new Date() })
+    .where(eq(performanceMealsTable.id, Number(req.params.id)))
+    .returning();
+  res.json(row);
+});
+
+router.delete("/performance/meals/:id", async (req, res) => {
+  await db.delete(performanceMealsTable).where(eq(performanceMealsTable.id, Number(req.params.id)));
   res.json({ ok: true });
 });
 

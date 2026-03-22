@@ -113,6 +113,53 @@ export const performanceProgressTable = pgTable("performance_progress", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const performanceExamMarkersTable = pgTable("performance_exam_markers", {
+  id: serial("id").primaryKey(),
+  examId: integer("exam_id").notNull(),
+  marcador: text("marcador").notNull(),
+  valor: numeric("valor", { precision: 12, scale: 4 }).notNull(),
+  unidade: text("unidade"),
+  refMin: numeric("ref_min", { precision: 12, scale: 4 }),
+  refMax: numeric("ref_max", { precision: 12, scale: 4 }),
+  status: text("status").notNull().default("normal"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const performanceMealPlansTable = pgTable("performance_meal_plans", {
+  id: serial("id").primaryKey(),
+  nome: text("nome").notNull(),
+  prescritoPor: text("prescrito_por"),
+  dataInicio: date("data_inicio"),
+  dataFim: date("data_fim"),
+  objetivo: text("objetivo"),
+  ativo: boolean("ativo").notNull().default(true),
+  observacoes: text("observacoes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const performanceMealsTable = pgTable("performance_meals", {
+  id: serial("id").primaryKey(),
+  planoId: integer("plano_id").notNull(),
+  nome: text("nome").notNull(),
+  horario: text("horario"),
+  alimentos: jsonb("alimentos").$type<{
+    nome: string;
+    quantidade: string;
+    unidade: string;
+    calorias?: number;
+    observacao?: string;
+  }[]>().default([]),
+  observacoes: text("observacoes"),
+  ordem: integer("ordem").default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type PerformanceExamMarker = typeof performanceExamMarkersTable.$inferSelect;
+export type PerformanceMealPlan = typeof performanceMealPlansTable.$inferSelect;
+export type PerformanceMeal = typeof performanceMealsTable.$inferSelect;
+
 export type PerformanceGoal = typeof performanceGoalsTable.$inferSelect;
 export type PerformanceCurrentState = typeof performanceCurrentStateTable.$inferSelect;
 export type PerformanceExam = typeof performanceExamsTable.$inferSelect;

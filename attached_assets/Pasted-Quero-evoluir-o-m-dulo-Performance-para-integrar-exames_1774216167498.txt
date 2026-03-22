@@ -1,0 +1,138 @@
+Quero evoluir o módulo Performance para integrar:
+
+- exames
+- dieta
+- avaliação física
+- objetivo
+
+OBJETIVO
+Transformar o módulo em um sistema de análise e decisão, não apenas armazenamento de dados.
+
+====================================================
+1) EXAMES — EVOLUIR MÓDULO
+====================================================
+
+Criar estrutura para:
+
+- upload de exames (PDF / imagem)
+- data do exame
+- tipo de exame
+
+Criar também extração manual dos principais indicadores:
+
+Campos importantes:
+
+- Hemoglobina
+- Hematócrito
+- Glicose
+- Insulina
+- HOMA-IR
+- Colesterol total
+- LDL
+- HDL
+- Triglicerídeos
+- Vitamina D
+- TSH
+- T3 / T4
+- Testosterona total
+- Estradiol
+- IGF-1
+- Cortisol
+
+Permitir:
+- visualizar evolução ao longo do tempo
+- gráficos por marcador
+
+====================================================
+2) DIETA — EVOLUIR MÓDULO
+====================================================
+
+Criar estrutura:
+
+- plano alimentar
+- refeições por horário
+- alimentos
+- quantidade
+
+Permitir:
+- visualizar plano diário
+- editar plano
+- criar versões de dieta
+
+====================================================
+3) CONEXÃO EXAMES + DIETA
+====================================================
+
+Criar lógica base:
+
+- associar exame ao período da dieta
+- mostrar contexto (exame X dieta atual)
+
+====================================================
+4) ANÁLISE BASE (SEM IA COMPLEXA)
+====================================================
+
+Criar análise simples:
+
+- destacar indicadores fora do ideal
+- mostrar pontos fortes
+- mostrar pontos de atenção
+
+Exemplo:
+- LDL elevado
+- testosterona alta
+- vitamina D excelente
+- glicemia controlada
+
+====================================================
+5) OBJETIVO VS ESTADO ATUAL
+====================================================
+
+Criar tela:
+
+- foto objetivo
+- fotos atuais
+- dados atuais
+
+E mostrar:
+
+- gap entre atual e objetivo
+
+====================================================
+6) BASE PARA RECOMENDAÇÕES FUTURAS
+====================================================
+
+Preparar estrutura para:
+
+- sugestões de treino
+- sugestões de dieta
+- ajustes
+
+Ainda não precisa IA complexa, apenas estrutura.
+
+====================================================
+7) VISUAL
+====================================================
+
+Quero visual premium, estilo:
+
+- painel médico + performance
+- fácil leitura
+- comparações claras
+- sem poluição
+
+====================================================
+8) ENTREGAR
+====================================================
+
+- módulo exames estruturado
+- módulo dieta estruturado
+- conexão entre os dois
+- análise básica automática
+- base para recomendações futuras
+
+No final, me mostrar:
+- como exames estão organizados
+- como dieta está organizada
+- como sistema começa a gerar leitura
+- próximos passos
