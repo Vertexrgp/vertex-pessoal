@@ -7,3 +7,4 @@ export * from "./annual-plans";
 export * from "./recurring-transactions";
 export * from "./assets";
 export * from "./budget";
+export * from "./performance";

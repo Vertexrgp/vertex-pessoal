@@ -1,8 +1,8 @@
-# Vertex Finance OS
+# Vertex OS
 
 ## Overview
 
-Full-stack personal finance management system built as a premium fintech product. React + Vite frontend with an Express backend and PostgreSQL database.
+Full-stack personal OS — modules for finance management and physical performance. Premium fintech product built with React + Vite frontend, Express backend, and PostgreSQL database. All UI in Brazilian Portuguese.
 
 ## Stack
 
@@ -52,6 +52,13 @@ Tables:
 - `incomes` — recurring income sources
 - `budget_groups` — budget group types (6 groups)
 - `budget_items` — line items within budget groups with planned vs realized amounts
+- `performance_goals` — physical objectives (target weight, BF%, aesthetic goal, deadline)
+- `performance_current_state` — current physical state (weight, height, BF%, body measurements, photos)
+- `performance_exams` — lab exam records (type, date, lab, file URL, results)
+- `performance_protocols` — medications/supplements/hormones (dosage, schedule, cycle dates, via)
+- `performance_workouts` — workout plans with exercises JSON (name, series, reps, load, rest)
+- `performance_nutrition` — nutrition strategy with macros and meals JSON
+- `performance_progress` — weekly progress tracking (weight, BF%, waist, energy, mood, photos)
 
 ## Navigation Structure (Sidebar)
 

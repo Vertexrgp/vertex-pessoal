@@ -18,6 +18,11 @@ import {
   RefreshCw,
   HeartPulse,
   FlaskConical,
+  Target,
+  Activity,
+  Dumbbell,
+  Utensils,
+  Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +70,19 @@ const navSections: NavSection[] = [
     items: [
       { name: "Faturas", path: "/faturas", icon: Receipt },
       { name: "Cartões Cadastrados", path: "/cartoes", icon: CreditCard },
+    ],
+  },
+  {
+    label: "Performance",
+    items: [
+      { name: "Objetivo", path: "/performance/objetivo", icon: Target },
+      { name: "Avaliação Atual", path: "/performance/avaliacao", icon: Activity },
+      { name: "Exames", path: "/performance/exames", icon: FileText },
+      { name: "Protocolos", path: "/performance/protocolos", icon: FlaskConical },
+      { name: "Treinos", path: "/performance/treinos", icon: Dumbbell },
+      { name: "Nutrição", path: "/performance/nutricao", icon: Utensils },
+      { name: "Progresso", path: "/performance/progresso", icon: TrendingUp },
+      { name: "Recomendações", path: "/performance/recomendacoes", icon: Lightbulb },
     ],
   },
   {

@@ -12,6 +12,7 @@ import assetsRouter from "./assets";
 import budgetRouter from "./budget";
 import dashboardRouter from "./dashboard";
 import reportsRouter from "./reports";
+import performanceRouter from "./performance";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(assetsRouter);
 router.use(budgetRouter);
 router.use(dashboardRouter);
 router.use(reportsRouter);
+router.use(performanceRouter);
 
 export default router;

@@ -1,0 +1,166 @@
+Quero criar um novo módulo no Vertex OS chamado:
+
+Performance
+
+OBJETIVO
+Criar um sistema de evolução física completo, não apenas treino.
+
+Esse módulo deve ajudar o usuário a sair do estado atual e chegar ao físico desejado, com base em:
+
+- fotos
+- exames
+- protocolos
+- treino
+- nutrição
+
+====================================================
+1) ESTRUTURA DO MÓDULO
+====================================================
+
+Criar no menu:
+
+Performance
+
+Submódulos:
+
+- Objetivo
+- Avaliação Atual
+- Exames
+- Protocolos
+- Treinos
+- Nutrição
+- Progresso
+- Recomendações
+
+====================================================
+2) OBJETIVO
+====================================================
+
+Criar tela para:
+
+- upload de foto do físico desejado
+- descrição do objetivo
+- meta (peso, BF, estética)
+
+====================================================
+3) AVALIAÇÃO ATUAL
+====================================================
+
+Criar tela com:
+
+- upload de fotos atuais
+- peso
+- medidas
+- percentual de gordura (manual)
+- observações
+
+====================================================
+4) EXAMES
+====================================================
+
+Criar sistema de upload:
+
+- anexar arquivos (PDF, imagem)
+- data do exame
+- tipo de exame
+- observação
+
+====================================================
+5) PROTOCOLOS
+====================================================
+
+Criar sistema para:
+
+- cadastrar manipulados
+- cadastrar medicamentos
+- dosagem
+- horários
+- observações
+
+====================================================
+6) TREINOS
+====================================================
+
+Criar estrutura para:
+
+- plano de treino
+- divisão semanal
+- exercícios
+- séries e repetições
+- carga
+
+====================================================
+7) NUTRIÇÃO
+====================================================
+
+Criar estrutura simples:
+
+- estratégia alimentar
+- macros básicos
+- observações
+
+====================================================
+8) PROGRESSO
+====================================================
+
+Criar:
+
+- timeline de evolução
+- fotos comparativas
+- peso ao longo do tempo
+
+====================================================
+9) RECOMENDAÇÕES (BASE)
+====================================================
+
+Criar base para recomendações futuras:
+
+- comparar objetivo vs atual
+- identificar gap
+- sugerir plano (inicial simples)
+
+====================================================
+10) BANCO DE DADOS
+====================================================
+
+Criar tabelas:
+
+- performance_goals
+- performance_current_state
+- performance_exams
+- performance_protocols
+- performance_workouts
+- performance_nutrition
+- performance_progress
+
+====================================================
+11) VISUAL
+====================================================
+
+Quero visual premium, clean, moderno e com cara de produto.
+
+Nada com cara de app simples.
+
+====================================================
+12) IMPORTANTE
+====================================================
+
+- Não integrar IA ainda
+- Criar estrutura pronta para IA futura
+- Foco em organização e usabilidade
+
+====================================================
+13) ENTREGAR
+====================================================
+
+- menu Performance
+- páginas estruturadas
+- banco criado
+- navegação funcional
+- visual premium
+
+No final, me mostre:
+- estrutura criada
+- tabelas
+- páginas
+- próximos passos recomendados
