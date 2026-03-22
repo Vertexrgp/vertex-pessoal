@@ -1,0 +1,17 @@
+packages:
+  "recharts": "For premium financial charts and dashboard visualizations"
+  "date-fns": "For formatting competence and movement dates"
+  "react-hook-form": "For robust form state management in modal dialogs"
+  "@hookform/resolvers": "For Zod schema validation in forms"
+  "zod": "For strict runtime type validation of form inputs"
+  "clsx": "For dynamic class name merging in UI components"
+  "tailwind-merge": "For resolving Tailwind class conflicts safely"
+
+images:
+  - path: "artifacts/vertex-finance/public/images/logo-icon.png"
+    description: "A minimal, premium fintech logo icon, geometric shape resembling a 'V' or vertex, deep navy blue and vibrant blue colors, transparent background, sleek and professional"
+    aspect_ratio: "1:1"
+
+notes:
+  - "Assuming standard shadcn/ui components are available in @/components/ui/ as listed in the directory structure."
+  - "Using @workspace/api-client-react for all data fetching, passing appropriate generic types where required."

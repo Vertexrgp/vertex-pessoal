@@ -1,0 +1,333 @@
+Quero criar um novo sistema web chamado provisoriamente de “Vertex Finance OS”.
+
+OBJETIVO DO PRODUTO
+Criar um sistema de controle financeiro pessoal premium, com visual limpo, executivo e moderno, baseado na lógica da minha planilha atual de finanças pessoais.
+
+Esse sistema deve nascer para uso pessoal, mas já com arquitetura de produto digital vendável no futuro (SaaS), então a estrutura precisa ser modular, escalável e visualmente profissional.
+
+====================================================
+REFERÊNCIA DE ESTRUTURA ATUAL (BASE DA PLANILHA)
+====================================================
+
+Minha planilha atual possui 4 blocos principais de lógica:
+
+1. Painel mensal consolidado
+- Receitas
+- Gastos
+- Resultado do mês (Receitas - Gastos)
+- Quebra por categorias mensais
+
+2. Lançamentos do dia a dia
+- Livro-caixa / conciliação bancária
+- Data
+- Categoria
+- Forma de pagamento
+- Descrição
+- Valor
+- Competência mensal
+
+3. Controle base patrimonial
+- Investimentos
+- Recebíveis
+- Dívidas
+- Renda
+- Custos fixos
+
+4. Orçamento pessoal por grupos
+- Despesas fixas
+- Despesas variáveis
+- Lazer e outros
+- Investimento de longo prazo
+- Investimento de curto prazo
+- Outros
+
+Quero que o sistema respeite essa lógica, mas seja superior à planilha em clareza, usabilidade, automação e visual.
+
+====================================================
+VISÃO DO PRODUTO
+====================================================
+
+Quero um sistema com posicionamento premium:
+- minimalista
+- elegante
+- executivo
+- organizado
+- fácil de usar
+- com sensação de controle real
+
+A ideia é que ele pareça um produto sério de mercado, não um app amador.
+
+====================================================
+MVP — MÓDULOS INICIAIS
+====================================================
+
+Criar os seguintes módulos:
+
+1. Dashboard
+2. Lançamentos
+3. Planejamento Mensal
+4. Patrimônio
+5. Orçamento
+6. Relatórios
+
+====================================================
+1. DASHBOARD
+====================================================
+
+Criar uma tela inicial com visão consolidada.
+
+Cards principais:
+- saldo do mês
+- total de receitas do mês
+- total de gastos do mês
+- resultado do mês
+- percentual poupado
+- patrimônio total
+- dívidas totais
+- recebíveis totais
+
+Gráficos:
+- receitas x gastos por mês
+- gastos por categoria
+- evolução do patrimônio
+- divisão entre despesas fixas, variáveis, lazer, investimentos e outros
+
+Filtros:
+- mês
+- ano
+- conta
+- categoria
+
+====================================================
+2. LANÇAMENTOS
+====================================================
+
+Criar tela de lançamentos financeiros, inspirada em livro-caixa / conciliação.
+
+Campos:
+- data de competência
+- data do movimento
+- categoria
+- subcategoria
+- tipo (receita / despesa / transferência)
+- forma de pagamento
+- descrição
+- valor
+- conta
+- status (previsto / pago / recebido)
+- observações
+
+Funcionalidades:
+- criar lançamento
+- editar lançamento
+- excluir lançamento
+- duplicar lançamento
+- filtro por período
+- filtro por categoria
+- busca por descrição
+- ordenação
+- importação futura via Excel/CSV (deixar preparado, não precisa concluir agora)
+
+====================================================
+3. PLANEJAMENTO MENSAL
+====================================================
+
+Criar uma tela com visão por mês, semelhante à lógica da aba “PLANILHA PESSOAL 2025”.
+
+Quero visualizar por colunas mensais:
+- receitas
+- gastos
+- resultado
+- categorias consolidadas por mês
+
+Categorias-base:
+DESPESAS FIXAS
+- aluguel
+- condomínio
+- academia
+- luz
+- tarifas bancárias
+- streaming
+- internet / telefone
+- diarista
+- IPTU
+- outras despesas fixas
+
+DESPESAS VARIÁVEIS
+- ifood / rappi / mercadinho
+- mercado
+- pet
+- apartamento
+- alimentação fora do lar
+- carro
+- cuidados pessoais
+- lazer
+- viagens
+- etc.
+
+A estrutura precisa permitir adicionar, editar ou ocultar categorias no futuro.
+
+====================================================
+4. PATRIMÔNIO
+====================================================
+
+Criar módulo patrimonial com 4 áreas:
+
+1) Investimentos
+2) Recebíveis
+3) Dívidas
+4) Renda
+
+Campos importantes:
+- descrição
+- categoria
+- valor
+- data
+- status
+- recorrência (quando aplicável)
+- observação
+
+Objetivo:
+ter visão clara do patrimônio total e da estrutura financeira pessoal.
+
+Indicadores:
+- total investido
+- total a receber
+- total em dívidas
+- renda mensal
+- patrimônio líquido estimado
+
+====================================================
+5. ORÇAMENTO
+====================================================
+
+Criar módulo de orçamento pessoal com metas por grupo, inspirado na aba “CUSTOS PESSOAIS”.
+
+Blocos:
+1. Despesas Fixas
+2. Despesas Variáveis
+3. Lazer e Outros
+4. Investimento LP
+5. Investimento CP
+6. Outros
+
+Cada bloco deve permitir:
+- meta percentual da renda
+- valor planejado
+- valor realizado
+- diferença
+- status visual (dentro / acima / abaixo)
+
+Quero ver claramente:
+- quanto planejei
+- quanto gastei
+- quanto sobrou
+- quanto estou desviando da meta
+
+====================================================
+6. RELATÓRIOS
+====================================================
+
+Criar uma área com relatórios prontos:
+
+- gastos por categoria
+- gastos por subcategoria
+- evolução mensal
+- despesas fixas x variáveis
+- top maiores gastos
+- comparação planejado x realizado
+- fluxo mensal consolidado
+
+====================================================
+BANCO DE DADOS — ESTRUTURA INICIAL
+====================================================
+
+Criar estrutura relacional, organizada e preparada para escalar.
+
+Tabelas iniciais sugeridas:
+- users
+- accounts
+- categories
+- subcategories
+- transactions
+- monthly_plans
+- assets
+- receivables
+- debts
+- incomes
+- budget_groups
+- budget_items
+
+Preparar tudo para no futuro ter múltiplos usuários, mas por enquanto pode funcionar com 1 usuário principal.
+
+====================================================
+REGRAS IMPORTANTES
+====================================================
+
+1. O sistema precisa separar claramente:
+- receita
+- despesa
+- patrimônio
+- orçamento
+
+2. O sistema deve permitir crescimento futuro para:
+- metas financeiras
+- cartões de crédito
+- assinatura recorrente
+- importação bancária
+- inteligência artificial financeira
+- versão multiusuário
+- venda como SaaS
+
+3. Não quero visual poluído.
+4. Não quero aparência de planilha simples.
+5. Quero design premium, com sensação de produto vendável.
+
+====================================================
+DESIGN / UX
+====================================================
+
+Referência visual:
+- clean
+- fundo claro
+- cards elegantes
+- gráficos modernos
+- boa hierarquia visual
+- sem exagero de cores
+- foco em legibilidade
+- visual premium de fintech pessoal
+
+Sidebar sugerida:
+- Dashboard
+- Lançamentos
+- Planejamento Mensal
+- Patrimônio
+- Orçamento
+- Relatórios
+- Configurações
+
+====================================================
+PRIMEIRA ENTREGA
+====================================================
+
+Quero que você faça agora a Fase 1 do projeto:
+
+1. Estruturar a arquitetura do sistema
+2. Criar as rotas principais
+3. Criar a sidebar
+4. Criar as páginas base com layout real
+5. Criar o banco com tabelas iniciais
+6. Criar dados mockados coerentes com finanças pessoais
+7. Entregar o MVP navegável com visual premium
+
+IMPORTANTE
+- Não quero ainda integração bancária
+- Não quero ainda IA
+- Não quero ainda importação de Excel
+- Primeiro quero o sistema base muito bem montado
+
+No final, me mostre:
+- arquitetura criada
+- tabelas criadas
+- páginas criadas
+- próximos passos recomendados
