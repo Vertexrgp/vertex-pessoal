@@ -53,16 +53,46 @@ Tables:
 - `budget_groups` — budget group types (6 groups)
 - `budget_items` — line items within budget groups with planned vs realized amounts
 
+## Navigation Structure (Sidebar)
+
+```
+Dashboard (/)
+
+Financeiro
+  Lançamentos            /transactions
+  Planejamento Mensal    /monthly-planning
+  Orçamento              /budget
+  Relatórios             /reports
+
+Patrimônio
+  Visão Geral            /patrimonio
+  Recebíveis             /receivables
+  Dívidas                /debts
+  Rendas                 /incomes
+
+Cartões
+  Faturas                /faturas
+  Cartões Cadastrados    /cartoes
+
+Configurações            /settings  (tabs: Contas, Categorias, Cartões, Perfil)
+```
+
 ## Modules
 
-1. **Dashboard** — 8 summary cards + bar chart (income vs expenses) + donut chart (by category)
-2. **Lançamentos** — Full transaction ledger with filters, search, CRUD + duplicate + parcelamentos (installments with group delete)
-3. **Cartões** — Credit card management with visual card selector, fatura (billing cycle) dashboard, limit utilization, installment badges, next 3 invoices forecast, CRUD modal with color picker. Route: `/credit-cards`
-4. **Planejamento Mensal** — Monthly view by category with planned vs actual
-5. **Patrimônio** — 4 tabs: Investimentos, Recebíveis, Dívidas, Fontes de Renda
-6. **Orçamento** — Budget groups with progress bars and status indicators
-7. **Relatórios** — 4 report types: by category, monthly evolution, top expenses, planned vs realized
-8. **Configurações** — Category and account management
+1. **Dashboard** (`/`) — KPI cards: saldo, receitas, gastos, resultado, patrimônio, dívidas, recebíveis + charts: receitas×gastos mensal, gastos por categoria
+2. **Lançamentos** (`/transactions`) — Transaction ledger with filters, search, CRUD + duplicate + installment series (parcelamentos) with group delete. Card selector + installment mode in form.
+3. **Planejamento Mensal** (`/monthly-planning`) — Monthly view by category with planned vs actual
+4. **Orçamento** (`/budget`) — Budget groups with progress bars and status indicators
+5. **Relatórios** (`/reports`) — 4 report types: by category, monthly evolution, top expenses, planned vs realized
+6. **Patrimônio Geral** (`/patrimonio`) — Consolidated net worth hero card + 4 section cards (Investimentos, Recebíveis, Dívidas, Rendas) + investment table
+7. **Recebíveis** (`/receivables`) — Dedicated receivables list page with status badges
+8. **Dívidas** (`/debts`) — Dedicated debts list page with active/paid status
+9. **Rendas** (`/incomes`) — Recurring income sources list
+10. **Faturas** (`/faturas`) — Credit card fatura view: card selector, month navigation, KPI dashboard (total/pago/aberto/próxima), limit bar, items table with installment badges, next 3 invoices forecast
+11. **Cartões Cadastrados** (`/cartoes`) — Card management: visual card grid + detail table + full CRUD modal with color picker
+12. **Configurações** (`/settings`) — Tabs: Contas (bank accounts), Categorias (with subcategories), Cartões (redirects to /cartoes), Perfil
+
+Legacy redirects: `/assets` → `/patrimonio`, `/credit-cards` → `/faturas`
 
 ## API Routes
 

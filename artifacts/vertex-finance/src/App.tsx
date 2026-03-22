@@ -7,11 +7,15 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "./pages/dashboard";
 import TransactionsPage from "./pages/transactions";
 import MonthlyPlanningPage from "./pages/monthly-planning";
-import AssetsPage from "./pages/assets";
+import PatrimonioPage from "./pages/patrimonio";
+import ReceivablesPage from "./pages/receivables";
+import DebtsPage from "./pages/debts";
+import IncomesPage from "./pages/incomes";
 import BudgetPage from "./pages/budget";
 import ReportsPage from "./pages/reports";
 import SettingsPage from "./pages/settings";
-import CreditCardsPage from "./pages/credit-cards";
+import FaturasPage from "./pages/faturas";
+import CartoesPage from "./pages/cartoes";
 
 const queryClient = new QueryClient();
 
@@ -21,11 +25,18 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/transactions" component={TransactionsPage} />
       <Route path="/monthly-planning" component={MonthlyPlanningPage} />
-      <Route path="/assets" component={AssetsPage} />
+      <Route path="/patrimonio" component={PatrimonioPage} />
+      <Route path="/receivables" component={ReceivablesPage} />
+      <Route path="/debts" component={DebtsPage} />
+      <Route path="/incomes" component={IncomesPage} />
       <Route path="/budget" component={BudgetPage} />
       <Route path="/reports" component={ReportsPage} />
       <Route path="/settings" component={SettingsPage} />
-      <Route path="/credit-cards" component={CreditCardsPage} />
+      <Route path="/faturas" component={FaturasPage} />
+      <Route path="/cartoes" component={CartoesPage} />
+      {/* Legacy redirect */}
+      <Route path="/assets" component={PatrimonioPage} />
+      <Route path="/credit-cards" component={FaturasPage} />
       <Route component={NotFound} />
     </Switch>
   );

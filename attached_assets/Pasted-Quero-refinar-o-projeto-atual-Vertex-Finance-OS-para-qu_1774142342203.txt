@@ -1,0 +1,274 @@
+Quero refinar o projeto atual “Vertex Finance OS” para que ele siga uma arquitetura de produto premium, mais organizada, escalável e pronta para no futuro virar um SaaS.
+
+OBJETIVO
+Reestruturar o sistema para ficar claro, elegante e fácil de usar, com foco em controle financeiro pessoal real, incluindo:
+- lançamentos
+- planejamento mensal
+- orçamento
+- patrimônio
+- cartões de crédito
+- faturas
+
+IMPORTANTE
+Não quero destruir o que já foi feito.
+Quero reorganizar e evoluir a estrutura atual.
+Aproveite ao máximo o que já existe e apenas ajuste arquitetura, menus, rotas, páginas e banco para o modelo abaixo.
+
+====================================================
+ARQUITETURA FINAL DO PRODUTO
+====================================================
+
+MENU LATERAL
+
+Dashboard
+
+Financeiro
+- Lançamentos
+- Planejamento Mensal
+- Orçamento
+- Relatórios
+
+Patrimônio
+- Patrimônio Geral
+- Recebíveis
+- Dívidas
+- Rendas
+
+Cartões
+- Faturas
+- Cartões Cadastrados
+
+Configurações
+- Categorias
+- Contas
+- Cartões
+- Perfil
+
+====================================================
+MÓDULOS E FUNÇÃO DE CADA UM
+====================================================
+
+1) Dashboard
+Tela principal com visão consolidada da vida financeira.
+
+Mostrar cards:
+- saldo do mês
+- receitas do mês
+- despesas do mês
+- resultado do mês
+- percentual poupado
+- patrimônio líquido
+- dívida total
+- recebíveis
+- valor da próxima fatura
+
+Mostrar gráficos:
+- receitas x despesas por mês
+- gastos por categoria
+- evolução patrimonial
+- divisão entre despesas fixas, variáveis, lazer e investimentos
+
+2) Lançamentos
+Tela principal para cadastrar e gerenciar receitas, despesas e transferências.
+
+Campos:
+- tipo (receita, despesa, transferência)
+- descrição
+- valor
+- categoria
+- subcategoria
+- conta
+- forma de pagamento
+- status
+- data do movimento
+- data de competência
+- observações
+
+3) Planejamento Mensal
+Visão consolidada por mês, inspirada na lógica da planilha atual.
+Mostrar por mês:
+- receitas
+- gastos
+- resultado
+- categorias consolidadas
+
+4) Orçamento
+Comparar planejado x realizado por grupo.
+
+Grupos:
+- despesas fixas
+- despesas variáveis
+- lazer e outros
+- investimento de longo prazo
+- investimento de curto prazo
+- outros
+
+Mostrar:
+- valor planejado
+- valor realizado
+- diferença
+- status visual
+
+5) Relatórios
+Relatórios executivos:
+- gastos por categoria
+- gastos por subcategoria
+- evolução mensal
+- top maiores gastos
+- planejado x realizado
+- receitas por fonte
+- despesas fixas x variáveis
+
+6) Patrimônio Geral
+Visão patrimonial consolidada:
+- investimentos
+- recebíveis
+- dívidas
+- renda
+- patrimônio líquido estimado
+
+7) Recebíveis
+Tudo que tenho para receber.
+
+8) Dívidas
+Tudo que tenho a pagar ou devo.
+
+9) Rendas
+Entradas recorrentes e extraordinárias.
+
+10) Cartões Cadastrados
+Cadastro de cartões de crédito.
+
+Campos:
+- nome do cartão
+- banco
+- bandeira
+- limite total
+- dia de fechamento
+- dia de vencimento
+- cor
+- ativo
+
+11) Faturas
+Tela de controle de faturas dos cartões.
+
+Mostrar:
+- valor total da fatura atual
+- valor pago
+- valor em aberto
+- limite total
+- limite utilizado
+- limite disponível
+- total parcelado futuro
+- valor previsto da próxima fatura
+
+Tabela da fatura:
+- data
+- descrição
+- categoria
+- valor
+- cartão
+- tipo (à vista / parcelado)
+- parcela atual (ex: 2/6)
+- status
+
+====================================================
+CARTÃO DE CRÉDITO E PARCELAMENTO
+====================================================
+
+No módulo de lançamentos, implementar lógica correta de cartão:
+
+Adicionar campo:
+- formaPagamento
+
+Opções:
+- Dinheiro
+- Débito
+- Crédito
+- Pix
+- Transferência
+- Outros
+
+Se formaPagamento = Crédito:
+mostrar:
+- cartão
+- tipoCredito (À vista / Parcelado)
+
+Se Parcelado:
+mostrar:
+- numeroParcelas
+- dataPrimeiraParcela
+
+Ao salvar um lançamento parcelado:
+- gerar automaticamente as parcelas futuras
+- distribuir por competência mensal
+- criar grupoParcelaId
+- identificar visualmente na lista como "Parcela X/Y"
+
+Impacto:
+- parcelas futuras devem aparecer automaticamente em:
+  - Planejamento Mensal
+  - Orçamento
+  - Faturas
+  - Dashboard
+
+====================================================
+BANCO DE DADOS
+====================================================
+
+Revisar e ajustar a arquitetura do banco para este modelo.
+
+Tabelas desejadas:
+
+- users
+- accounts
+- categories
+- subcategories
+- transactions
+- monthly_plans
+- budget_groups
+- budget_items
+- assets
+- receivables
+- debts
+- incomes
+- credit_cards
+
+Na tabela transactions, garantir suporte a:
+- formaPagamento
+- tipoCredito
+- numeroParcelas
+- parcelaAtual
+- grupoParcelaId
+- creditCardId
+
+====================================================
+REGRAS IMPORTANTES
+====================================================
+
+1) O sistema deve ter aparência premium e vendável.
+2) Não quero visual de planilha simples.
+3) Quero layout limpo, elegante, moderno e executivo.
+4) Reaproveitar ao máximo o que já foi feito.
+5) Não destruir telas prontas sem necessidade.
+6) Melhorar a arquitetura e padronizar a navegação.
+
+====================================================
+O QUE FAZER AGORA
+====================================================
+
+Quero que você execute agora a Fase 2 do produto:
+
+1. analisar a estrutura atual do projeto
+2. reorganizar o menu lateral para a arquitetura acima
+3. ajustar rotas e páginas para os módulos acima
+4. revisar o banco para suportar cartões e parcelamento
+5. evoluir a tela de lançamentos para suportar forma de pagamento, cartão e parcelamento
+6. criar a base do módulo de Faturas
+7. manter o sistema navegável e bonito
+
+NO FINAL, ME MOSTRE:
+- o que já existia e foi reaproveitado
+- o que foi reorganizado
+- o que foi criado
+- próximos passos recomendados
