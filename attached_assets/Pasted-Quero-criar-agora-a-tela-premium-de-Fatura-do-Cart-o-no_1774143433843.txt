@@ -1,0 +1,186 @@
+Quero criar agora a tela premium de Fatura do Cartão no Vertex Finance OS.
+
+OBJETIVO
+Transformar o módulo de cartões em um sistema real de controle de faturas, limite, compras à vista, parceladas e previsão futura.
+
+A tela precisa ter cara de produto vendável, estilo fintech premium.
+
+====================================================
+1) ESTRUTURA DO MÓDULO
+====================================================
+
+Criar/ajustar o módulo Cartões para ter duas áreas claras:
+
+- Cartões Cadastrados
+- Faturas
+
+No menu lateral, estruturar assim:
+
+Cartões
+- Faturas
+- Cartões Cadastrados
+
+====================================================
+2) TELA DE FATURA
+====================================================
+
+Criar a rota:
+
+/cartoes/faturas
+
+Essa tela deve permitir filtrar por:
+- cartão
+- mês
+- ano
+
+E mostrar o resumo da fatura do cartão selecionado.
+
+====================================================
+3) DASHBOARD DA FATURA
+====================================================
+
+No topo da tela, mostrar cards com:
+
+- Valor total da fatura atual
+- Valor pago
+- Valor em aberto
+- Limite total
+- Limite utilizado
+- Limite disponível
+- Total parcelado futuro
+- Valor previsto da próxima fatura
+
+Esses cards precisam ter visual premium, com boa hierarquia e leitura rápida.
+
+====================================================
+4) CÁLCULO DA FATURA
+====================================================
+
+A lógica deve respeitar:
+
+- compras no crédito à vista
+- parcelas com mês de competência correspondente
+- cartão selecionado
+- ciclo da fatura
+
+Cada cartão deve ter:
+- diaFechamento
+- diaVencimento
+
+O sistema deve usar isso para organizar a fatura corretamente.
+
+====================================================
+5) LISTA DE ITENS DA FATURA
+====================================================
+
+Criar uma tabela elegante com:
+
+- Data
+- Descrição
+- Categoria
+- Tipo de compra
+- Parcela
+- Valor
+- Status
+
+Regras:
+- Tipo de compra: À vista / Parcelado
+- Parcela: mostrar "1/12", "2/12" etc
+- Se não houver parcela: mostrar "À vista"
+- Status: Pago / Em aberto / Previsto
+
+====================================================
+6) BLOCOS DA FATURA
+====================================================
+
+Separar visualmente a fatura em 3 blocos:
+
+1. Compras à vista
+2. Parcelas deste mês
+3. Próximas parcelas futuras
+
+Esses blocos podem ser tabelas separadas ou seções no mesmo layout.
+
+====================================================
+7) PREVISÃO DAS PRÓXIMAS FATURAS
+====================================================
+
+Criar um bloco chamado:
+
+Próximas Faturas
+
+Mostrar pelo menos os próximos 3 meses:
+
+- mês
+- valor previsto
+- quantidade de parcelas futuras
+- total à vista previsto
+
+Exemplo:
+Abril: R$ 2.350
+Maio: R$ 1.980
+Junho: R$ 1.720
+
+====================================================
+8) LIMITES DO CARTÃO
+====================================================
+
+Calcular automaticamente:
+
+limiteUtilizado =
+soma das compras em aberto do cartão
+
+limiteDisponivel =
+limiteTotal - limiteUtilizado
+
+Mostrar isso claramente no dashboard e também no card do cartão.
+
+====================================================
+9) INTEGRAÇÃO COM LANÇAMENTOS
+====================================================
+
+Garantir que a tela de Faturas consuma os lançamentos de crédito já cadastrados no módulo de Lançamentos.
+
+Regras:
+- se formaPagamento = Crédito, o lançamento precisa entrar na fatura do cartão correto
+- se parcelado, precisa aparecer na competência correta
+- se à vista, precisa entrar na fatura correspondente ao ciclo
+
+====================================================
+10) UX / VISUAL
+====================================================
+
+Quero visual premium, estilo fintech pessoal:
+
+- clean
+- moderno
+- elegante
+- hierarquia visual forte
+- boa separação de blocos
+- sem poluição
+- sem cara de sistema simples
+
+A tela deve parecer algo próximo de uma mistura entre:
+- dashboard executivo
+- app financeiro premium
+- visão clara de compromisso futuro
+
+====================================================
+11) ENTREGAR
+====================================================
+
+Quero que você faça agora:
+
+1. criar/ajustar a rota de Faturas
+2. montar o dashboard da fatura
+3. montar a tabela/listagem de itens da fatura
+4. criar o bloco de próximas faturas
+5. integrar com os lançamentos no crédito
+6. calcular limite utilizado e disponível
+7. deixar o visual mais premium
+
+No final, me mostre:
+- o que foi criado
+- como a lógica da fatura está funcionando
+- como está sendo calculado o limite
+- próximos ajustes recomendados
