@@ -1,0 +1,124 @@
+Quero criar uma nova visão dentro da aba "Custo de Vida" chamada:
+
+Modo Otimização (ou Vida Ideal)
+
+OBJETIVO
+Mostrar como o usuário deveria organizar seus gastos para melhorar sua estrutura financeira e aumentar sua capacidade de investimento.
+
+====================================================
+1) CONCEITO
+====================================================
+
+Criar comparação entre:
+
+- Estrutura atual de gastos
+- Estrutura ideal de gastos
+
+====================================================
+2) REGRAS DE ALOCAÇÃO
+====================================================
+
+Definir regras padrão:
+
+- Despesas Fixas: até 40%
+- Despesas Variáveis: até 30%
+- Lazer: até 10%
+- Investimentos: mínimo 20%
+- Outros: residual
+
+Esses valores devem ser configuráveis no futuro.
+
+====================================================
+3) CÁLCULO
+====================================================
+
+Com base na renda do usuário:
+
+Calcular:
+
+- percentual atual por categoria
+- percentual ideal
+- diferença em valor
+- diferença em percentual
+
+====================================================
+4) COMPARAÇÃO VISUAL
+====================================================
+
+Criar tabela:
+
+Categoria | Atual | Ideal | Diferença
+
+Exemplo:
+Fixos | 40% | 40% | OK
+Variáveis | 35% | 30% | -5%
+Lazer | 15% | 10% | -5%
+Investimentos | 10% | 20% | +10%
+
+====================================================
+5) SUGESTÕES AUTOMÁTICAS
+====================================================
+
+Gerar sugestões como:
+
+- reduzir despesas variáveis em X
+- reduzir lazer em Y
+- aumentar investimento em Z
+
+====================================================
+6) IMPACTO
+====================================================
+
+Calcular:
+
+- quanto o usuário economizaria por mês
+- quanto investiria a mais por mês
+- impacto anual
+
+Exemplo:
++R$ 1.500/mês
++R$ 18.000/ano
+
+====================================================
+7) VISUAL
+====================================================
+
+Criar:
+
+- gráfico comparando atual vs ideal
+- destaque visual para ajustes
+- leitura simples e executiva
+
+====================================================
+8) INTEGRAÇÃO
+====================================================
+
+Usar dados de:
+
+- lançamentos
+- recorrências
+- planejamento
+- orçamento
+
+====================================================
+9) EXPERIÊNCIA
+====================================================
+
+Quero que o usuário consiga:
+
+- entender rapidamente onde está errado
+- ver o que precisa ajustar
+- entender o impacto das mudanças
+
+====================================================
+10) ENTREGAR
+====================================================
+
+Implementar:
+
+- nova visão dentro da aba Custo de Vida
+- cálculos automáticos
+- comparação atual vs ideal
+- sugestões de ajuste
+- cálculo de impacto
+- visual premium

@@ -8,6 +8,7 @@ import {
   Shield, Wallet, TrendingUp, AlertTriangle,
   CheckCircle, Circle, RefreshCw, Scissors,
   Zap, ArrowRight, ChevronDown, ChevronUp,
+  Target, BarChart2, Lightbulb, ArrowUpRight, ArrowDownRight, MinusCircle,
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL ?? "/";
@@ -817,9 +818,620 @@ function VisaoAtual({ data }: { data: CustoData }) {
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
+   MODO OTIMIZAÇÃO VIEW
+   ──────────────────────────────────────────────────────────────────────────── */
+
+interface AllocRule {
+  key: string;
+  label: string;
+  sublabel: string;
+  icon: React.ElementType;
+  idealPct: number;       // target %
+  direction: "max" | "min"; // max = spend at most X%, min = invest at least X%
+  iconColor: string;
+  bg: string;
+  good: string;   // tailwind color when on track
+  bad: string;    // tailwind color when off track
+  barGood: string;
+  barBad: string;
+  tipoCustoKeys: string[]; // which tipoCusto values map here
+}
+
+const ALLOC_RULES: AllocRule[] = [
+  {
+    key: "fixas",
+    label: "Despesas Fixas",
+    sublabel: "essenciais + fixos não essenciais",
+    icon: Home,
+    idealPct: 40,
+    direction: "max",
+    iconColor: "text-rose-600",
+    bg: "bg-rose-50",
+    good: "text-emerald-700",
+    bad: "text-rose-700",
+    barGood: "bg-emerald-400",
+    barBad: "bg-rose-400",
+    tipoCustoKeys: ["essencial", "fixo"],
+  },
+  {
+    key: "variaveis",
+    label: "Despesas Variáveis",
+    sublabel: "gastos recorrentes variáveis",
+    icon: RefreshCw,
+    idealPct: 30,
+    direction: "max",
+    iconColor: "text-blue-600",
+    bg: "bg-blue-50",
+    good: "text-emerald-700",
+    bad: "text-rose-700",
+    barGood: "bg-blue-400",
+    barBad: "bg-rose-400",
+    tipoCustoKeys: ["variavel"],
+  },
+  {
+    key: "lazer",
+    label: "Lazer & Conforto",
+    sublabel: "entretenimento, viagens, luxo",
+    icon: Sparkles,
+    idealPct: 10,
+    direction: "max",
+    iconColor: "text-violet-600",
+    bg: "bg-violet-50",
+    good: "text-emerald-700",
+    bad: "text-rose-700",
+    barGood: "bg-violet-400",
+    barBad: "bg-rose-400",
+    tipoCustoKeys: ["luxo"],
+  },
+  {
+    key: "investimentos",
+    label: "Investimentos",
+    sublabel: "aportes, previdência, renda fixa",
+    icon: TrendingUp,
+    idealPct: 20,
+    direction: "min",
+    iconColor: "text-emerald-600",
+    bg: "bg-emerald-50",
+    good: "text-emerald-700",
+    bad: "text-amber-700",
+    barGood: "bg-emerald-400",
+    barBad: "bg-amber-400",
+    tipoCustoKeys: ["investimento"],
+  },
+];
+
+function StatusBadge({ status, diffPct }: { status: "ok" | "acima" | "abaixo"; diffPct: number }) {
+  if (status === "ok") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+        <CheckCircle className="w-3 h-3" />
+        No alvo
+      </span>
+    );
+  }
+  if (status === "acima") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+        <ArrowUpRight className="w-3 h-3" />
+        +{Math.abs(diffPct).toFixed(1)}% acima
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+      <ArrowDownRight className="w-3 h-3" />
+      {Math.abs(diffPct).toFixed(1)}% abaixo
+    </span>
+  );
+}
+
+function ModoOtimizacao({ data }: { data: CustoData }) {
+  const renda = data.totalReceitas;
+
+  // Compute allocations
+  const allocs = ALLOC_RULES.map(rule => {
+    const atual = rule.tipoCustoKeys.reduce((sum, k) => sum + (data.byType[k]?.total ?? 0), 0);
+    const atualPct = renda > 0 ? (atual / renda) * 100 : 0;
+    const idealVal = renda > 0 ? (rule.idealPct / 100) * renda : 0;
+    const diffVal = idealVal - atual; // positive = room to spend/invest more; negative = over budget
+    const diffPct = atualPct - rule.idealPct; // positive = over, negative = under
+    // Status logic
+    let status: "ok" | "acima" | "abaixo";
+    if (rule.direction === "max") {
+      status = atualPct <= rule.idealPct ? "ok" : "acima";
+    } else {
+      // min (investimentos)
+      status = atualPct >= rule.idealPct ? "ok" : "abaixo";
+    }
+    return { ...rule, atual, atualPct, idealVal, diffVal, diffPct, status };
+  });
+
+  // Suggestions
+  const suggestions: { icon: React.ElementType; color: string; bg: string; text: string; value: number; priority: "high" | "medium" }[] = [];
+  allocs.forEach(a => {
+    if (a.status === "acima" && a.direction === "max") {
+      suggestions.push({
+        icon: ArrowDownRight,
+        color: "text-rose-700",
+        bg: "bg-rose-50",
+        text: `Reduza ${a.label.toLowerCase()} em`,
+        value: Math.abs(a.diffVal),
+        priority: a.key === "fixas" ? "high" : "medium",
+      });
+    }
+    if (a.status === "abaixo" && a.direction === "min") {
+      suggestions.push({
+        icon: ArrowUpRight,
+        color: "text-emerald-700",
+        bg: "bg-emerald-50",
+        text: `Aumente ${a.label.toLowerCase()} em`,
+        value: Math.abs(a.diffVal),
+        priority: "high",
+      });
+    }
+  });
+  suggestions.sort((a, b) => (a.priority === "high" ? -1 : 1));
+
+  // Impact
+  const economiaMensal = allocs
+    .filter(a => a.status === "acima" && a.direction === "max")
+    .reduce((sum, a) => sum + Math.abs(a.diffVal), 0);
+  const investimentoAdicional = allocs.find(a => a.key === "investimentos" && a.status === "abaixo");
+  const investimentoGanho = investimentoAdicional ? Math.abs(investimentoAdicional.diffVal) : 0;
+
+  const hasData = renda > 0;
+  const noProblem = suggestions.length === 0 && hasData;
+
+  // Total spending (all expenses)
+  const totalDespesas = allocs.reduce((s, a) => s + a.atual, 0);
+
+  return (
+    <div className="space-y-6">
+      {/* ─── Intro banner ────────────────────────────────────────────────── */}
+      <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-100 rounded-2xl px-6 py-4 flex items-start gap-3">
+        <Target className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+        <div>
+          <p className="text-indigo-900 font-semibold text-sm">Estrutura Financeira Ideal</p>
+          <p className="text-indigo-700 text-xs mt-0.5">
+            Com base na sua renda mensal de{" "}
+            <span className="font-bold">{formatCurrency(renda)}</span>, analisamos como seus gastos
+            se comparam com a estrutura recomendada de alocação.
+          </p>
+        </div>
+      </div>
+
+      {!hasData ? (
+        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-400">
+          <Target className="w-8 h-8 mx-auto mb-3 text-slate-200" />
+          <p className="font-medium">Cadastre receitas recorrentes para ver a otimização</p>
+          <p className="text-sm mt-1">
+            <a href={`${BASE}recorrencias`} className="text-primary hover:underline font-medium">
+              Clique aqui para cadastrar
+            </a>
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* ─── 4 allocation cards ────────────────────────────────────── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {allocs.map(a => {
+              const Icon = a.icon;
+              const isOk = a.status === "ok";
+              const barPct = Math.min(a.atualPct, 100);
+              const idealBarPct = Math.min(a.idealPct, 100);
+              return (
+                <div
+                  key={a.key}
+                  className={cn(
+                    "bg-white border-2 rounded-2xl p-5 shadow-sm flex flex-col gap-3 transition-all",
+                    isOk ? "border-slate-200" : a.status === "acima" ? "border-rose-200" : "border-amber-200"
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", a.bg)}>
+                      <Icon className={cn("w-4 h-4", a.iconColor)} />
+                    </div>
+                    <StatusBadge status={a.status} diffPct={a.diffPct} />
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{a.label}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{a.sublabel}</p>
+                  </div>
+
+                  {/* Values */}
+                  <div className="flex items-end justify-between gap-2">
+                    <div>
+                      <p className="text-[10px] text-slate-400 mb-0.5">Atual</p>
+                      <p className={cn("text-xl font-bold font-mono", isOk ? "text-slate-800" : a.status === "acima" ? "text-rose-700" : "text-amber-700")}>
+                        {a.atualPct.toFixed(1)}%
+                      </p>
+                      <p className="text-[10px] text-slate-400 font-mono">{formatCurrency(a.atual)}</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-300 mb-3 flex-shrink-0" />
+                    <div className="text-right">
+                      <p className="text-[10px] text-slate-400 mb-0.5">Ideal</p>
+                      <p className="text-xl font-bold font-mono text-emerald-600">{a.idealPct}%</p>
+                      <p className="text-[10px] text-slate-400 font-mono">{formatCurrency(a.idealVal)}</p>
+                    </div>
+                  </div>
+
+                  {/* Dual progress bar */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 text-[10px] text-slate-400">Atual</div>
+                      <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={cn("h-full rounded-full transition-all duration-500", isOk ? a.barGood : a.barBad)}
+                          style={{ width: `${barPct}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-500 w-8 text-right">{a.atualPct.toFixed(0)}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 text-[10px] text-slate-400">Ideal</div>
+                      <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-emerald-300 transition-all duration-500"
+                          style={{ width: `${idealBarPct}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-500 w-8 text-right">{a.idealPct}%</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ─── Comparison table + stacked bar ──────────────────────── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Table */}
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+                <BarChart2 className="w-4 h-4 text-slate-400" />
+                <h2 className="font-semibold text-slate-900">Comparativo Atual vs Ideal</h2>
+              </div>
+              <div className="p-1">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wide">Categoria</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-slate-400 uppercase tracking-wide">Atual</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-slate-400 uppercase tracking-wide">Ideal</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-slate-400 uppercase tracking-wide">Ajuste</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {allocs.map(a => {
+                      const Icon = a.icon;
+                      const overUnder = a.direction === "max"
+                        ? (a.atualPct > a.idealPct ? `−${formatCurrency(Math.abs(a.diffVal))}` : "OK")
+                        : (a.atualPct < a.idealPct ? `+${formatCurrency(Math.abs(a.diffVal))}` : "OK");
+                      const isOk = a.status === "ok";
+                      const adjustColor = isOk ? "text-emerald-600" :
+                        a.status === "acima" ? "text-rose-600" : "text-amber-600";
+                      return (
+                        <tr key={a.key} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-2">
+                              <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0", a.bg)}>
+                                <Icon className={cn("w-3 h-3", a.iconColor)} />
+                              </div>
+                              <span className="font-medium text-slate-700 text-xs">{a.label}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 text-center">
+                            <div>
+                              <span className={cn("font-bold text-sm font-mono", isOk ? "text-slate-700" : a.status === "acima" ? "text-rose-600" : "text-amber-600")}>
+                                {a.atualPct.toFixed(1)}%
+                              </span>
+                              <p className="text-[10px] text-slate-400 font-mono">{formatCurrency(a.atual)}</p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 text-center">
+                            <div>
+                              <span className="font-bold text-sm text-emerald-600 font-mono">{a.idealPct}%</span>
+                              <p className="text-[10px] text-slate-400 font-mono">{formatCurrency(a.idealVal)}</p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 text-center">
+                            {isOk ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                <CheckCircle className="w-2.5 h-2.5" />
+                                OK
+                              </span>
+                            ) : (
+                              <span className={cn("font-bold text-sm font-mono", adjustColor)}>{overUnder}</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {/* Residual row */}
+                    {renda > 0 && (() => {
+                      const totalIdeal = allocs.reduce((s, a) => s + a.idealPct, 0);
+                      const residualPct = Math.max(0, 100 - totalIdeal);
+                      const residualAtualPct = renda > 0 ? Math.max(0, ((renda - totalDespesas) / renda) * 100) : 0;
+                      return (
+                        <tr className="hover:bg-slate-50/50 transition-colors bg-slate-50/50">
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                                <MinusCircle className="w-3 h-3 text-slate-400" />
+                              </div>
+                              <span className="font-medium text-slate-500 text-xs">Outros / Livre</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 text-center">
+                            <span className="font-bold text-sm text-slate-500 font-mono">{residualAtualPct.toFixed(1)}%</span>
+                          </td>
+                          <td className="px-4 py-3.5 text-center">
+                            <span className="font-bold text-sm text-slate-500 font-mono">{residualPct}%</span>
+                          </td>
+                          <td className="px-4 py-3.5 text-center">
+                            <span className="text-xs text-slate-400">residual</span>
+                          </td>
+                        </tr>
+                      );
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Stacked bar comparison */}
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100">
+                <h2 className="font-semibold text-slate-900">Distribuição Visual</h2>
+                <p className="text-xs text-slate-400 mt-0.5">Como sua renda está alocada hoje vs o ideal</p>
+              </div>
+              <div className="p-6 space-y-6">
+                {/* Actual */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Distribuição atual</p>
+                    <p className="text-xs text-slate-400 font-mono">{formatCurrency(renda)}</p>
+                  </div>
+                  <div className="flex h-8 rounded-xl overflow-hidden gap-0.5">
+                    {allocs.map(a => {
+                      if (a.atualPct <= 0) return null;
+                      const colors: Record<string, string> = {
+                        fixas: "bg-rose-400",
+                        variaveis: "bg-blue-400",
+                        lazer: "bg-violet-400",
+                        investimentos: "bg-emerald-500",
+                      };
+                      return (
+                        <div
+                          key={a.key}
+                          className={cn("h-full flex items-center justify-center text-white text-[10px] font-bold transition-all duration-500", colors[a.key])}
+                          style={{ width: `${Math.min(a.atualPct, 100)}%` }}
+                          title={`${a.label}: ${a.atualPct.toFixed(1)}%`}
+                        >
+                          {a.atualPct >= 8 ? `${a.atualPct.toFixed(0)}%` : ""}
+                        </div>
+                      );
+                    })}
+                    {/* Residual */}
+                    {(() => {
+                      const used = allocs.reduce((s, a) => s + Math.min(a.atualPct, 100), 0);
+                      const rem = Math.max(0, 100 - used);
+                      return rem > 0 ? (
+                        <div className="h-full bg-slate-200 flex-1 flex items-center justify-center text-slate-500 text-[10px] font-bold">
+                          {rem.toFixed(0)}%
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                  {/* Legend */}
+                  <div className="flex flex-wrap gap-3 mt-3">
+                    {allocs.map(a => {
+                      const colors: Record<string, string> = {
+                        fixas: "bg-rose-400",
+                        variaveis: "bg-blue-400",
+                        lazer: "bg-violet-400",
+                        investimentos: "bg-emerald-500",
+                      };
+                      return (
+                        <div key={a.key} className="flex items-center gap-1.5">
+                          <div className={cn("w-2.5 h-2.5 rounded-full", colors[a.key])} />
+                          <span className="text-[10px] text-slate-500">{a.label}</span>
+                        </div>
+                      );
+                    })}
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
+                      <span className="text-[10px] text-slate-500">Livre</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-dashed border-slate-200" />
+
+                {/* Ideal */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Distribuição ideal</p>
+                    <p className="text-xs text-slate-400 font-mono">meta de alocação</p>
+                  </div>
+                  <div className="flex h-8 rounded-xl overflow-hidden gap-0.5">
+                    {allocs.map(a => {
+                      const colors: Record<string, string> = {
+                        fixas: "bg-rose-300",
+                        variaveis: "bg-blue-300",
+                        lazer: "bg-violet-300",
+                        investimentos: "bg-emerald-400",
+                      };
+                      return (
+                        <div
+                          key={a.key}
+                          className={cn("h-full flex items-center justify-center text-white text-[10px] font-bold", colors[a.key])}
+                          style={{ width: `${a.idealPct}%` }}
+                        >
+                          {a.idealPct >= 8 ? `${a.idealPct}%` : ""}
+                        </div>
+                      );
+                    })}
+                    {/* Residual 0% */}
+                    <div className="h-full bg-slate-100 flex-1 flex items-center justify-center text-slate-400 text-[10px] font-bold">
+                      {100 - allocs.reduce((s, a) => s + a.idealPct, 0)}%
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-2">
+                    Regra: Fixas ≤40% · Variáveis ≤30% · Lazer ≤10% · Investimentos ≥20%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ─── Suggestions + Impact ──────────────────────────────────── */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Suggestions */}
+            <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+                <Lightbulb className="w-4 h-4 text-amber-500" />
+                <h2 className="font-semibold text-slate-900">Sugestões de Ajuste</h2>
+                {noProblem && (
+                  <span className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <CheckCircle className="w-3 h-3" />
+                    Estrutura ideal!
+                  </span>
+                )}
+              </div>
+
+              <div className="p-6">
+                {noProblem ? (
+                  <div className="text-center py-8">
+                    <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle className="w-7 h-7 text-emerald-500" />
+                    </div>
+                    <p className="text-slate-700 font-semibold">Parabéns! Estrutura de gastos exemplar.</p>
+                    <p className="text-slate-400 text-sm mt-1">Seus percentuais estão dentro das metas ideais de alocação.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {suggestions.map((s, i) => {
+                      const Icon = s.icon;
+                      return (
+                        <div
+                          key={i}
+                          className={cn(
+                            "flex items-center gap-4 p-4 rounded-xl border transition-all",
+                            s.priority === "high"
+                              ? "border-rose-100 bg-rose-50/60"
+                              : "border-amber-100 bg-amber-50/60"
+                          )}
+                        >
+                          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0", s.bg)}>
+                            <Icon className={cn("w-5 h-5", s.color)} />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-slate-800">
+                              {s.text}{" "}
+                              <span className={cn("font-bold font-mono", s.color)}>
+                                {formatCurrency(s.value)}/mês
+                              </span>
+                            </p>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              {formatCurrency(s.value * 12)}/ano de impacto acumulado
+                            </p>
+                          </div>
+                          {s.priority === "high" && (
+                            <span className="text-[10px] font-bold text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full flex-shrink-0">
+                              Prioritário
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Static good advice */}
+                    {allocs.find(a => a.key === "investimentos" && a.status === "ok") && (
+                      <div className="flex items-center gap-4 p-4 rounded-xl border border-emerald-100 bg-emerald-50/60">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                          <TrendingUp className="w-5 h-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-800">
+                            Investimentos no alvo — considere aumentar ainda mais para metas de longo prazo.
+                          </p>
+                          <p className="text-xs text-slate-400 mt-0.5">Cada 1% a mais em investimentos pode gerar impacto significativo em 10 anos.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Impact block */}
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-sm p-6 text-white flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-amber-400" />
+                <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">Impacto do Ajuste</p>
+              </div>
+              <p className="text-slate-400 text-xs">Se você seguir as sugestões acima:</p>
+
+              {/* Economy */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <p className="text-xs text-slate-400 mb-1">Economia mensal</p>
+                <p className={cn("text-2xl font-bold font-mono", economiaMensal > 0 ? "text-rose-300" : "text-slate-500")}>
+                  {economiaMensal > 0 ? `−${formatCurrency(economiaMensal)}` : "—"}
+                </p>
+                {economiaMensal > 0 && (
+                  <p className="text-xs text-slate-500 mt-1">em gastos desnecessários</p>
+                )}
+              </div>
+
+              {/* Investment gain */}
+              <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-xl p-4">
+                <p className="text-xs text-slate-400 mb-1">Investimento adicional</p>
+                <p className={cn("text-2xl font-bold font-mono", investimentoGanho > 0 ? "text-emerald-300" : "text-slate-500")}>
+                  {investimentoGanho > 0 ? `+${formatCurrency(investimentoGanho)}` : "—"}
+                </p>
+                {investimentoGanho > 0 && (
+                  <p className="text-xs text-slate-500 mt-1">por mês em aportes</p>
+                )}
+              </div>
+
+              {/* Annual impact */}
+              {(economiaMensal > 0 || investimentoGanho > 0) && (
+                <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-4">
+                  <p className="text-xs text-slate-400 mb-1">Impacto anual</p>
+                  <p className="text-2xl font-bold font-mono text-amber-300">
+                    +{formatCurrency((economiaMensal + investimentoGanho) * 12)}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">recuperados ou investidos por ano</p>
+                </div>
+              )}
+
+              {!economiaMensal && !investimentoGanho && (
+                <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-xl p-4 text-center">
+                  <CheckCircle className="w-6 h-6 text-emerald-400 mx-auto mb-2" />
+                  <p className="text-xs text-emerald-300 font-semibold">Estrutura financeira saudável</p>
+                </div>
+              )}
+
+              {/* Reference */}
+              <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+                <p className="text-xs text-slate-500">Base de cálculo</p>
+                <p className="text-xs font-bold text-white font-mono">{formatCurrency(renda)}/mês</p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
    ROOT PAGE
    ──────────────────────────────────────────────────────────────────────────── */
-type Tab = "atual" | "enxuto";
+type Tab = "atual" | "enxuto" | "otimizacao";
 
 export default function CustoDeVidaPage() {
   const [tab, setTab] = useState<Tab>("atual");
@@ -874,15 +1486,35 @@ export default function CustoDeVidaPage() {
               Crise
             </span>
           </button>
+          <button
+            onClick={() => setTab("otimizacao")}
+            className={cn(
+              "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all",
+              tab === "otimizacao"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            )}
+          >
+            <Target className="w-4 h-4" />
+            Otimização
+            <span className={cn(
+              "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+              tab === "otimizacao"
+                ? "bg-indigo-100 text-indigo-700"
+                : "bg-slate-200 text-slate-500"
+            )}>
+              Ideal
+            </span>
+          </button>
         </div>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-32 text-slate-400">Carregando...</div>
       ) : data ? (
-        tab === "atual"
-          ? <VisaoAtual data={data} />
-          : <ModoEnxuto data={data} />
+        tab === "atual" ? <VisaoAtual data={data} />
+        : tab === "enxuto" ? <ModoEnxuto data={data} />
+        : <ModoOtimizacao data={data} />
       ) : null}
     </AppLayout>
   );
