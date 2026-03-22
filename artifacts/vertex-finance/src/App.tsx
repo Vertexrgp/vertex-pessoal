@@ -20,6 +20,7 @@ import RecorrenciasPage from "./pages/recorrencias";
 import CustoDeVidaPage from "./pages/custo-de-vida";
 import SimuladorPage from "./pages/simulador";
 import ObjetivoPage from "./pages/performance/objetivo";
+import ObjetivoFisicoPage from "./pages/performance/objetivo-fisico";
 import AvaliacaoPage from "./pages/performance/avaliacao";
 import ExamesPage from "./pages/performance/exames";
 import ProtocolosPage from "./pages/performance/protocolos";
@@ -49,6 +50,7 @@ function Router() {
       <Route path="/custo-de-vida" component={CustoDeVidaPage} />
       <Route path="/simulador-financeiro" component={SimuladorPage} />
       <Route path="/performance/objetivo" component={ObjetivoPage} />
+      <Route path="/performance/objetivo-fisico" component={ObjetivoFisicoPage} />
       <Route path="/performance/avaliacao" component={AvaliacaoPage} />
       <Route path="/performance/exames" component={ExamesPage} />
       <Route path="/performance/protocolos" component={ProtocolosPage} />

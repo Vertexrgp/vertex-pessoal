@@ -160,6 +160,26 @@ export type PerformanceExamMarker = typeof performanceExamMarkersTable.$inferSel
 export type PerformanceMealPlan = typeof performanceMealPlansTable.$inferSelect;
 export type PerformanceMeal = typeof performanceMealsTable.$inferSelect;
 
+/* ─── Objetivo Físico ─────────────────────────────────────────────────────── */
+export const performanceBodyGoalTable = pgTable("performance_body_goal", {
+  id: serial("id").primaryKey(),
+  pesoAtual: numeric("peso_atual", { precision: 6, scale: 2 }),
+  bfAtual: numeric("bf_atual", { precision: 5, scale: 2 }),
+  pesoAlvo: numeric("peso_alvo", { precision: 6, scale: 2 }),
+  bfAlvo: numeric("bf_alvo", { precision: 5, scale: 2 }),
+  prazo: date("prazo"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const performanceBodyPhotosTable = pgTable("performance_body_photos", {
+  id: serial("id").primaryKey(),
+  tipo: text("tipo").notNull(), // objetivo | atual_frente | atual_lado | atual_costas
+  imageData: text("image_data").notNull(),
+  goalId: integer("goal_id").references(() => performanceBodyGoalTable.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export type PerformanceGoal = typeof performanceGoalsTable.$inferSelect;
 export type PerformanceCurrentState = typeof performanceCurrentStateTable.$inferSelect;
 export type PerformanceExam = typeof performanceExamsTable.$inferSelect;
@@ -167,3 +187,5 @@ export type PerformanceProtocol = typeof performanceProtocolsTable.$inferSelect;
 export type PerformanceWorkout = typeof performanceWorkoutsTable.$inferSelect;
 export type PerformanceNutrition = typeof performanceNutritionTable.$inferSelect;
 export type PerformanceProgress = typeof performanceProgressTable.$inferSelect;
+export type PerformanceBodyGoal = typeof performanceBodyGoalTable.$inferSelect;
+export type PerformanceBodyPhoto = typeof performanceBodyPhotosTable.$inferSelect;

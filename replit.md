@@ -126,6 +126,45 @@ All routes under `/api`:
 - `pnpm --filter @workspace/db run push` — push schema changes to database
 - `pnpm --filter @workspace/scripts run seed` — seed the database with mock financial data
 
+## Performance Module — Pages
+
+Navigation via `PerformanceLayout.tsx` sub-tabs:
+
+| Page | Path | Description |
+|---|---|---|
+| Objetivo | `/performance/objetivo` | Define strategic goals (text + targets + deadline + motivation) |
+| **Objetivo Físico** | `/performance/objetivo-fisico` | Visual body comparison — reference photos (up to 3), current photos (Frente/Lado/Costas), numeric data (peso/BF atual + alvo + prazo), auto-calculated GAP |
+| Avaliação | `/performance/avaliacao` | Body measurements log |
+| Exames | `/performance/exames` | Lab exams with 36 markers, evolution bar charts (2-panel layout) |
+| Protocolos | `/performance/protocolos` | TRT/medication protocol tracking |
+| Treinos | `/performance/treinos` | Workout sessions |
+| Nutrição | `/performance/nutricao` | Meal plan (Plano Fev/Mar 2026, Dra. Roberta Carbonari — 5 refeições, 1669kcal/dia) |
+| Progresso | `/performance/progresso` | Evolution tracking |
+| Recomendações | `/performance/recomendacoes` | Marker analysis — 29 normal / 7 attention items from real exam |
+
+## Performance DB Tables
+
+| Table | Description |
+|---|---|
+| `performance_goals` | Strategic goals |
+| `performance_body_goal` | Numeric data for Objetivo Físico (peso/BF atual+alvo, prazo) |
+| `performance_body_photos` | Photos for Objetivo Físico (tipo: objetivo/atual_frente/atual_lado/atual_costas, imageData base64) |
+| `performance_current_state` | Body measurement assessments |
+| `performance_exams` | Lab exams |
+| `performance_exam_markers` | 36 markers from Alta Diagnósticos exam (31/01/2026) |
+| `performance_protocols` | TRT/medication protocols |
+| `performance_workouts` | Workout sessions |
+| `performance_nutrition` | Nutrition log |
+| `performance_progress` | Progress tracking |
+| `performance_meal_plans` | Meal plans |
+| `performance_meals` | Individual meals |
+
+## Real Data Seeded
+
+- **Exam**: Alta Diagnósticos, 31/01/2026, Dr. Paulo Cavalcante Muzy — 36 markers
+- **Meal Plan**: Plano Fev/Mar 2026, Dra. Roberta Carbonari — 5 refeições, 1669kcal/dia
+- User: Rafael Gomes Perez, DOB 06/05/1991, on TRT protocol
+
 ## Future Roadmap (not yet built)
 
 - Financial goals module

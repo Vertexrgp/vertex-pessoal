@@ -11,6 +11,8 @@ import {
   performanceExamMarkersTable,
   performanceMealPlansTable,
   performanceMealsTable,
+  performanceBodyGoalTable,
+  performanceBodyPhotosTable,
 } from "@workspace/db";
 import { desc, eq } from "drizzle-orm";
 
@@ -417,6 +419,72 @@ router.put("/performance/meals/:id", async (req, res) => {
 
 router.delete("/performance/meals/:id", async (req, res) => {
   await db.delete(performanceMealsTable).where(eq(performanceMealsTable.id, Number(req.params.id)));
+  res.json({ ok: true });
+});
+
+/* ─── Objetivo Físico — Body Goal ────────────────────────────────────── */
+router.get("/performance/body-goal", async (_req, res) => {
+  const rows = await db.select().from(performanceBodyGoalTable).orderBy(desc(performanceBodyGoalTable.createdAt));
+  res.json(rows[0] ?? null);
+});
+
+router.post("/performance/body-goal", async (req, res) => {
+  const b = req.body;
+  const [row] = await db.insert(performanceBodyGoalTable).values({
+    pesoAtual: b.pesoAtual ? parseNum(b.pesoAtual) : null,
+    bfAtual: b.bfAtual ? parseNum(b.bfAtual) : null,
+    pesoAlvo: b.pesoAlvo ? parseNum(b.pesoAlvo) : null,
+    bfAlvo: b.bfAlvo ? parseNum(b.bfAlvo) : null,
+    prazo: b.prazo ? String(b.prazo) : null,
+  }).returning();
+  res.json(row);
+});
+
+router.put("/performance/body-goal/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const b = req.body;
+  const [row] = await db.update(performanceBodyGoalTable)
+    .set({
+      pesoAtual: b.pesoAtual !== undefined ? (b.pesoAtual ? parseNum(b.pesoAtual) : null) : undefined,
+      bfAtual: b.bfAtual !== undefined ? (b.bfAtual ? parseNum(b.bfAtual) : null) : undefined,
+      pesoAlvo: b.pesoAlvo !== undefined ? (b.pesoAlvo ? parseNum(b.pesoAlvo) : null) : undefined,
+      bfAlvo: b.bfAlvo !== undefined ? (b.bfAlvo ? parseNum(b.bfAlvo) : null) : undefined,
+      prazo: b.prazo !== undefined ? (b.prazo || null) : undefined,
+      updatedAt: new Date(),
+    })
+    .where(eq(performanceBodyGoalTable.id, id))
+    .returning();
+  res.json(row);
+});
+
+/* ─── Objetivo Físico — Body Photos ─────────────────────────────────── */
+router.get("/performance/body-photos", async (req, res) => {
+  const goalId = req.query.goalId ? Number(req.query.goalId) : null;
+  let rows;
+  if (goalId) {
+    rows = await db.select().from(performanceBodyPhotosTable)
+      .where(eq(performanceBodyPhotosTable.goalId, goalId))
+      .orderBy(performanceBodyPhotosTable.createdAt);
+  } else {
+    rows = await db.select().from(performanceBodyPhotosTable)
+      .orderBy(performanceBodyPhotosTable.createdAt);
+  }
+  res.json(rows);
+});
+
+router.post("/performance/body-photos", async (req, res) => {
+  const b = req.body;
+  if (!b.tipo || !b.imageData) return res.status(400).json({ error: "tipo e imageData são obrigatórios" });
+  const [row] = await db.insert(performanceBodyPhotosTable).values({
+    tipo: String(b.tipo),
+    imageData: String(b.imageData),
+    goalId: b.goalId ? Number(b.goalId) : null,
+  }).returning();
+  res.json(row);
+});
+
+router.delete("/performance/body-photos/:id", async (req, res) => {
+  await db.delete(performanceBodyPhotosTable).where(eq(performanceBodyPhotosTable.id, Number(req.params.id)));
   res.json({ ok: true });
 });
 

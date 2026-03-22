@@ -2,11 +2,12 @@ import { Link, useRoute } from "wouter";
 import { cn } from "@/lib/utils";
 import {
   Target, Activity, FileText, FlaskConical,
-  Dumbbell, Utensils, TrendingUp, Lightbulb,
+  Dumbbell, Utensils, TrendingUp, Lightbulb, PersonStanding,
 } from "lucide-react";
 
 const PERF_TABS = [
   { label: "Objetivo", path: "/performance/objetivo", icon: Target },
+  { label: "Objetivo Físico", path: "/performance/objetivo-fisico", icon: PersonStanding },
   { label: "Avaliação", path: "/performance/avaliacao", icon: Activity },
   { label: "Exames", path: "/performance/exames", icon: FileText },
   { label: "Protocolos", path: "/performance/protocolos", icon: FlaskConical },
