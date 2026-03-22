@@ -3,7 +3,6 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,10 +20,12 @@ import {
   useDeleteTransaction,
   useDeleteInstallmentGroup,
 } from "@workspace/api-client-react";
-import { Plus, Search, Trash2, Edit2, Copy, FileText, CheckCircle2, Clock, CreditCard, Layers } from "lucide-react";
+import { Plus, Search, Trash2, Edit2, FileText, CheckCircle2, Clock, CreditCard, Layers } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const PAYMENT_METHODS = ["Dinheiro", "Débito", "Crédito", "Pix", "Transferência", "Outros"];
+const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 const singleSchema = z.object({
   mode: z.literal("single"),
@@ -46,7 +47,7 @@ const installmentSchema = z.object({
   mode: z.literal("installment"),
   description: z.string().min(2, "Descrição obrigatória"),
   totalAmount: z.coerce.number().min(0.01, "Valor obrigatório"),
-  totalInstallments: z.coerce.number().int().min(2, "Mínimo 2 parcelas").max(72, "Máximo 72 parcelas"),
+  totalInstallments: z.coerce.number().int().min(2).max(72),
   firstInstallmentDate: z.string().min(10),
   firstInstallmentStatus: z.enum(["planned", "paid"]),
   categoryId: z.coerce.number().nullable().optional(),
@@ -58,13 +59,23 @@ const installmentSchema = z.object({
 const formSchema = z.discriminatedUnion("mode", [singleSchema, installmentSchema]);
 type FormValues = z.infer<typeof formSchema>;
 
-function InstallmentBadge({ current, total }: { current: number; total: number }) {
-  return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200">
-      <Layers className="w-3 h-3" />
-      {current}/{total}
-    </span>
-  );
+function ParcelaBadge({ tx }: { tx: any }) {
+  if (tx.creditType === "parcelado" && tx.currentInstallment && tx.totalInstallments) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200">
+        <Layers className="w-3 h-3" />
+        {tx.currentInstallment}/{tx.totalInstallments}
+      </span>
+    );
+  }
+  if (tx.creditType === "avista") {
+    return (
+      <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-600">
+        À vista
+      </span>
+    );
+  }
+  return <span className="text-slate-300 text-xs">—</span>;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -78,6 +89,20 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
       <Clock className="w-3.5 h-3.5" /> Previsto
+    </span>
+  );
+}
+
+function PaymentBadge({ method }: { method: string | null | undefined }) {
+  if (!method) return <span className="text-slate-300 text-xs">—</span>;
+  const isCredit = method === "Crédito";
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium",
+      isCredit ? "bg-violet-50 text-violet-700 border border-violet-100" : "bg-slate-100 text-slate-600"
+    )}>
+      {isCredit && <CreditCard className="w-3 h-3" />}
+      {method}
     </span>
   );
 }
@@ -101,15 +126,12 @@ export default function TransactionsPage() {
   const createMutation = useCreateTransaction({
     mutation: { onSuccess: () => { toast({ title: "Lançamento criado!" }); setIsModalOpen(false); refetch(); } }
   });
-
   const installmentMutation = useCreateInstallments({
-    mutation: { onSuccess: (data) => { toast({ title: `${data.length} parcelas criadas com sucesso!` }); setIsModalOpen(false); refetch(); } }
+    mutation: { onSuccess: (data) => { toast({ title: `${data.length} parcelas criadas!` }); setIsModalOpen(false); refetch(); } }
   });
-
   const deleteMutation = useDeleteTransaction({
     mutation: { onSuccess: () => { toast({ title: "Lançamento excluído." }); refetch(); } }
   });
-
   const deleteGroupMutation = useDeleteInstallmentGroup({
     mutation: { onSuccess: () => { toast({ title: "Todas as parcelas excluídas." }); refetch(); } }
   });
@@ -130,9 +152,7 @@ export default function TransactionsPage() {
   const mode = useWatch({ control: form.control, name: "mode" });
   const paymentMethod = useWatch({ control: form.control, name: "paymentMethod" as any });
   const creditType = useWatch({ control: form.control, name: "creditType" as any });
-  const txType = useWatch({ control: form.control, name: "type" as any });
 
-  // When payment method is Crédito, set creditType default
   useEffect(() => {
     if (paymentMethod === "Crédito" && !creditType) {
       (form as any).setValue("creditType", "avista");
@@ -142,7 +162,6 @@ export default function TransactionsPage() {
     }
   }, [paymentMethod]);
 
-  // When creditType switches to parcelado, switch mode
   useEffect(() => {
     if (creditType === "parcelado") {
       form.setValue("mode" as any, "installment");
@@ -192,7 +211,7 @@ export default function TransactionsPage() {
 
   const handleDelete = (tx: any) => {
     if (tx.installmentGroupId) {
-      if (confirm(`Excluir todas as ${tx.totalInstallments} parcelas desta compra?`)) {
+      if (confirm(`Excluir todas as ${tx.totalInstallments} parcelas?`)) {
         deleteGroupMutation.mutate({ groupId: tx.installmentGroupId });
       }
     } else {
@@ -204,40 +223,54 @@ export default function TransactionsPage() {
 
   const isPending = createMutation.isPending || installmentMutation.isPending;
 
-  const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  const openNew = () => {
+    form.reset({
+      mode: "single", type: "expense", status: "paid",
+      competenceDate: new Date().toISOString().split("T")[0],
+      movementDate: new Date().toISOString().split("T")[0],
+      paymentMethod: "Pix",
+    } as any);
+    setIsModalOpen(true);
+  };
 
   return (
     <AppLayout>
+      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Lançamentos</h1>
-          <p className="text-slate-500 mt-1">Gerencie suas receitas e despesas.</p>
+          <h1 className="text-3xl font-display font-bold text-slate-900">Lançamentos</h1>
+          <p className="text-slate-500 mt-1">Gerencie suas receitas, despesas e transferências.</p>
         </div>
         <Button
           className="bg-primary hover:bg-primary/90 text-white rounded-xl shadow-md shadow-primary/20"
-          onClick={() => { form.reset({ mode: "single", type: "expense", status: "paid", competenceDate: new Date().toISOString().split("T")[0], movementDate: new Date().toISOString().split("T")[0], paymentMethod: "Pix" } as any); setIsModalOpen(true); }}
+          onClick={openNew}
         >
           <Plus className="w-4 h-4 mr-2" /> Novo Lançamento
         </Button>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-4">
+      <div className="flex flex-wrap gap-3 mb-5">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
             placeholder="Buscar lançamentos..."
-            className="pl-9 bg-white border-slate-200"
+            className="pl-9 bg-white border-slate-200 rounded-xl"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 flex-wrap">
           {MONTHS.map((m, i) => (
             <button
               key={i}
               onClick={() => setFilterMonth(i + 1)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterMonth === i + 1 ? "bg-primary text-white shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                filterMonth === i + 1
+                  ? "bg-primary text-white shadow-sm shadow-primary/30"
+                  : "bg-white border border-slate-200 text-slate-500 hover:bg-slate-50"
+              )}
             >
               {m}
             </button>
@@ -249,67 +282,69 @@ export default function TransactionsPage() {
       <Card className="border-slate-200 shadow-sm overflow-hidden bg-white rounded-2xl">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50/80 text-slate-500 font-medium border-b border-slate-200">
+            <thead className="bg-slate-50 text-slate-400 font-medium border-b border-slate-200 text-xs uppercase tracking-wide">
               <tr>
-                <th className="px-5 py-4">Data</th>
-                <th className="px-5 py-4">Descrição</th>
-                <th className="px-5 py-4">Categoria</th>
-                <th className="px-5 py-4">Pagamento</th>
-                <th className="px-5 py-4 text-right">Valor</th>
-                <th className="px-5 py-4">Status</th>
-                <th className="px-5 py-4 text-right">Ações</th>
+                <th className="px-5 py-3.5">Data</th>
+                <th className="px-5 py-3.5">Descrição</th>
+                <th className="px-5 py-3.5">Categoria</th>
+                <th className="px-5 py-3.5">Pagamento</th>
+                <th className="px-5 py-3.5 text-center">Parcela</th>
+                <th className="px-5 py-3.5 text-right">Valor</th>
+                <th className="px-5 py-3.5">Status</th>
+                <th className="px-5 py-3.5 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                <tr><td colSpan={7} className="p-8 text-center text-slate-400">Carregando...</td></tr>
+                <tr><td colSpan={8} className="p-8 text-center text-slate-400">Carregando...</td></tr>
               ) : !transactions?.length ? (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center">
-                    <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <td colSpan={8} className="p-14 text-center">
+                    <FileText className="w-10 h-10 text-slate-200 mx-auto mb-3" />
                     <p className="text-slate-500 font-medium">Nenhum lançamento encontrado.</p>
+                    <p className="text-slate-400 text-xs mt-1">Clique em "Novo Lançamento" para começar.</p>
                   </td>
                 </tr>
               ) : (
                 transactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-50/80 transition-colors group">
-                    <td className="px-5 py-3.5 text-slate-600 text-xs">{formatDate(tx.competenceDate)}</td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-slate-900">{tx.description}</span>
-                        {tx.totalInstallments && tx.currentInstallment && (
-                          <InstallmentBadge current={tx.currentInstallment} total={tx.totalInstallments} />
-                        )}
-                      </div>
+                  <tr key={tx.id} className="hover:bg-slate-50/60 transition-colors group">
+                    <td className="px-5 py-3.5 text-slate-400 text-xs font-medium whitespace-nowrap">
+                      {formatDate(tx.competenceDate)}
                     </td>
                     <td className="px-5 py-3.5">
-                      {tx.categoryName && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                      <span className="font-medium text-slate-900 text-sm">{tx.description}</span>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      {tx.categoryName ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
                           {tx.categoryName}
                         </span>
+                      ) : (
+                        <span className="text-slate-300 text-xs">—</span>
                       )}
                     </td>
                     <td className="px-5 py-3.5">
-                      {tx.paymentMethod && (
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${tx.paymentMethod === "Crédito" ? "bg-violet-50 text-violet-700" : "bg-slate-100 text-slate-600"}`}>
-                          {tx.paymentMethod === "Crédito" && <CreditCard className="w-3 h-3" />}
-                          {tx.paymentMethod}
-                        </span>
-                      )}
+                      <PaymentBadge method={tx.paymentMethod} />
                     </td>
-                    <td className={`px-5 py-3.5 text-right font-bold tracking-tight ${tx.type === "income" ? "text-emerald-600" : tx.type === "expense" ? "text-rose-600" : "text-slate-700"}`}>
-                      {tx.type === "expense" ? "-" : ""}{formatCurrency(tx.amount)}
+                    <td className="px-5 py-3.5 text-center">
+                      <ParcelaBadge tx={tx} />
+                    </td>
+                    <td className={cn(
+                      "px-5 py-3.5 text-right font-bold tracking-tight tabular-nums",
+                      tx.type === "income" ? "text-emerald-600" : tx.type === "expense" ? "text-rose-600" : "text-slate-600"
+                    )}>
+                      {tx.type === "expense" ? "-" : tx.type === "income" ? "+" : ""}{formatCurrency(tx.amount)}
                     </td>
                     <td className="px-5 py-3.5">
                       <StatusBadge status={tx.status} />
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-primary">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-primary hover:bg-primary/10">
                           <Edit2 className="w-3.5 h-3.5" />
                         </Button>
                         <Button
-                          variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-destructive"
+                          variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
                           title={tx.installmentGroupId ? `Excluir todas as ${tx.totalInstallments} parcelas` : "Excluir"}
                           onClick={() => handleDelete(tx)}
                         >
@@ -323,11 +358,22 @@ export default function TransactionsPage() {
             </tbody>
           </table>
         </div>
+        {transactions && transactions.length > 0 && (
+          <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex justify-between text-xs text-slate-400">
+            <span>{transactions.length} lançamento{transactions.length !== 1 ? "s" : ""}</span>
+            <span>
+              Total despesas:{" "}
+              <span className="font-semibold text-rose-600">
+                -{formatCurrency(transactions.filter(t => t.type === "expense").reduce((a, t) => a + t.amount, 0))}
+              </span>
+            </span>
+          </div>
+        )}
       </Card>
 
       {/* Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[520px] bg-white border-slate-200 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[520px] bg-white border-slate-200 max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Novo Lançamento</DialogTitle>
           </DialogHeader>
@@ -340,14 +386,27 @@ export default function TransactionsPage() {
                 <FormField control={form.control} name={"type" as any} render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipo</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        <SelectItem value="expense">Despesa</SelectItem>
-                        <SelectItem value="income">Receita</SelectItem>
-                        <SelectItem value="transfer">Transferência</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-2">
+                      {[
+                        { value: "expense", label: "Despesa", color: "hover:border-rose-400 data-[active=true]:bg-rose-50 data-[active=true]:border-rose-500 data-[active=true]:text-rose-700" },
+                        { value: "income", label: "Receita", color: "hover:border-emerald-400 data-[active=true]:bg-emerald-50 data-[active=true]:border-emerald-500 data-[active=true]:text-emerald-700" },
+                        { value: "transfer", label: "Transferência", color: "hover:border-blue-400 data-[active=true]:bg-blue-50 data-[active=true]:border-blue-500 data-[active=true]:text-blue-700" },
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          data-active={field.value === opt.value}
+                          onClick={() => field.onChange(opt.value)}
+                          className={cn(
+                            "flex-1 py-2 rounded-xl border text-sm font-medium transition-all",
+                            field.value === opt.value ? "" : "border-slate-200 text-slate-500 bg-white",
+                            opt.color
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -358,7 +417,7 @@ export default function TransactionsPage() {
                 <FormField control={form.control} name={"description" as any} render={({ field }) => (
                   <FormItem>
                     <FormLabel>Descrição</FormLabel>
-                    <FormControl><Input placeholder="Ex: iPhone 15 Pro" {...field} /></FormControl>
+                    <FormControl><Input placeholder="Ex: Mercado, Salário..." {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -385,16 +444,23 @@ export default function TransactionsPage() {
                 </FormItem>
               )} />
 
-              {/* Crédito: à vista ou parcelado */}
+              {/* Crédito fields */}
               {paymentMethod === "Crédito" && (
-                <>
+                <div className="space-y-3 bg-slate-50 rounded-xl p-4 border border-slate-200">
+                  <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide flex items-center gap-1.5">
+                    <CreditCard className="w-3.5 h-3.5" /> Cartão de Crédito
+                  </p>
                   <FormField control={form.control} name={"creditCardId" as any} render={({ field }) => (
                     <FormItem>
                       <FormLabel>Cartão</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value?.toString() ?? ""}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Selecione o cartão" /></SelectTrigger></FormControl>
                         <SelectContent>
-                          {creditCards?.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.nomeCartao} ({c.banco})</SelectItem>)}
+                          {creditCards?.map(c => (
+                            <SelectItem key={c.id} value={c.id.toString()}>
+                              {c.nomeCartao} · {c.banco}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -403,7 +469,7 @@ export default function TransactionsPage() {
                   <FormField control={form.control} name={"creditType" as any} render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo de Crédito</FormLabel>
-                      <div className="flex gap-3">
+                      <div className="flex gap-2">
                         {[
                           { value: "avista", label: "À Vista" },
                           { value: "parcelado", label: "Parcelado" },
@@ -412,7 +478,12 @@ export default function TransactionsPage() {
                             key={opt.value}
                             type="button"
                             onClick={() => field.onChange(opt.value)}
-                            className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${field.value === opt.value ? "bg-primary text-white border-primary shadow-sm" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"}`}
+                            className={cn(
+                              "flex-1 py-2 rounded-lg border text-sm font-medium transition-all",
+                              field.value === opt.value
+                                ? "bg-primary text-white border-primary shadow-sm"
+                                : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                            )}
                           >
                             {opt.label}
                           </button>
@@ -421,53 +492,53 @@ export default function TransactionsPage() {
                       <FormMessage />
                     </FormItem>
                   )} />
-                </>
+                </div>
               )}
 
               {/* Parcelamento fields */}
               {mode === "installment" && (
-                <>
-                  <div className="bg-violet-50 border border-violet-200 rounded-xl p-4 space-y-3">
-                    <p className="text-sm font-semibold text-violet-800 flex items-center gap-2">
-                      <Layers className="w-4 h-4" /> Parcelamento
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <FormField control={form.control} name={"totalInstallments" as any} render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nº de Parcelas</FormLabel>
-                          <FormControl><Input type="number" min={2} max={72} placeholder="Ex: 12" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name={"firstInstallmentDate" as any} render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Data 1ª Parcela</FormLabel>
-                          <FormControl><Input type="date" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                    </div>
-                    <FormField control={form.control} name={"firstInstallmentStatus" as any} render={({ field }) => (
+                <div className="bg-violet-50 border border-violet-200 rounded-xl p-4 space-y-3">
+                  <p className="text-sm font-semibold text-violet-800 flex items-center gap-2">
+                    <Layers className="w-4 h-4" /> Parcelamento
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField control={form.control} name={"totalInstallments" as any} render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Status da 1ª Parcela</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value ?? "paid"}>
-                          <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                          <SelectContent>
-                            <SelectItem value="paid">Já paga</SelectItem>
-                            <SelectItem value="planned">Prevista</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormLabel>Nº de Parcelas</FormLabel>
+                        <FormControl><Input type="number" min={2} max={72} placeholder="Ex: 12" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
-                    {/* Preview */}
-                    {form.getValues("totalInstallments" as any) >= 2 && form.getValues("totalAmount" as any) > 0 && (
-                      <p className="text-xs text-violet-700">
-                        ≈ {formatCurrency(form.getValues("totalAmount" as any) / form.getValues("totalInstallments" as any))} / parcela
-                      </p>
-                    )}
+                    <FormField control={form.control} name={"firstInstallmentDate" as any} render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data 1ª Parcela</FormLabel>
+                        <FormControl><Input type="date" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
                   </div>
-                </>
+                  <FormField control={form.control} name={"firstInstallmentStatus" as any} render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status da 1ª Parcela</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? "paid"}>
+                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="paid">Já paga</SelectItem>
+                          <SelectItem value="planned">Prevista</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  {(form.getValues("totalInstallments" as any) ?? 0) >= 2 && (form.getValues("totalAmount" as any) ?? 0) > 0 && (
+                    <div className="flex items-center justify-between bg-violet-100 rounded-lg px-3 py-2">
+                      <span className="text-xs text-violet-700">Valor por parcela:</span>
+                      <span className="text-sm font-bold text-violet-900">
+                        {formatCurrency((form.getValues("totalAmount" as any) ?? 0) / (form.getValues("totalInstallments" as any) ?? 1))}
+                      </span>
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Categoria + Conta */}
@@ -476,7 +547,7 @@ export default function TransactionsPage() {
                   <FormItem>
                     <FormLabel>Categoria</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value?.toString() ?? ""}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Categoria" /></SelectTrigger></FormControl>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {categories?.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
                       </SelectContent>
@@ -488,7 +559,7 @@ export default function TransactionsPage() {
                   <FormItem>
                     <FormLabel>Conta</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value?.toString() ?? ""}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Conta" /></SelectTrigger></FormControl>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {accounts?.map(a => <SelectItem key={a.id} value={a.id.toString()}>{a.name}</SelectItem>)}
                       </SelectContent>
@@ -503,7 +574,7 @@ export default function TransactionsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name={"competenceDate" as any} render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Data Competência</FormLabel>
+                      <FormLabel>Data de Competência</FormLabel>
                       <FormControl><Input type="date" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -529,12 +600,12 @@ export default function TransactionsPage() {
               <FormField control={form.control} name={"notes" as any} render={({ field }) => (
                 <FormItem>
                   <FormLabel>Observações <span className="text-slate-400 font-normal">(opcional)</span></FormLabel>
-                  <FormControl><Input placeholder="Anotações sobre este lançamento..." {...field} value={field.value ?? ""} /></FormControl>
+                  <FormControl><Input placeholder="Anotações..." {...field} value={field.value ?? ""} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
 
-              <Button type="submit" className="w-full mt-2" disabled={isPending}>
+              <Button type="submit" className="w-full mt-2 h-11" disabled={isPending}>
                 {isPending
                   ? "Salvando..."
                   : mode === "installment"

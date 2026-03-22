@@ -1,0 +1,145 @@
+Quero refinar o Vertex Finance OS para deixá-lo mais premium e mais preparado para virar produto vendável.
+
+AJUSTES PRIORITÁRIOS
+
+====================================================
+1) CARTÕES COM IDENTIDADE VISUAL MAIS PROFISSIONAL
+====================================================
+
+No módulo de Cartões de Crédito:
+
+1. Separar claramente:
+- banco/emissor
+- nome do cartão
+- bandeira
+
+Exemplo:
+- Banco: Itaú
+- Cartão: Platinum
+- Bandeira: Visa
+
+2. No cadastro de cartões, incluir campos:
+- nomeCartao
+- banco
+- bandeira
+- limiteTotal
+- diaFechamento
+- diaVencimento
+- corPrimaria
+- corSecundaria
+- ativo
+
+3. Bandeiras disponíveis:
+- Visa
+- Mastercard
+- Elo
+- American Express
+- Hipercard
+- Diners
+- Outra
+
+4. Criar identidade visual melhor para os cards dos cartões:
+- visual premium
+- bordas arredondadas
+- boa hierarquia
+- nome do cartão em destaque
+- banco menor
+- bandeira em pill/tag visual
+- usar cor coerente com o cartão cadastrado
+
+5. Melhorar os cards atuais:
+- não deixar todos com aparência muito genérica
+- usar a cor do cartão para o fundo ou gradiente
+- exibir bandeira com mais clareza
+- exibir nome do cartão e banco com mais elegância
+
+====================================================
+2) LISTA DE LANÇAMENTOS — COLUNA PRÓPRIA DE PARCELA
+====================================================
+
+Na tela de Lançamentos:
+
+1. Criar uma coluna própria chamada:
+Parcela
+
+2. Regras da coluna:
+- se compra parcelada: mostrar "1/12", "2/12", etc
+- se compra no crédito à vista: mostrar "À vista"
+- se não se aplica: mostrar "-"
+
+3. Remover a dependência de mostrar parcela apenas como badge na descrição.
+
+4. A tabela de lançamentos deve ficar assim:
+- Data
+- Descrição
+- Categoria
+- Pagamento
+- Parcela
+- Valor
+- Status
+- Ações
+
+5. Visual:
+- a coluna Parcela deve ficar limpa e elegante
+- usar badge/pill discreto
+- manter boa legibilidade
+
+====================================================
+3) MELHORAR O CADASTRO DE LANÇAMENTOS PARA CARTÃO
+====================================================
+
+No modal de Novo Lançamento:
+
+Se formaPagamento = Crédito:
+mostrar:
+- cartão
+- tipoCredito (À vista / Parcelado)
+
+Se Parcelado:
+mostrar:
+- número de parcelas
+- data da primeira parcela
+
+Garantir que:
+- o lançamento gere parcelas corretamente
+- a coluna Parcela na listagem funcione
+- a Fatura do Cartão entenda essas parcelas
+
+====================================================
+4) PADRÃO VISUAL DE PRODUTO VENDÁVEL
+====================================================
+
+Quero que essas telas tenham mais cara de produto premium e vendável:
+
+- Cartões
+- Lançamentos
+- Faturas
+
+Objetivo visual:
+- clean
+- elegante
+- moderno
+- estilo fintech pessoal premium
+- boa hierarquia visual
+- sem poluição
+- sem aparência de sistema genérico
+
+====================================================
+5) ENTREGAR
+====================================================
+
+Quero que você faça agora:
+
+1. melhorar o módulo de Cartões
+2. ajustar o cadastro de cartões
+3. criar/ajustar bandeiras
+4. melhorar o visual dos cards
+5. criar a coluna própria de Parcela na listagem de lançamentos
+6. ajustar a lógica para exibir À vista / X parcelas corretamente
+7. manter tudo funcionando com a lógica de faturas e parcelamento
+
+No final, me mostre:
+- o que foi alterado
+- como ficou a estrutura de cartões
+- como ficou a tabela de lançamentos
+- próximos ajustes recomendados para deixar isso com cara de produto premium

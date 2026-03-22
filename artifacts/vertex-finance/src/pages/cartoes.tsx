@@ -15,25 +15,28 @@ import {
   useDeleteCreditCard,
 } from "@workspace/api-client-react";
 import { formatCurrency } from "@/lib/format";
-import {
-  CreditCard,
-  Plus,
-  Edit2,
-  Trash2,
-  Receipt,
-  ArrowRight,
-} from "lucide-react";
+import { CreditCard, Plus, Edit2, Trash2, Receipt, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 
-const BANDEIRAS = ["Visa", "Mastercard", "Elo", "Amex", "Hipercard", "Outros"];
-const CARD_COLORS = ["#6366F1", "#0EA5E9", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#14B8A6", "#F97316", "#7C3AED", "#64748B"];
+export const BANDEIRAS = [
+  "Visa", "Mastercard", "Elo", "American Express", "Hipercard", "Diners", "Outra"
+] as const;
+
+export const CARD_COLORS = [
+  "#6366F1", "#8B5CF6", "#7C3AED",
+  "#0EA5E9", "#0369A1",
+  "#10B981", "#059669",
+  "#F59E0B", "#F97316",
+  "#EF4444", "#EC4899",
+  "#14B8A6", "#64748B", "#0F172A",
+];
 
 const cardSchema = z.object({
   nomeCartao: z.string().min(2, "Nome obrigatório"),
   banco: z.string().min(2, "Banco obrigatório"),
-  bandeira: z.enum(["Visa", "Mastercard", "Elo", "Amex", "Hipercard", "Outros"]),
+  bandeira: z.enum(["Visa", "Mastercard", "Elo", "American Express", "Hipercard", "Diners", "Outra"]),
   limiteTotal: z.coerce.number().min(0),
   diaFechamento: z.coerce.number().int().min(1).max(31),
   diaVencimento: z.coerce.number().int().min(1).max(31),
@@ -42,16 +45,117 @@ const cardSchema = z.object({
 });
 type CardForm = z.infer<typeof cardSchema>;
 
-function BandeiraBadge({ bandeira }: { bandeira: string }) {
-  const colors: Record<string, string> = {
-    Visa: "bg-blue-100 text-blue-800",
-    Mastercard: "bg-orange-100 text-orange-800",
-    Elo: "bg-yellow-100 text-yellow-800",
-    Amex: "bg-indigo-100 text-indigo-800",
-    Hipercard: "bg-red-100 text-red-800",
-    Outros: "bg-slate-100 text-slate-600",
+export function BandeiraBadge({ bandeira }: { bandeira: string }) {
+  const styles: Record<string, string> = {
+    Visa: "bg-blue-50 text-blue-700 border-blue-200",
+    Mastercard: "bg-orange-50 text-orange-700 border-orange-200",
+    Elo: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    "American Express": "bg-indigo-50 text-indigo-700 border-indigo-200",
+    Hipercard: "bg-red-50 text-red-700 border-red-200",
+    Diners: "bg-slate-100 text-slate-700 border-slate-200",
+    Outra: "bg-slate-100 text-slate-600 border-slate-200",
   };
-  return <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full", colors[bandeira] ?? colors.Outros)}>{bandeira}</span>;
+  return (
+    <span className={cn(
+      "text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide uppercase",
+      styles[bandeira] ?? styles.Outra
+    )}>
+      {bandeira}
+    </span>
+  );
+}
+
+export function PremiumCard({
+  card,
+  size = "md",
+  selected = false,
+  onClick,
+  onEdit,
+  onDelete,
+}: {
+  card: any;
+  size?: "sm" | "md" | "lg";
+  selected?: boolean;
+  onClick?: () => void;
+  onEdit?: (e: React.MouseEvent) => void;
+  onDelete?: (e: React.MouseEvent) => void;
+}) {
+  const sizeClasses = {
+    sm: "w-44 h-28 p-4",
+    md: "w-56 h-36 p-5",
+    lg: "w-72 h-44 p-6",
+  };
+
+  return (
+    <div
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? e => e.key === "Enter" && onClick() : undefined}
+      onClick={onClick}
+      className={cn(
+        "relative rounded-2xl cursor-default flex-shrink-0 overflow-hidden group transition-all duration-200",
+        sizeClasses[size],
+        onClick && "cursor-pointer",
+        selected ? "shadow-2xl scale-[1.04] ring-2 ring-white ring-offset-2" : onClick && "hover:scale-[1.02] hover:shadow-xl opacity-80 hover:opacity-100"
+      )}
+      style={{ backgroundColor: card.cor }}
+    >
+      {/* Gradient overlay for premium depth */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/30 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-8 translate-x-8 pointer-events-none" />
+
+      {/* Actions (hover) */}
+      {(onEdit || onDelete) && (
+        <div className="absolute top-2.5 right-2.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          {onEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="p-1.5 bg-black/20 backdrop-blur-sm rounded-lg hover:bg-black/40 transition-colors"
+            >
+              <Edit2 className="w-3 h-3 text-white" />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="p-1.5 bg-black/20 backdrop-blur-sm rounded-lg hover:bg-red-500/60 transition-colors"
+            >
+              <Trash2 className="w-3 h-3 text-white" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Top row: chip + bandeira */}
+      <div className="relative flex items-start justify-between mb-auto">
+        <div className="w-7 h-5 bg-white/30 rounded-sm border border-white/20 flex items-center justify-center">
+          <div className="w-4 h-3 border border-white/40 rounded-[1px]" />
+        </div>
+        <BandeiraBadge bandeira={card.bandeira} />
+      </div>
+
+      {/* Bottom content */}
+      <div className="absolute bottom-4 left-5 right-5">
+        <p className="text-white font-bold text-sm leading-tight truncate drop-shadow-sm">{card.nomeCartao}</p>
+        <p className="text-white/60 text-xs mt-0.5">{card.banco}</p>
+        {size !== "sm" && (
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-white/80 text-xs font-mono tracking-widest">•••• {card.diaVencimento.toString().padStart(2, "0")}</p>
+            <p className="text-white/70 text-xs font-semibold">{formatCurrency(card.limiteTotal)}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Inactive overlay */}
+      {!card.ativo && (
+        <div className="absolute inset-0 rounded-2xl bg-black/50 flex items-center justify-center backdrop-blur-[1px]">
+          <span className="text-white text-xs font-bold bg-black/60 px-3 py-1 rounded-full border border-white/20">Inativo</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function CartoesPage() {
@@ -75,6 +179,8 @@ export default function CartoesPage() {
     resolver: zodResolver(cardSchema),
     defaultValues: { cor: "#6366F1", ativo: true, bandeira: "Visa", limiteTotal: 5000, diaFechamento: 5, diaVencimento: 12 },
   });
+
+  const watchedCor = form.watch("cor");
 
   const onSubmit = (values: CardForm) => {
     if (editingCard) {
@@ -115,7 +221,7 @@ export default function CartoesPage() {
         <div className="flex gap-3">
           <Link href="/faturas">
             <Button variant="outline" className="rounded-xl gap-2">
-              <Receipt className="w-4 h-4" /> Ver Faturas <ArrowRight className="w-3 h-3" />
+              <Receipt className="w-4 h-4" /> Faturas <ArrowRight className="w-3 h-3" />
             </Button>
           </Link>
           <Button className="bg-primary hover:bg-primary/90 text-white rounded-xl shadow-md shadow-primary/20" onClick={openNew}>
@@ -124,114 +230,87 @@ export default function CartoesPage() {
         </div>
       </div>
 
-      {/* Summary */}
+      {/* KPI Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Cartões</p>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Cartões Cadastrados</p>
           <p className="text-3xl font-bold text-slate-900">{cards?.length ?? 0}</p>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Limite Total</p>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Limite Total</p>
           <p className="text-3xl font-bold text-primary">{formatCurrency(cards?.reduce((a, c) => a + c.limiteTotal, 0) ?? 0)}</p>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Ativos</p>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Ativos</p>
           <p className="text-3xl font-bold text-emerald-600">{cards?.filter(c => c.ativo).length ?? 0}</p>
         </div>
       </div>
 
-      {/* Card Grid */}
       {cards && cards.length > 0 ? (
         <>
-          <div className="flex gap-4 mb-8 flex-wrap">
+          {/* Premium Card Grid */}
+          <div className="flex gap-5 mb-8 flex-wrap">
             {cards.map(card => (
-              <div
+              <PremiumCard
                 key={card.id}
-                className="relative rounded-2xl p-5 w-56 group shadow-md transition-all hover:shadow-xl hover:scale-[1.02]"
-                style={{ backgroundColor: card.cor }}
-              >
-                <div className="flex justify-between items-start mb-8">
-                  <CreditCard className="w-7 h-7 text-white/90" />
-                  <BandeiraBadge bandeira={card.bandeira} />
-                </div>
-                <p className="text-white font-bold">{card.nomeCartao}</p>
-                <p className="text-white/70 text-xs mt-0.5 mb-3">{card.banco}</p>
-                <p className="text-white/90 text-sm font-semibold">{formatCurrency(card.limiteTotal)}</p>
-                <p className="text-white/50 text-xs">Fecha dia {card.diaFechamento} • Vence dia {card.diaVencimento}</p>
-
-                <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    type="button"
-                    onClick={() => openEdit(card)}
-                    className="p-1.5 bg-white/20 rounded-lg hover:bg-white/40 transition-colors"
-                  >
-                    <Edit2 className="w-3 h-3 text-white" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { if (confirm(`Excluir cartão "${card.nomeCartao}"?`)) deleteMutation.mutate({ id: card.id }); }}
-                    className="p-1.5 bg-white/20 rounded-lg hover:bg-red-500/60 transition-colors"
-                  >
-                    <Trash2 className="w-3 h-3 text-white" />
-                  </button>
-                </div>
-
-                {!card.ativo && (
-                  <div className="absolute inset-0 rounded-2xl bg-black/40 flex items-center justify-center">
-                    <span className="text-white text-xs font-bold bg-black/50 px-3 py-1 rounded-full">Inativo</span>
-                  </div>
-                )}
-              </div>
+                card={card}
+                size="md"
+                onEdit={e => { e.stopPropagation(); openEdit(card); }}
+                onDelete={e => { e.stopPropagation(); if (confirm(`Excluir "${card.nomeCartao}"?`)) deleteMutation.mutate({ id: card.id }); }}
+              />
             ))}
           </div>
 
-          {/* Table view */}
+          {/* Detail Table */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100">
-              <h3 className="font-semibold text-slate-900">Detalhes dos Cartões</h3>
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-semibold text-slate-900">Detalhes</h3>
+              <span className="text-xs text-slate-400">{cards.length} cartão{cards.length !== 1 ? "s" : ""}</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-slate-500">
+                <thead className="bg-slate-50 text-xs text-slate-400 uppercase tracking-wide">
                   <tr>
-                    <th className="px-6 py-3 text-left font-medium">Cartão</th>
-                    <th className="px-6 py-3 text-left font-medium">Banco / Bandeira</th>
-                    <th className="px-6 py-3 text-right font-medium">Limite</th>
-                    <th className="px-6 py-3 text-center font-medium">Fechamento</th>
-                    <th className="px-6 py-3 text-center font-medium">Vencimento</th>
-                    <th className="px-6 py-3 text-center font-medium">Status</th>
-                    <th className="px-6 py-3 text-center font-medium">Ações</th>
+                    <th className="px-6 py-3 text-left font-semibold">Cartão</th>
+                    <th className="px-6 py-3 text-left font-semibold">Banco</th>
+                    <th className="px-6 py-3 text-left font-semibold">Bandeira</th>
+                    <th className="px-6 py-3 text-right font-semibold">Limite</th>
+                    <th className="px-6 py-3 text-center font-semibold">Fechamento</th>
+                    <th className="px-6 py-3 text-center font-semibold">Vencimento</th>
+                    <th className="px-6 py-3 text-center font-semibold">Status</th>
+                    <th className="px-6 py-3 text-center font-semibold">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {cards.map(card => (
-                    <tr key={card.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={card.id} className="hover:bg-slate-50/60 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg flex-shrink-0" style={{ backgroundColor: card.cor }} />
-                          <span className="font-medium text-slate-900">{card.nomeCartao}</span>
+                          <div className="w-9 h-6 rounded-lg flex-shrink-0 shadow-sm border border-white/20" style={{ backgroundColor: card.cor }} />
+                          <span className="font-semibold text-slate-900">{card.nomeCartao}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-slate-500">
-                        {card.banco} · <BandeiraBadge bandeira={card.bandeira} />
+                      <td className="px-6 py-4 text-slate-500 text-sm">{card.banco}</td>
+                      <td className="px-6 py-4">
+                        <BandeiraBadge bandeira={card.bandeira} />
                       </td>
                       <td className="px-6 py-4 text-right font-bold text-slate-900">{formatCurrency(card.limiteTotal)}</td>
-                      <td className="px-6 py-4 text-center text-slate-500">Dia {card.diaFechamento}</td>
-                      <td className="px-6 py-4 text-center text-slate-500">Dia {card.diaVencimento}</td>
+                      <td className="px-6 py-4 text-center text-slate-500 text-sm">Dia {card.diaFechamento}</td>
+                      <td className="px-6 py-4 text-center text-slate-500 text-sm">Dia {card.diaVencimento}</td>
                       <td className="px-6 py-4 text-center">
                         {card.ativo ? (
-                          <span className="px-2 py-1 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">Ativo</span>
+                          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Ativo</span>
                         ) : (
-                          <span className="px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-500">Inativo</span>
+                          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500">Inativo</span>
                         )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex justify-center gap-2">
                           <button onClick={() => openEdit(card)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
-                            <Edit2 className="w-4 h-4 text-slate-500" />
+                            <Edit2 className="w-4 h-4 text-slate-400 hover:text-slate-700" />
                           </button>
-                          <button onClick={() => { if (confirm(`Excluir "${card.nomeCartao}"?`)) deleteMutation.mutate({ id: card.id }); }} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors">
-                            <Trash2 className="w-4 h-4 text-rose-500" />
+                          <button onClick={() => { if (confirm(`Excluir "${card.nomeCartao}"?`)) deleteMutation.mutate({ id: card.id }); }} className="p-1.5 hover:bg-rose-50 rounded-lg transition-colors">
+                            <Trash2 className="w-4 h-4 text-slate-400 hover:text-rose-600" />
                           </button>
                         </div>
                       </td>
@@ -243,61 +322,81 @@ export default function CartoesPage() {
           </div>
         </>
       ) : (
-        <div className="text-center py-20 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+        <div className="text-center py-24 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
           <CreditCard className="w-14 h-14 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-500 font-medium text-lg mb-2">Nenhum cartão cadastrado ainda</p>
+          <p className="text-slate-600 font-semibold text-lg mb-2">Nenhum cartão cadastrado</p>
           <p className="text-slate-400 text-sm mb-6">Adicione seus cartões para controlar faturas e parcelamentos.</p>
-          <Button onClick={openNew}>
-            <Plus className="w-4 h-4 mr-2" /> Adicionar Primeiro Cartão
+          <Button onClick={openNew} className="gap-2">
+            <Plus className="w-4 h-4" /> Adicionar Primeiro Cartão
           </Button>
         </div>
       )}
 
       {/* Card Modal */}
       <Dialog open={isModalOpen} onOpenChange={open => { setIsModalOpen(open); if (!open) setEditingCard(null); }}>
-        <DialogContent className="sm:max-w-[460px] bg-white border-slate-200">
+        <DialogContent className="sm:max-w-[500px] bg-white border-slate-200 max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
               {editingCard ? "Editar Cartão" : "Novo Cartão de Crédito"}
             </DialogTitle>
           </DialogHeader>
+
+          {/* Live preview */}
+          <div className="flex justify-center py-2">
+            <PremiumCard
+              size="lg"
+              card={{
+                nomeCartao: form.watch("nomeCartao") || "Nome do Cartão",
+                banco: form.watch("banco") || "Banco",
+                bandeira: form.watch("bandeira") || "Visa",
+                cor: watchedCor || "#6366F1",
+                limiteTotal: form.watch("limiteTotal") || 0,
+                diaVencimento: form.watch("diaVencimento") || 12,
+                ativo: true,
+              }}
+            />
+          </div>
+
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-1">
               <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="nomeCartao" render={({ field }) => (
-                  <FormItem className="col-span-2">
-                    <FormLabel>Nome do Cartão</FormLabel>
-                    <FormControl><Input placeholder="Ex: Nubank Roxinho" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
                 <FormField control={form.control} name="banco" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Banco / Emissor</FormLabel>
-                    <FormControl><Input placeholder="Ex: Nubank" {...field} /></FormControl>
+                    <FormControl><Input placeholder="Ex: Nubank, Itaú" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
-                <FormField control={form.control} name="bandeira" render={({ field }) => (
+                <FormField control={form.control} name="nomeCartao" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Bandeira</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        {BANDEIRAS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Nome do Cartão</FormLabel>
+                    <FormControl><Input placeholder="Ex: Platinum, Roxinho" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
               </div>
-              <FormField control={form.control} name="limiteTotal" render={({ field }) => (
+
+              <FormField control={form.control} name="bandeira" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Limite Total (R$)</FormLabel>
-                  <FormControl><Input type="number" step="100" {...field} /></FormControl>
+                  <FormLabel>Bandeira</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {BANDEIRAS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )} />
+
+              <FormField control={form.control} name="limiteTotal" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Limite Total (R$)</FormLabel>
+                  <FormControl><Input type="number" step="100" placeholder="5000" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="diaFechamento" render={({ field }) => (
                   <FormItem>
@@ -314,6 +413,7 @@ export default function CartoesPage() {
                   </FormItem>
                 )} />
               </div>
+
               <FormField control={form.control} name="cor" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cor do Cartão</FormLabel>
@@ -324,8 +424,8 @@ export default function CartoesPage() {
                         type="button"
                         onClick={() => field.onChange(color)}
                         className={cn(
-                          "w-8 h-8 rounded-full border-2 transition-transform",
-                          field.value === color ? "border-slate-900 scale-110" : "border-transparent"
+                          "w-7 h-7 rounded-full transition-all border-2",
+                          field.value === color ? "border-slate-900 scale-110 shadow-md" : "border-transparent hover:scale-105"
                         )}
                         style={{ backgroundColor: color }}
                       />
@@ -333,9 +433,10 @@ export default function CartoesPage() {
                   </div>
                 </FormItem>
               )} />
+
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full h-11"
                 disabled={createMutation.isPending || updateMutation.isPending}
               >
                 {editingCard ? "Salvar Alterações" : "Criar Cartão"}
