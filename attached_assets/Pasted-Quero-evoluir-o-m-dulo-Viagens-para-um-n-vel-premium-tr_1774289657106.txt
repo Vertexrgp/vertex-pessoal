@@ -1,0 +1,138 @@
+Quero evoluir o módulo Viagens para um nível premium, transformando-o em um sistema completo de planejamento e execução de viagens.
+
+OBJETIVO
+Permitir planejar, organizar, executar e registrar uma viagem completa, incluindo roteiro, lugares, mapa, despesas e memória.
+
+====================================================
+1) NOVA ESTRUTURA
+====================================================
+
+Viagens
+
+- Minhas Viagens
+   - Detalhe da viagem com abas:
+      - Visão Geral
+      - Roteiro
+      - Lugares
+      - Mapa
+      - Despesas
+      - Checklist
+      - Fotos & Memórias
+
+====================================================
+2) LUGARES
+====================================================
+
+Criar entidade principal:
+
+Lugares
+
+Cada lugar deve ter:
+
+- nome
+- endereço
+- categoria (restaurante, ponto turístico, etc.)
+- descrição
+- notas
+- horário
+- como chegar
+- prioridade
+- status (planejado / visitado)
+
+====================================================
+3) ROTEIRO
+====================================================
+
+Melhorar o roteiro:
+
+- separar por dias
+- permitir ordem dos locais
+- incluir horário
+- vincular com lugares
+
+====================================================
+4) MAPA
+====================================================
+
+Criar visão inicial:
+
+- lista de lugares com localização
+- (fase futura: mapa interativo com API)
+
+====================================================
+5) DESPESAS
+====================================================
+
+Integrar com financeiro:
+
+- registrar gastos da viagem
+- acompanhar orçamento
+- impacto no sistema financeiro
+
+====================================================
+6) CHECKLIST
+====================================================
+
+Manter e melhorar:
+
+- itens antes da viagem
+- itens durante a viagem
+
+====================================================
+7) FOTOS & MEMÓRIA
+====================================================
+
+Criar:
+
+- upload de fotos
+- organização por viagem
+- organização por dia
+- notas da viagem
+
+====================================================
+8) DICAS
+====================================================
+
+Criar base para:
+
+- sugestões de lugares
+- sugestões de roteiro
+
+====================================================
+9) INTEGRAÇÕES
+====================================================
+
+Integrar com:
+
+- Agenda (datas da viagem)
+- Financeiro (orçamento e gastos)
+- Crescimento (objetivos de viagem)
+
+====================================================
+10) VISUAL
+====================================================
+
+Quero:
+
+- layout premium
+- sensação de planejamento + experiência
+- não parecer planilha
+- estilo moderno e limpo
+
+====================================================
+11) ENTREGAR
+====================================================
+
+Implementar:
+
+1. estrutura completa do módulo
+2. entidade lugares
+3. melhoria do roteiro
+4. base de mapa
+5. upload de fotos
+6. integração com financeiro e agenda
+
+No final, me mostrar:
+- como ficou a estrutura
+- como funciona o fluxo da viagem
+- próximos passos para evoluir

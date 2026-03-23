@@ -1,154 +1,204 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { viagensTripsTable, viagensExpensesTable, viagensChecklistTable, viagensRoteiroTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import {
+  viagensTripsTable,
+  viagensExpensesTable,
+  viagensChecklistTable,
+  viagensRoteiroTable,
+  viagensLugaresTable,
+  viagensMemoriasTable,
+} from "@workspace/db";
+import { eq, asc, desc } from "drizzle-orm";
 
 const router = Router();
 
-// Trips
+// ── TRIPS ─────────────────────────────────────────────────────────────────────
+
 router.get("/viagens/trips", async (_req, res) => {
-  try {
-    const trips = await db.select().from(viagensTripsTable).orderBy(viagensTripsTable.dataInicio);
-    res.json(trips);
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao buscar viagens" });
-  }
+  const trips = await db.select().from(viagensTripsTable).orderBy(desc(viagensTripsTable.createdAt));
+  res.json(trips);
 });
 
 router.get("/viagens/trips/:id", async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const [trip] = await db.select().from(viagensTripsTable).where(eq(viagensTripsTable.id, id));
-    if (!trip) return res.status(404).json({ error: "Viagem não encontrada" });
-    const expenses = await db.select().from(viagensExpensesTable).where(eq(viagensExpensesTable.viagemId, id));
-    const checklist = await db.select().from(viagensChecklistTable).where(eq(viagensChecklistTable.viagemId, id));
-    const roteiro = await db.select().from(viagensRoteiroTable).where(eq(viagensRoteiroTable.viagemId, id)).orderBy(viagensRoteiroTable.dia, viagensRoteiroTable.ordem);
-    res.json({ trip, expenses, checklist, roteiro });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao buscar viagem" });
-  }
+  const id = Number(req.params.id);
+  const [trip] = await db.select().from(viagensTripsTable).where(eq(viagensTripsTable.id, id));
+  if (!trip) return res.status(404).json({ error: "Not found" });
+
+  const [expenses, checklist, roteiro, lugares, memorias] = await Promise.all([
+    db.select().from(viagensExpensesTable).where(eq(viagensExpensesTable.viagemId, id)).orderBy(desc(viagensExpensesTable.createdAt)),
+    db.select().from(viagensChecklistTable).where(eq(viagensChecklistTable.viagemId, id)).orderBy(asc(viagensChecklistTable.createdAt)),
+    db.select().from(viagensRoteiroTable).where(eq(viagensRoteiroTable.viagemId, id)).orderBy(asc(viagensRoteiroTable.dia), asc(viagensRoteiroTable.ordem)),
+    db.select().from(viagensLugaresTable).where(eq(viagensLugaresTable.viagemId, id)).orderBy(asc(viagensLugaresTable.createdAt)),
+    db.select().from(viagensMemoriasTable).where(eq(viagensMemoriasTable.viagemId, id)).orderBy(desc(viagensMemoriasTable.createdAt)),
+  ]);
+
+  res.json({ trip, expenses, checklist, roteiro, lugares, memorias });
 });
 
 router.post("/viagens/trips", async (req, res) => {
-  try {
-    const { destino, dataInicio, dataFim, orcamento, status, descricao, capaUrl } = req.body;
-    if (!destino) return res.status(400).json({ error: "destino é obrigatório" });
-    const [trip] = await db
-      .insert(viagensTripsTable)
-      .values({ destino, dataInicio, dataFim, orcamento, status: status || "planejando", descricao, capaUrl })
-      .returning();
-    res.json(trip);
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao criar viagem" });
-  }
+  const { destino, dataInicio, dataFim, orcamento, status, descricao, pais, cidade, moeda } = req.body;
+  if (!destino) return res.status(400).json({ error: "destino obrigatório" });
+  const [trip] = await db.insert(viagensTripsTable).values({
+    destino, dataInicio: dataInicio || null, dataFim: dataFim || null,
+    orcamento: orcamento ? String(orcamento) : null,
+    status: status || "planejando", descricao: descricao || null,
+    pais: pais || null, cidade: cidade || null, moeda: moeda || "BRL",
+  }).returning();
+  res.json(trip);
 });
 
 router.put("/viagens/trips/:id", async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const { destino, dataInicio, dataFim, orcamento, status, descricao, capaUrl } = req.body;
-    const [updated] = await db
-      .update(viagensTripsTable)
-      .set({ destino, dataInicio, dataFim, orcamento, status, descricao, capaUrl, updatedAt: new Date() })
-      .where(eq(viagensTripsTable.id, id))
-      .returning();
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao atualizar viagem" });
-  }
+  const id = Number(req.params.id);
+  const { destino, dataInicio, dataFim, orcamento, status, descricao, pais, cidade, moeda } = req.body;
+  const [trip] = await db.update(viagensTripsTable).set({
+    destino, dataInicio: dataInicio || null, dataFim: dataFim || null,
+    orcamento: orcamento ? String(orcamento) : null,
+    status, descricao: descricao || null,
+    pais: pais || null, cidade: cidade || null, moeda: moeda || "BRL",
+    updatedAt: new Date(),
+  }).where(eq(viagensTripsTable.id, id)).returning();
+  res.json(trip);
 });
 
 router.delete("/viagens/trips/:id", async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    await db.delete(viagensChecklistTable).where(eq(viagensChecklistTable.viagemId, id));
-    await db.delete(viagensExpensesTable).where(eq(viagensExpensesTable.viagemId, id));
-    await db.delete(viagensRoteiroTable).where(eq(viagensRoteiroTable.viagemId, id));
-    await db.delete(viagensTripsTable).where(eq(viagensTripsTable.id, id));
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao deletar viagem" });
-  }
+  const id = Number(req.params.id);
+  await db.delete(viagensMemoriasTable).where(eq(viagensMemoriasTable.viagemId, id));
+  await db.delete(viagensRoteiroTable).where(eq(viagensRoteiroTable.viagemId, id));
+  await db.delete(viagensLugaresTable).where(eq(viagensLugaresTable.viagemId, id));
+  await db.delete(viagensExpensesTable).where(eq(viagensExpensesTable.viagemId, id));
+  await db.delete(viagensChecklistTable).where(eq(viagensChecklistTable.viagemId, id));
+  await db.delete(viagensTripsTable).where(eq(viagensTripsTable.id, id));
+  res.json({ ok: true });
 });
 
-// Expenses
+// ── LUGARES ───────────────────────────────────────────────────────────────────
+
+router.post("/viagens/trips/:id/lugares", async (req, res) => {
+  const viagemId = Number(req.params.id);
+  const { nome, endereco, categoria, descricao, notas, horario, comoChegar, prioridade, status, lat, lng } = req.body;
+  if (!nome) return res.status(400).json({ error: "nome obrigatório" });
+  const [lugar] = await db.insert(viagensLugaresTable).values({
+    viagemId, nome, endereco: endereco || null,
+    categoria: categoria || "ponto_turistico",
+    descricao: descricao || null, notas: notas || null,
+    horario: horario || null, comoChegar: comoChegar || null,
+    prioridade: prioridade || "media", status: status || "planejado",
+    lat: lat ? String(lat) : null, lng: lng ? String(lng) : null,
+  }).returning();
+  res.json(lugar);
+});
+
+router.put("/viagens/lugares/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const { nome, endereco, categoria, descricao, notas, horario, comoChegar, prioridade, status, lat, lng } = req.body;
+  const [lugar] = await db.update(viagensLugaresTable).set({
+    nome, endereco: endereco || null,
+    categoria: categoria || "ponto_turistico",
+    descricao: descricao || null, notas: notas || null,
+    horario: horario || null, comoChegar: comoChegar || null,
+    prioridade: prioridade || "media", status: status || "planejado",
+    lat: lat ? String(lat) : null, lng: lng ? String(lng) : null,
+  }).where(eq(viagensLugaresTable.id, id)).returning();
+  res.json(lugar);
+});
+
+router.delete("/viagens/lugares/:id", async (req, res) => {
+  await db.delete(viagensLugaresTable).where(eq(viagensLugaresTable.id, Number(req.params.id)));
+  res.json({ ok: true });
+});
+
+// ── EXPENSES ──────────────────────────────────────────────────────────────────
+
 router.post("/viagens/trips/:id/expenses", async (req, res) => {
-  try {
-    const viagemId = parseInt(req.params.id);
-    const { descricao, valor, categoria, data } = req.body;
-    if (!descricao || !valor) return res.status(400).json({ error: "descricao e valor são obrigatórios" });
-    const [expense] = await db.insert(viagensExpensesTable).values({ viagemId, descricao, valor, categoria: categoria || "outros", data }).returning();
-    res.json(expense);
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao criar despesa" });
-  }
+  const viagemId = Number(req.params.id);
+  const { descricao, valor, categoria, data } = req.body;
+  if (!descricao || !valor) return res.status(400).json({ error: "descricao e valor obrigatórios" });
+  const [exp] = await db.insert(viagensExpensesTable).values({
+    viagemId, descricao, valor: String(valor), categoria: categoria || "outros", data: data || null,
+  }).returning();
+  res.json(exp);
 });
 
 router.delete("/viagens/expenses/:id", async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    await db.delete(viagensExpensesTable).where(eq(viagensExpensesTable.id, id));
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao deletar despesa" });
-  }
+  await db.delete(viagensExpensesTable).where(eq(viagensExpensesTable.id, Number(req.params.id)));
+  res.json({ ok: true });
 });
 
-// Checklist
+// ── CHECKLIST ─────────────────────────────────────────────────────────────────
+
 router.post("/viagens/trips/:id/checklist", async (req, res) => {
-  try {
-    const viagemId = parseInt(req.params.id);
-    const { item } = req.body;
-    if (!item) return res.status(400).json({ error: "item é obrigatório" });
-    const [check] = await db.insert(viagensChecklistTable).values({ viagemId, item }).returning();
-    res.json(check);
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao criar item" });
-  }
+  const viagemId = Number(req.params.id);
+  const { item, fase } = req.body;
+  if (!item) return res.status(400).json({ error: "item obrigatório" });
+  const [check] = await db.insert(viagensChecklistTable).values({
+    viagemId, item, fase: fase || "antes",
+  }).returning();
+  res.json(check);
 });
 
 router.put("/viagens/checklist/:id", async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const { concluido } = req.body;
-    const [updated] = await db.update(viagensChecklistTable).set({ concluido }).where(eq(viagensChecklistTable.id, id)).returning();
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao atualizar item" });
-  }
+  const { concluido, item, fase } = req.body;
+  const [check] = await db.update(viagensChecklistTable).set({
+    ...(concluido !== undefined ? { concluido } : {}),
+    ...(item ? { item } : {}),
+    ...(fase ? { fase } : {}),
+  }).where(eq(viagensChecklistTable.id, Number(req.params.id))).returning();
+  res.json(check);
 });
 
 router.delete("/viagens/checklist/:id", async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    await db.delete(viagensChecklistTable).where(eq(viagensChecklistTable.id, id));
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao deletar item" });
-  }
+  await db.delete(viagensChecklistTable).where(eq(viagensChecklistTable.id, Number(req.params.id)));
+  res.json({ ok: true });
 });
 
-// Roteiro
+// ── ROTEIRO ───────────────────────────────────────────────────────────────────
+
 router.post("/viagens/trips/:id/roteiro", async (req, res) => {
-  try {
-    const viagemId = parseInt(req.params.id);
-    const { dia, titulo, descricao, hora, ordem } = req.body;
-    if (!dia || !titulo) return res.status(400).json({ error: "dia e titulo são obrigatórios" });
-    const [item] = await db.insert(viagensRoteiroTable).values({ viagemId, dia, titulo, descricao, hora, ordem: ordem || 0 }).returning();
-    res.json(item);
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao criar roteiro" });
-  }
+  const viagemId = Number(req.params.id);
+  const { dia, data, titulo, descricao, hora, tipo, ordem, lugarId } = req.body;
+  if (!titulo || !dia) return res.status(400).json({ error: "titulo e dia obrigatórios" });
+  const [item] = await db.insert(viagensRoteiroTable).values({
+    viagemId, lugarId: lugarId ? Number(lugarId) : null,
+    dia: Number(dia), data: data || null,
+    titulo, descricao: descricao || null,
+    hora: hora || null, tipo: tipo || "atividade",
+    ordem: ordem ? Number(ordem) : 0,
+  }).returning();
+  res.json(item);
 });
 
 router.delete("/viagens/roteiro/:id", async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    await db.delete(viagensRoteiroTable).where(eq(viagensRoteiroTable.id, id));
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao deletar roteiro" });
-  }
+  await db.delete(viagensRoteiroTable).where(eq(viagensRoteiroTable.id, Number(req.params.id)));
+  res.json({ ok: true });
+});
+
+// ── MEMÓRIAS ──────────────────────────────────────────────────────────────────
+
+router.post("/viagens/trips/:id/memorias", async (req, res) => {
+  const viagemId = Number(req.params.id);
+  const { titulo, conteudo, data, dia, tipo, fotoUrl } = req.body;
+  if (!titulo) return res.status(400).json({ error: "titulo obrigatório" });
+  const [mem] = await db.insert(viagensMemoriasTable).values({
+    viagemId, titulo, conteudo: conteudo || null,
+    data: data || null, dia: dia ? Number(dia) : null,
+    tipo: tipo || "nota", fotoUrl: fotoUrl || null,
+  }).returning();
+  res.json(mem);
+});
+
+router.put("/viagens/memorias/:id", async (req, res) => {
+  const { titulo, conteudo, data, dia, tipo, fotoUrl } = req.body;
+  const [mem] = await db.update(viagensMemoriasTable).set({
+    titulo, conteudo: conteudo || null,
+    data: data || null, dia: dia ? Number(dia) : null,
+    tipo: tipo || "nota", fotoUrl: fotoUrl || null,
+  }).where(eq(viagensMemoriasTable.id, Number(req.params.id))).returning();
+  res.json(mem);
+});
+
+router.delete("/viagens/memorias/:id", async (req, res) => {
+  await db.delete(viagensMemoriasTable).where(eq(viagensMemoriasTable.id, Number(req.params.id)));
+  res.json({ ok: true });
 });
 
 export default router;
