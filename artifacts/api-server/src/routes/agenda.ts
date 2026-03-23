@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { agendaEventsTable } from "@workspace/db";
+import { agendaEventsTable, agendaPlannerTasksTable } from "@workspace/db";
 import { eq, gte, lte, and } from "drizzle-orm";
 
 const router = Router();
 
+// ─── Events ───────────────────────────────────────────────
 router.get("/agenda/events", async (req, res) => {
   try {
     const { month, year } = req.query;
@@ -63,6 +64,107 @@ router.delete("/agenda/events/:id", async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: "Erro ao deletar evento" });
+  }
+});
+
+// ─── Planner Tasks ────────────────────────────────────────
+router.get("/agenda/planner", async (req, res) => {
+  try {
+    const { semana } = req.query;
+    if (!semana) return res.status(400).json({ error: "semana é obrigatória (YYYY-MM-DD)" });
+    const tasks = await db
+      .select()
+      .from(agendaPlannerTasksTable)
+      .where(eq(agendaPlannerTasksTable.semanaInicio, String(semana)))
+      .orderBy(agendaPlannerTasksTable.ordem);
+    res.json(tasks);
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao buscar tarefas" });
+  }
+});
+
+router.post("/agenda/planner", async (req, res) => {
+  try {
+    const { semanaInicio, titulo, descricao, prioridade, categoria, estimativaTempo, status, diaSemana, ordem, observacao } = req.body;
+    if (!semanaInicio || !titulo) return res.status(400).json({ error: "semanaInicio e titulo são obrigatórios" });
+    const [task] = await db
+      .insert(agendaPlannerTasksTable)
+      .values({
+        semanaInicio,
+        titulo,
+        descricao,
+        prioridade: prioridade || "media",
+        categoria,
+        estimativaTempo,
+        status: status || "pendente",
+        diaSemana: diaSemana || null,
+        ordem: ordem || 0,
+        observacao,
+      })
+      .returning();
+    res.json(task);
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao criar tarefa" });
+  }
+});
+
+router.put("/agenda/planner/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { titulo, descricao, prioridade, categoria, estimativaTempo, status, diaSemana, ordem, observacao } = req.body;
+    const [updated] = await db
+      .update(agendaPlannerTasksTable)
+      .set({ titulo, descricao, prioridade, categoria, estimativaTempo, status, diaSemana, ordem, observacao, updatedAt: new Date() })
+      .where(eq(agendaPlannerTasksTable.id, id))
+      .returning();
+    if (!updated) return res.status(404).json({ error: "Tarefa não encontrada" });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao atualizar tarefa" });
+  }
+});
+
+router.delete("/agenda/planner/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(agendaPlannerTasksTable).where(eq(agendaPlannerTasksTable.id, id));
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao deletar tarefa" });
+  }
+});
+
+router.post("/agenda/planner/:id/duplicar", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [original] = await db.select().from(agendaPlannerTasksTable).where(eq(agendaPlannerTasksTable.id, id));
+    if (!original) return res.status(404).json({ error: "Tarefa não encontrada" });
+    const { id: _id, createdAt: _c, updatedAt: _u, ...rest } = original;
+    const [copy] = await db.insert(agendaPlannerTasksTable).values({ ...rest, titulo: `${original.titulo} (cópia)`, status: "pendente", diaSemana: null }).returning();
+    res.json(copy);
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao duplicar tarefa" });
+  }
+});
+
+router.post("/agenda/planner/:id/proxima-semana", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [task] = await db.select().from(agendaPlannerTasksTable).where(eq(agendaPlannerTasksTable.id, id));
+    if (!task) return res.status(404).json({ error: "Tarefa não encontrada" });
+    // Calculate next week Monday
+    const current = new Date(task.semanaInicio);
+    current.setDate(current.getDate() + 7);
+    const nextWeek = current.toISOString().split("T")[0];
+    const { id: _id, createdAt: _c, updatedAt: _u, ...rest } = task;
+    const [moved] = await db
+      .insert(agendaPlannerTasksTable)
+      .values({ ...rest, semanaInicio: nextWeek, status: "pendente", diaSemana: null })
+      .returning();
+    await db.update(agendaPlannerTasksTable).set({ status: "proxima_semana", updatedAt: new Date() }).where(eq(agendaPlannerTasksTable.id, id));
+    res.json(moved);
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao mover tarefa" });
   }
 });
 

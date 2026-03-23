@@ -33,6 +33,7 @@ import RecomendacoesPage from "./pages/performance/recomendacoes";
 import AgendaPage from "./pages/agenda/index";
 import EventosPage from "./pages/agenda/eventos";
 import LembretesPage from "./pages/agenda/lembretes";
+import PlanejamentoSemanalPage from "./pages/agenda/planejamento-semanal";
 
 import ViagensPage from "./pages/viagens/index";
 import ViagemDetailPage from "./pages/viagens/[id]";
@@ -68,6 +69,7 @@ function Router() {
       <Route path="/performance/progresso" component={ProgressoPage} />
       <Route path="/performance/recomendacoes" component={RecomendacoesPage} />
 
+      <Route path="/agenda/planejamento-semanal" component={PlanejamentoSemanalPage} />
       <Route path="/agenda" component={AgendaPage} />
       <Route path="/agenda/eventos" component={EventosPage} />
       <Route path="/agenda/lembretes" component={LembretesPage} />

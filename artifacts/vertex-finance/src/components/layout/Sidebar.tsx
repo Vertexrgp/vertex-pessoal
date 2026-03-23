@@ -116,6 +116,7 @@ const modules: Module[] = [
     color: "text-sky-600",
     prefixes: ["/agenda"],
     items: [
+      { name: "Planejamento Semanal", path: "/agenda/planejamento-semanal", icon: CalendarDays },
       { name: "Visão Geral", path: "/agenda", icon: CalendarCheck },
       { name: "Eventos", path: "/agenda/eventos", icon: CalendarDays },
       { name: "Lembretes", path: "/agenda/lembretes", icon: Bell },

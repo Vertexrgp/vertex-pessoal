@@ -1,0 +1,184 @@
+Quero criar no Vertex OS uma tela de Agenda inspirada no meu modelo real de planejamento semanal.
+
+OBJETIVO
+Criar uma tela premium de Planejamento Semanal, onde eu possa organizar primeiro tudo o que preciso fazer na semana e depois distribuir essas tarefas nos dias da semana.
+
+CONCEITO
+Hoje eu organizo minha agenda assim:
+
+- lado direito: tudo o que preciso fazer na semana
+- lado esquerdo: os dias da semana, onde distribuo essas tarefas
+
+Quero reproduzir essa lógica no sistema.
+
+====================================================
+1) NOME DA TELA
+====================================================
+
+Criar módulo:
+Agenda
+
+Criar subpágina principal:
+Planejamento Semanal
+
+Rota sugerida:
+/agenda/planejamento-semanal
+
+====================================================
+2) ESTRUTURA DA TELA
+====================================================
+
+A tela deve ter 2 grandes áreas:
+
+A) PAINEL DE TAREFAS DA SEMANA
+B) PAINEL DOS DIAS DA SEMANA
+
+====================================================
+3) PAINEL DE TAREFAS DA SEMANA
+====================================================
+
+Criar um bloco chamado:
+
+Tarefas da Semana
+
+Função:
+- servir como área de captura e organização semanal
+- eu adiciono tudo que preciso fazer
+- depois distribuo para os dias
+
+Cada tarefa deve poder ter:
+- título
+- descrição curta
+- prioridade (baixa, média, alta)
+- categoria
+- estimativa de tempo
+- status
+- observação
+
+Também quero:
+- adicionar nova tarefa
+- editar tarefa
+- excluir tarefa
+- duplicar tarefa
+- marcar concluída
+- mover para próxima semana
+
+====================================================
+4) PAINEL DOS DIAS DA SEMANA
+====================================================
+
+Criar colunas ou blocos para:
+
+- Segunda
+- Terça
+- Quarta
+- Quinta
+- Sexta
+- Sábado
+- Domingo
+
+Cada dia deve permitir:
+- receber tarefas arrastadas do painel semanal
+- reordenar tarefas dentro do dia
+- adicionar tarefas diretamente no dia
+- marcar tarefa concluída
+
+====================================================
+5) INTERAÇÃO PRINCIPAL
+====================================================
+
+Quero que a lógica principal seja:
+
+1. criar tarefas no bloco "Tarefas da Semana"
+2. arrastar ou distribuir essas tarefas para os dias
+3. o que não for distribuído continua no painel semanal
+4. tarefas concluídas podem ir para uma área de concluídos
+
+====================================================
+6) ÁREAS EXTRAS
+====================================================
+
+Adicionar também:
+
+- Não alocados
+- Concluídos
+- Mover para próxima semana
+
+Essas áreas podem ser simples, mas precisam existir.
+
+====================================================
+7) VISUAL / UX
+====================================================
+
+Quero visual premium, elegante e com cara de planner executivo.
+
+Referência:
+- agenda física refinada
+- visão limpa
+- muito espaço em branco
+- tipografia clara
+- sem poluição
+- sem cara de calendário engessado
+
+A tela deve parecer:
+- um planner moderno
+- um painel de organização semanal
+- algo entre Notion premium + agenda executiva
+
+====================================================
+8) COMPORTAMENTOS IMPORTANTES
+====================================================
+
+Implementar:
+
+- drag and drop entre painel semanal e dias
+- reorder de tarefas
+- salvar estado da semana
+- visual de prioridade
+- visual de status
+- checkbox de concluído
+
+====================================================
+9) DADOS / ESTRUTURA
+====================================================
+
+Criar estrutura de dados para:
+
+- semana
+- tarefas
+- dia vinculado (opcional)
+- ordem dentro do dia
+- concluído
+- prioridade
+- categoria
+
+====================================================
+10) FUTURO
+====================================================
+
+Preparar a arquitetura para no futuro:
+- integrar com calendário
+- integrar com financeiro
+- integrar com viagens
+- integrar com performance
+- gerar planejamento com IA
+
+====================================================
+11) ENTREGAR
+====================================================
+
+Quero que você implemente agora:
+
+1. módulo Agenda
+2. página Planejamento Semanal
+3. painel Tarefas da Semana
+4. painel com dias da semana
+5. drag and drop
+6. concluídos / não alocados
+7. visual premium e elegante
+
+No final, me mostre:
+- como ficou a estrutura da tela
+- como funciona o fluxo semanal
+- como as tarefas são armazenadas
+- próximos ajustes recomendados
