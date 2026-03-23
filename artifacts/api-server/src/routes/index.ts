@@ -19,6 +19,7 @@ import eventsRouter from "./events";
 import crescimentoRouter from "./crescimento";
 import conhecimentoRouter from "./conhecimento";
 import sugestoesRouter from "./sugestoes";
+import globalDashboardRouter from "./global-dashboard";
 
 const router: IRouter = Router();
 
@@ -42,5 +43,6 @@ router.use(eventsRouter);
 router.use(crescimentoRouter);
 router.use(conhecimentoRouter);
 router.use(sugestoesRouter);
+router.use(globalDashboardRouter);
 
 export default router;

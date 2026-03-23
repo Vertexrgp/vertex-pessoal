@@ -1,0 +1,128 @@
+Quero criar um Dashboard Global no Vertex OS com nível executivo, funcionando como um painel de decisão da vida do usuário.
+
+OBJETIVO
+Criar um dashboard que mostre em poucos segundos:
+
+- o que precisa ser feito hoje
+- situação financeira
+- status da performance
+- progresso das metas
+- alertas importantes
+
+====================================================
+1) CONCEITO
+====================================================
+
+O dashboard deve ser:
+
+- simples
+- claro
+- objetivo
+- acionável
+
+Não quero excesso de informação.
+Quero foco em decisão.
+
+====================================================
+2) ESTRUTURA
+====================================================
+
+Criar blocos:
+
+1. HOJE
+2. ALERTAS
+3. FINANCEIRO
+4. PERFORMANCE
+5. DIREÇÃO (CRESCIMENTO)
+
+====================================================
+3) BLOCO HOJE
+====================================================
+
+Mostrar:
+
+- foco do dia (top 3 tarefas)
+- tarefas críticas
+- tarefas postergadas
+- próximos compromissos
+
+====================================================
+4) BLOCO ALERTAS
+====================================================
+
+Mostrar alertas como:
+
+- tarefas atrasadas
+- orçamento estourando
+- metas sem progresso
+- inconsistência em performance
+
+====================================================
+5) BLOCO FINANCEIRO
+====================================================
+
+Mostrar:
+
+- saldo do mês
+- gastos vs planejado
+- custo de vida
+- resultado
+
+====================================================
+6) BLOCO PERFORMANCE
+====================================================
+
+Mostrar:
+
+- treino do dia
+- consistência da semana
+- status geral
+
+====================================================
+7) BLOCO DIREÇÃO
+====================================================
+
+Mostrar:
+
+- metas ativas
+- progresso
+- próximo checkpoint
+- risco de atraso
+
+====================================================
+8) VISUAL
+====================================================
+
+Quero:
+
+- layout premium
+- limpo
+- com hierarquia clara
+- leitura rápida
+
+====================================================
+9) INTEGRAÇÃO
+====================================================
+
+Usar dados de:
+
+- Agenda
+- Financeiro
+- Performance
+- Crescimento
+
+====================================================
+10) ENTREGAR
+====================================================
+
+Implementar:
+
+1. dashboard global
+2. blocos estruturados
+3. integração entre módulos
+4. alertas inteligentes
+
+No final, me mostrar:
+- estrutura do dashboard
+- como os dados são puxados
+- como o usuário usa no dia a dia
