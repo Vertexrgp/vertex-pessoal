@@ -27,7 +27,7 @@ const navItems = [
   { name: "Configurações", path: "/settings", icon: Settings },
 ];
 
-export function AppLayout({ children }: { children: ReactNode }) {
+export function AppLayout({ children, noPadding }: { children: ReactNode; noPadding?: boolean }) {
   return (
     <div className="flex min-h-screen bg-background text-slate-900 font-sans selection:bg-primary/20">
       <Sidebar />
@@ -77,9 +77,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </Sheet>
         </header>
 
-        <div className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
-          {children}
-        </div>
+        {noPadding ? (
+          <div className="flex-1 flex flex-col animate-in fade-in duration-500">{children}</div>
+        ) : (
+          <div className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
+            {children}
+          </div>
+        )}
       </main>
     </div>
   );

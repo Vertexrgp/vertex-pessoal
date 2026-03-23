@@ -66,3 +66,21 @@ export const growthVision = pgTable("growth_vision", {
 });
 
 export type GrowthVision = typeof growthVision.$inferSelect;
+
+export const visionBoardItems = pgTable("vision_board_items", {
+  id: serial("id").primaryKey(),
+  tipo: text("tipo").notNull().default("texto"),
+  conteudo: text("conteudo").notNull(),
+  x: integer("x").notNull().default(100),
+  y: integer("y").notNull().default(100),
+  largura: integer("largura").notNull().default(220),
+  altura: integer("altura").notNull().default(160),
+  zIndex: integer("z_index").notNull().default(1),
+  cor: text("cor").notNull().default("#FFFFFF"),
+  fontSize: integer("font_size").notNull().default(16),
+  rotacao: integer("rotacao").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type VisionBoardItem = typeof visionBoardItems.$inferSelect;

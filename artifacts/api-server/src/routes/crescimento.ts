@@ -6,6 +6,7 @@ import {
   growthPlans,
   growthCheckpoints,
   growthVision,
+  visionBoardItems,
 } from "@workspace/db";
 import { eq, asc, desc } from "drizzle-orm";
 
@@ -279,6 +280,57 @@ router.delete("/crescimento/vision/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     await db.delete(growthVision).where(eq(growthVision.id, id));
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: "Erro ao deletar item" });
+  }
+});
+
+// ─── VISION BOARD CANVAS ──────────────────────────────────────────────────────
+
+router.get("/crescimento/vision-board-items", async (_req, res) => {
+  try {
+    const items = await db.select().from(visionBoardItems).orderBy(asc(visionBoardItems.zIndex));
+    res.json(items);
+  } catch {
+    res.status(500).json({ error: "Erro ao buscar itens" });
+  }
+});
+
+router.post("/crescimento/vision-board-items", async (req, res) => {
+  try {
+    const { tipo, conteudo, x, y, largura, altura, zIndex, cor, fontSize, rotacao } = req.body;
+    if (!tipo || !conteudo) return res.status(400).json({ error: "tipo e conteudo são obrigatórios" });
+    const [item] = await db
+      .insert(visionBoardItems)
+      .values({ tipo, conteudo, x: x ?? 100, y: y ?? 100, largura: largura ?? 220, altura: altura ?? 160, zIndex: zIndex ?? 1, cor: cor ?? "#FFFFFF", fontSize: fontSize ?? 16, rotacao: rotacao ?? 0 })
+      .returning();
+    res.json(item);
+  } catch {
+    res.status(500).json({ error: "Erro ao criar item" });
+  }
+});
+
+router.put("/crescimento/vision-board-items/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { tipo, conteudo, x, y, largura, altura, zIndex, cor, fontSize, rotacao } = req.body;
+    const [item] = await db
+      .update(visionBoardItems)
+      .set({ tipo, conteudo, x, y, largura, altura, zIndex, cor, fontSize, rotacao, updatedAt: new Date() })
+      .where(eq(visionBoardItems.id, id))
+      .returning();
+    if (!item) return res.status(404).json({ error: "Item não encontrado" });
+    res.json(item);
+  } catch {
+    res.status(500).json({ error: "Erro ao atualizar item" });
+  }
+});
+
+router.delete("/crescimento/vision-board-items/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(visionBoardItems).where(eq(visionBoardItems.id, id));
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: "Erro ao deletar item" });
