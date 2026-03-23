@@ -76,13 +76,8 @@ const modules: Module[] = [
     label: "Financeiro",
     icon: DollarSign,
     color: "text-emerald-600",
-    prefixes: ["/", "/transactions", "/monthly-planning", "/recorrencias", "/custo-de-vida", "/simulador-financeiro", "/budget", "/reports", "/patrimonio", "/receivables", "/debts", "/incomes", "/faturas", "/cartoes", "/assets"],
+    prefixes: ["/transactions", "/monthly-planning", "/recorrencias", "/custo-de-vida", "/simulador-financeiro", "/budget", "/reports", "/patrimonio", "/receivables", "/debts", "/incomes", "/faturas", "/cartoes", "/assets"],
     groups: [
-      {
-        label: "Dashboard",
-        icon: LayoutDashboard,
-        path: "/",
-      },
       {
         label: "Movimentações",
         icon: ArrowLeftRight,
@@ -206,11 +201,9 @@ const modules: Module[] = [
 ];
 
 function getActiveModule(pathname: string): string | null {
+  if (pathname === "/" || pathname === "") return "dashboard";
   for (const mod of modules) {
-    if (mod.prefixes?.some(p => {
-      if (p === "/") return pathname === "/" || pathname === "";
-      return pathname === p || pathname.startsWith(p + "/");
-    })) {
+    if (mod.prefixes?.some(p => pathname === p || pathname.startsWith(p + "/"))) {
       return mod.id;
     }
   }
@@ -492,13 +485,19 @@ export function Sidebar() {
 
       {/* Nav */}
       <div className={cn("flex-1 overflow-y-auto py-3 space-y-1", compact ? "px-1.5" : "px-3")}>
+        {/* Dashboard global */}
+        <NavItem
+          item={{ name: "Dashboard", path: "/", icon: LayoutDashboard }}
+          compact={compact}
+        />
+
         {/* Sugestões */}
         <NavItem
           item={{ name: "Sugestões", path: "/sugestoes", icon: Sparkles }}
           compact={compact}
         />
 
-        <div className={cn("my-2", compact ? "border-t border-slate-100" : "")} />
+        <div className="my-2 border-t border-slate-100" />
 
         {/* Modules */}
         <div className="space-y-1">
