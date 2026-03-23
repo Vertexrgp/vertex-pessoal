@@ -1,0 +1,145 @@
+Quero criar dentro do módulo Viagens uma funcionalidade chamada:
+
+Roteiro Inteligente
+
+OBJETIVO
+Permitir que o sistema organize automaticamente os lugares cadastrados em um roteiro otimizado por dias, sem uso de APIs externas (Google Maps, etc).
+
+O sistema deve usar lógica interna para sugerir a melhor divisão e ordem dos lugares.
+
+====================================================
+1) CONCEITO
+====================================================
+
+O usuário cadastra:
+
+- destino
+- duração da viagem (ex: 5 dias)
+- lista de lugares (ex: 20 lugares)
+
+O sistema deve gerar automaticamente:
+
+- divisão dos lugares por dia
+- ordem sugerida dentro de cada dia
+- roteiro completo da viagem
+
+====================================================
+2) ESTRUTURA DOS LUGARES
+====================================================
+
+Cada lugar deve ter:
+
+- nome
+- endereço
+- cidade
+- bairro/região (se possível)
+- categoria (restaurante, turismo, etc)
+- prioridade (baixa, média, alta)
+- duração estimada (tempo que vai ficar no local)
+- notas
+
+====================================================
+3) LÓGICA DE AGRUPAMENTO (SEM API)
+====================================================
+
+O sistema deve:
+
+1. Agrupar lugares por proximidade (bairro/região)
+2. Priorizar lugares mais importantes
+3. Distribuir lugares entre os dias da viagem
+4. Evitar sobrecarregar um único dia
+
+====================================================
+4) DISTRIBUIÇÃO POR DIA
+====================================================
+
+Exemplo:
+
+20 lugares
+5 dias
+
+→ aproximadamente 4 lugares por dia
+
+Mas respeitando:
+- prioridade
+- duração estimada
+
+====================================================
+5) ORDEM DO ROTEIRO
+====================================================
+
+Dentro de cada dia:
+
+- ordenar lugares de forma lógica
+- tentar manter sequência geográfica
+- evitar deslocamentos grandes
+
+====================================================
+6) AJUSTES MANUAIS
+====================================================
+
+O usuário deve poder:
+
+- mover lugar de um dia para outro
+- reordenar manualmente
+- fixar um lugar em um dia específico
+
+====================================================
+7) VISUAL DO ROTEIRO
+====================================================
+
+Criar tela:
+
+Roteiro
+
+Com:
+
+Dia 1
+- lugar 1
+- lugar 2
+- lugar 3
+
+Dia 2
+- lugar 4
+- lugar 5
+
+Layout limpo, tipo planner de viagem.
+
+====================================================
+8) REGRAS IMPORTANTES
+====================================================
+
+- não usar API externa
+- lógica simples, mas eficiente
+- performance rápida
+- fácil de entender
+
+====================================================
+9) FUTURO (PREPARAR)
+====================================================
+
+Deixar pronto para:
+
+- integração com Google Maps
+- integração com Valhalla/OSRM
+- otimização avançada de rota
+- sugestão de transporte
+
+====================================================
+10) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. estrutura de lugares completa
+2. algoritmo simples de agrupamento
+3. distribuição por dias
+4. ordenação dentro do dia
+5. tela de roteiro
+6. edição manual
+
+No final, me mostrar:
+
+- como o sistema organiza os lugares
+- exemplo de roteiro gerado
+- como melhorar isso depois com mapa

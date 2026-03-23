@@ -7,7 +7,8 @@ import {
   MapPin, ListChecks, ReceiptText, Route, Camera, Eye, Star,
   Clock, Navigation, Tag, FileText, Globe, Sparkles, ChevronDown,
   BookOpen, Flag, CheckCircle2, Circle, ExternalLink, Zap, ArrowUpDown,
-  Link2, LocateFixed, SortAsc,
+  Link2, LocateFixed, SortAsc, BrainCircuit, ArrowUp, ArrowDown,
+  CalendarDays, Timer, BarChart3, ChevronRight, AlertCircle, RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -93,13 +94,15 @@ export default function ViagemDetailPage({ id }: Props) {
 
   // ── Forms ────────────────────────────────────────────────────────────────
   const BLANK_LUGAR = {
-    nome: "", endereco: "", cidade: "", pais: "", categoria: "ponto_turistico",
+    nome: "", endereco: "", cidade: "", pais: "", bairro: "", categoria: "ponto_turistico",
     descricao: "", notas: "", horario: "", comoChegar: "", linkExterno: "",
     prioridade: "media", status: "planejado", lat: "", lng: "",
-    diaViagem: "", ordemRoteiro: "",
+    diaViagem: "", ordemRoteiro: "", duracaoEstimada: "",
   };
   const [lugarForm, setLugarForm] = useState(BLANK_LUGAR);
   const [showLugarForm, setShowLugarForm] = useState(false);
+  const [numDiasGerar, setNumDiasGerar] = useState("");
+  const [showRoteiroManual, setShowRoteiroManual] = useState(false);
 
   const [roteiroForm, setRoteiroForm] = useState({ dia: "1", titulo: "", hora: "", descricao: "", tipo: "atividade", lugarId: "" });
   const [expenseForm, setExpenseForm] = useState({ descricao: "", valor: "", categoria: "outros", data: "" });
@@ -130,6 +133,37 @@ export default function ViagemDetailPage({ id }: Props) {
   const delCheck     = useMutation({ mutationFn: (id: number) => fetch(apiUrl(`/viagens/checklist/${id}`), { method: "DELETE" }).then(r => r.json()), onSuccess: inv });
   const addMemoria   = useMutation({ mutationFn: (b: any) => fetch(apiUrl(`/viagens/trips/${tripId}/memorias`), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }).then(r => r.json()), onSuccess: () => { inv(); setShowMemForm(false); setMemoriaForm({ titulo:"", conteudo:"", data:"", dia:"", tipo:"nota" }); toast({ title: "Memória registrada" }); } });
   const delMemoria   = useMutation({ mutationFn: (id: number) => fetch(apiUrl(`/viagens/memorias/${id}`), { method: "DELETE" }).then(r => r.json()), onSuccess: inv });
+  const gerarRoteiro = useMutation({
+    mutationFn: (numDias?: number) => fetch(apiUrl(`/viagens/trips/${tripId}/roteiro-inteligente`), {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(numDias ? { numDias } : {}),
+    }).then(r => r.json()),
+    onSuccess: (result) => {
+      inv();
+      toast({ title: `Roteiro gerado!`, description: `${result.stats?.totalLugares ?? 0} lugares distribuídos em ${result.stats?.numDias ?? 0} dias` });
+    },
+    onError: () => toast({ title: "Erro ao gerar roteiro", variant: "destructive" }),
+  });
+  const limparRoteiro = useMutation({
+    mutationFn: () => fetch(apiUrl(`/viagens/trips/${tripId}/limpar-roteiro`), { method: "POST" }).then(r => r.json()),
+    onSuccess: () => { inv(); toast({ title: "Roteiro limpo", description: "Os dias foram removidos de todos os lugares" }); },
+  });
+  const moverDia = useMutation({
+    mutationFn: ({ lugarId, diaViagem }: { lugarId: number; diaViagem: number | null }) =>
+      fetch(apiUrl(`/viagens/lugares/${lugarId}`), {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ diaViagem }),
+      }).then(r => r.json()),
+    onSuccess: inv,
+  });
+  const reordenar = useMutation({
+    mutationFn: ({ lugarId, ordemRoteiro }: { lugarId: number; ordemRoteiro: number }) =>
+      fetch(apiUrl(`/viagens/lugares/${lugarId}`), {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ordemRoteiro }),
+      }).then(r => r.json()),
+    onSuccess: inv,
+  });
 
   if (isLoading) return <AppLayout><div className="flex items-center justify-center py-32 text-slate-400">Carregando...</div></AppLayout>;
   if (!data?.trip) return <AppLayout><div className="text-center py-24 text-slate-500">Viagem não encontrada.</div></AppLayout>;
@@ -293,93 +327,418 @@ export default function ViagemDetailPage({ id }: Props) {
         </div>
       )}
 
-      {/* ── ROTEIRO ────────────────────────────────────────────────────────────── */}
-      {tab === "roteiro" && (
-        <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-slate-200 p-5">
-            <h3 className="text-sm font-semibold text-slate-700 mb-4">Adicionar ao roteiro</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
-              <div>
-                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Dia</label>
-                <input type="number" min="1" value={roteiroForm.dia} onChange={e => setRoteiroForm(f => ({ ...f, dia: e.target.value }))} className={INPUT} />
-              </div>
-              <div>
-                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Horário</label>
-                <input type="time" value={roteiroForm.hora} onChange={e => setRoteiroForm(f => ({ ...f, hora: e.target.value }))} className={INPUT} />
-              </div>
-              <div>
-                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Tipo</label>
-                <select value={roteiroForm.tipo} onChange={e => setRoteiroForm(f => ({ ...f, tipo: e.target.value }))} className={INPUT}>
-                  {TIPO_ROTEIRO.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-                </select>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-              <div>
-                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Título *</label>
-                <input value={roteiroForm.titulo} onChange={e => setRoteiroForm(f => ({ ...f, titulo: e.target.value }))} placeholder="Ex: Visita ao Museu Nacional" className={INPUT} />
-              </div>
-              <div>
-                <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Vincular lugar</label>
-                <select value={roteiroForm.lugarId} onChange={e => setRoteiroForm(f => ({ ...f, lugarId: e.target.value }))} className={INPUT}>
-                  <option value="">— Sem vínculo —</option>
-                  {lugares.map((l: any) => <option key={l.id} value={l.id}>{getCatEmoji(l.categoria)} {l.nome}</option>)}
-                </select>
-              </div>
-            </div>
-            <input value={roteiroForm.descricao} onChange={e => setRoteiroForm(f => ({ ...f, descricao: e.target.value }))} placeholder="Descrição / notas..." className={cn(INPUT, "w-full mb-3")} />
-            <button
-              onClick={() => {
-                if (!roteiroForm.titulo || !roteiroForm.dia) { toast({ title: "Título e dia são obrigatórios", variant: "destructive" }); return; }
-                addRoteiro.mutate({ ...roteiroForm, dia: parseInt(roteiroForm.dia), lugarId: roteiroForm.lugarId ? parseInt(roteiroForm.lugarId) : null });
-              }}
-              disabled={addRoteiro.isPending}
-              className={BTN_PRIMARY}
-            >
-              <Plus className="w-4 h-4" /> Adicionar
-            </button>
-          </div>
+      {/* ── ROTEIRO INTELIGENTE ────────────────────────────────────────────────── */}
+      {tab === "roteiro" && (() => {
+        const lugaresComDia    = lugares.filter((l: any) => l.diaViagem);
+        const lugaresSemDia    = lugares.filter((l: any) => !l.diaViagem);
+        const diasUnicos       = [...new Set(lugaresComDia.map((l: any) => l.diaViagem as number))].sort((a, b) => a - b);
+        const totalMinutos     = lugaresComDia.reduce((s: number, l: any) => s + (l.duracaoEstimada || 90), 0);
+        const totalHoras       = (totalMinutos / 60).toFixed(1);
+        const visitados        = lugaresComDia.filter((l: any) => l.status === "visitado").length;
+        const temRoteiro       = lugaresComDia.length > 0;
 
-          {roteiro.length === 0 ? (
-            <EmptyState icon={Route} msg="Roteiro vazio" action="Planeje seu itinerário dia a dia" />
-          ) : (
-            <div className="space-y-4">
-              {Object.entries(roteiroByDay).sort(([a], [b]) => Number(a) - Number(b)).map(([dia, items]) => (
-                <div key={dia} className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                  <div className="px-5 py-3.5 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center flex-shrink-0">{dia}</div>
-                    <p className="text-sm font-bold text-slate-800">Dia {dia}</p>
-                    <span className="text-xs text-slate-400 ml-auto">{(items as any[]).length} atividade{(items as any[]).length !== 1 ? "s" : ""}</span>
-                  </div>
-                  {(items as any[]).sort((a, b) => (a.hora || "") < (b.hora || "") ? -1 : 1).map((r: any, idx: number) => {
-                    const lugar = lugares.find((l: any) => l.id === r.lugarId);
-                    return (
-                      <div key={r.id} className={cn("flex items-start gap-4 px-5 py-4 group hover:bg-slate-50 transition-colors", idx > 0 && "border-t border-slate-100")}>
-                        <div className="text-xs font-mono text-slate-400 pt-0.5 w-10 flex-shrink-0">{r.hora || "—"}</div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <p className="text-sm font-semibold text-slate-900">{r.titulo}</p>
-                            <span className="text-[10px] text-slate-400 capitalize bg-slate-100 px-1.5 py-0.5 rounded">{r.tipo}</span>
-                          </div>
-                          {r.descricao && <p className="text-xs text-slate-500">{r.descricao}</p>}
-                          {lugar && (
-                            <p className="text-xs text-primary mt-0.5 flex items-center gap-1">
-                              <MapPin className="w-3 h-3" /> {lugar.nome}
-                            </p>
-                          )}
-                        </div>
-                        <button onClick={() => delRoteiro.mutate(r.id)} className="text-slate-200 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all p-1">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    );
-                  })}
+        return (
+          <div className="space-y-5">
+
+            {/* ── Painel de controle ─────────────────────────────────────── */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-5">
+              <div className="flex items-start gap-4">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <BrainCircuit className="w-6 h-6 text-primary" />
                 </div>
-              ))}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h3 className="text-sm font-bold text-slate-900">Roteiro Inteligente</h3>
+                    {temRoteiro && (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                        ✓ Gerado
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 mb-4">
+                    O sistema distribui seus lugares automaticamente entre os dias da viagem, respeitando prioridade, duração estimada e proximidade geográfica (bairro/região).
+                  </p>
+
+                  {/* Stats row */}
+                  {temRoteiro && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                      <div className="bg-slate-50 rounded-xl p-3">
+                        <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">Dias</p>
+                        <p className="text-base font-bold text-slate-900">{diasUnicos.length}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-3">
+                        <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">Lugares</p>
+                        <p className="text-base font-bold text-slate-900">{lugaresComDia.length}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-3">
+                        <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">Tempo total</p>
+                        <p className="text-base font-bold text-slate-900">{totalHoras}h</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-3">
+                        <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">Visitados</p>
+                        <p className={cn("text-base font-bold", visitados > 0 ? "text-emerald-600" : "text-slate-900")}>{visitados}/{lugaresComDia.length}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action bar */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {/* Num dias override */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number" min="1" max="60"
+                        value={numDiasGerar}
+                        onChange={e => setNumDiasGerar(e.target.value)}
+                        placeholder={dias ? String(dias) : "Nº dias"}
+                        className={cn(INPUT, "w-24 py-2")}
+                      />
+                      <button
+                        onClick={() => {
+                          if (lugares.length === 0) { toast({ title: "Sem lugares", description: "Adicione lugares antes de gerar o roteiro", variant: "destructive" }); return; }
+                          gerarRoteiro.mutate(numDiasGerar ? parseInt(numDiasGerar) : undefined);
+                        }}
+                        disabled={gerarRoteiro.isPending}
+                        className={cn(BTN_PRIMARY, "gap-2")}
+                      >
+                        {gerarRoteiro.isPending ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <BrainCircuit className="w-4 h-4" />
+                        )}
+                        {gerarRoteiro.isPending ? "Gerando..." : temRoteiro ? "Regerar roteiro" : "Gerar roteiro"}
+                      </button>
+                    </div>
+                    {temRoteiro && (
+                      <button
+                        onClick={() => limparRoteiro.mutate()}
+                        disabled={limparRoteiro.isPending}
+                        className={cn(BTN_GHOST, "text-rose-500 border-rose-200 hover:bg-rose-50 text-xs px-3 py-2")}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Limpar dias
+                      </button>
+                    )}
+                  </div>
+
+                  {lugaresSemDia.length > 0 && lugares.length > 0 && (
+                    <p className="text-xs text-amber-600 flex items-center gap-1.5 mt-3">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                      {lugaresSemDia.length} lugar{lugaresSemDia.length !== 1 ? "es" : ""} ainda sem dia definido. Gere o roteiro para distribuí-los.
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
-          )}
-        </div>
-      )}
+
+            {/* ── Como funciona (quando vazio) ───────────────────────────── */}
+            {!temRoteiro && lugares.length === 0 && (
+              <div className="bg-white rounded-2xl border border-slate-200 border-dashed p-8 text-center">
+                <Route className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                <h3 className="text-sm font-bold text-slate-700 mb-1">Nenhum lugar cadastrado</h3>
+                <p className="text-xs text-slate-500 mb-4 max-w-sm mx-auto">Adicione lugares na aba Lugares. Quanto mais informações (bairro, duração estimada, prioridade), melhor será o roteiro gerado.</p>
+                <button onClick={() => setTab("lugares")} className={BTN_PRIMARY}>
+                  <MapPin className="w-4 h-4" /> Ir para Lugares
+                </button>
+              </div>
+            )}
+
+            {!temRoteiro && lugares.length > 0 && (
+              <div className="bg-gradient-to-br from-primary/5 to-sky-50 rounded-2xl border border-primary/20 p-6">
+                <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-primary" /> Como o algoritmo funciona
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[
+                    { step: "1", title: "Agrupa por proximidade", desc: "Lugares do mesmo bairro/região ficam no mesmo dia para minimizar deslocamento." },
+                    { step: "2", title: "Respeita prioridade", desc: "Lugares de alta prioridade são alocados primeiro, garantindo que não fiquem de fora." },
+                    { step: "3", title: "Distribui por duração", desc: "Usa a duração estimada de cada lugar para não sobrecarregar um único dia." },
+                    { step: "4", title: "Ordena por período", desc: "Cafés de manhã, museus e pontos turísticos no meio do dia, restaurantes e bares à noite." },
+                  ].map(s => (
+                    <div key={s.step} className="flex items-start gap-3 bg-white/80 rounded-xl p-3.5 border border-primary/10">
+                      <div className="w-6 h-6 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{s.step}</div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-800 mb-0.5">{s.title}</p>
+                        <p className="text-[11px] text-slate-500 leading-relaxed">{s.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 bg-white/60 rounded-xl p-4 border border-primary/10">
+                  <p className="text-xs font-semibold text-slate-600 mb-2">
+                    Você tem <span className="text-primary font-bold">{lugares.length}</span> lugar{lugares.length !== 1 ? "es" : ""} cadastrado{lugares.length !== 1 ? "s" : ""}.
+                    {dias && <> A viagem tem <span className="text-primary font-bold">{dias}</span> dias. Isso dá ~<span className="text-primary font-bold">{Math.ceil(lugares.length / dias)}</span> lugar{Math.ceil(lugares.length / dias) !== 1 ? "es" : ""} por dia.</>}
+                  </p>
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                    <Timer className="w-3.5 h-3.5" /> Dica: defina a duração estimada de cada lugar (em minutos) para uma distribuição mais precisa.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Roteiro gerado — dia a dia ─────────────────────────────── */}
+            {temRoteiro && (
+              <div className="space-y-4">
+                {diasUnicos.map((dia: number) => {
+                  const lugaresNoDia = lugaresComDia
+                    .filter((l: any) => l.diaViagem === dia)
+                    .sort((a: any, b: any) => (a.ordemRoteiro ?? 99) - (b.ordemRoteiro ?? 99));
+
+                  const totalMinDia = lugaresNoDia.reduce((s: number, l: any) => s + (l.duracaoEstimada || 90), 0);
+                  const visitadosDia = lugaresNoDia.filter((l: any) => l.status === "visitado").length;
+                  const pctVisitado = lugaresNoDia.length > 0 ? Math.round((visitadosDia / lugaresNoDia.length) * 100) : 0;
+
+                  return (
+                    <div key={dia} className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                      {/* Day header */}
+                      <div className="px-5 py-4 bg-gradient-to-r from-primary/5 to-transparent border-b border-slate-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-primary text-white text-sm font-bold flex items-center justify-center flex-shrink-0">
+                            {dia}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-sm font-bold text-slate-900">Dia {dia}</p>
+                              <span className="text-[10px] text-slate-500">{lugaresNoDia.length} lugar{lugaresNoDia.length !== 1 ? "es" : ""}</span>
+                              <span className="text-[10px] text-slate-400">·</span>
+                              <span className="text-[10px] text-slate-500 flex items-center gap-1"><Timer className="w-3 h-3" />{(totalMinDia / 60).toFixed(1)}h</span>
+                            </div>
+                            {/* Progress bar */}
+                            {visitadosDia > 0 && (
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                  <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${pctVisitado}%` }} />
+                                </div>
+                                <span className="text-[9px] font-semibold text-emerald-600">{pctVisitado}%</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Lugares list */}
+                      {lugaresNoDia.map((l: any, idx: number) => {
+                        const visited = l.status === "visitado";
+                        const isFirst = idx === 0;
+                        const isLast = idx === lugaresNoDia.length - 1;
+
+                        return (
+                          <div key={l.id} className={cn(
+                            "flex items-start gap-3 px-5 py-4 group hover:bg-slate-50/80 transition-colors",
+                            idx > 0 && "border-t border-slate-100"
+                          )}>
+                            {/* Ordem badge */}
+                            <div className={cn(
+                              "w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 transition-all",
+                              visited ? "bg-emerald-500 border-emerald-500 text-white" : "bg-white border-slate-300 text-slate-500"
+                            )}>
+                              {visited ? <Check className="w-3.5 h-3.5" /> : (l.ordemRoteiro || idx + 1)}
+                            </div>
+
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start gap-2 flex-wrap mb-0.5">
+                                <span className="text-base">{getCatEmoji(l.categoria)}</span>
+                                <p className={cn("text-sm font-semibold leading-tight", visited ? "text-slate-400 line-through" : "text-slate-900")}>
+                                  {l.nome}
+                                </p>
+                                {l.prioridade === "alta" && !visited && (
+                                  <span className="text-[9px] bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded font-semibold">⭐ Alta</span>
+                                )}
+                                {l.bairro && (
+                                  <span className="text-[9px] bg-sky-50 text-sky-600 px-1.5 py-0.5 rounded font-medium">{l.bairro}</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 text-[11px] text-slate-400">
+                                {l.duracaoEstimada && (
+                                  <span className="flex items-center gap-1"><Timer className="w-3 h-3" />{l.duracaoEstimada}min</span>
+                                )}
+                                {l.horario && (
+                                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{l.horario}</span>
+                                )}
+                                {l.comoChegar && (
+                                  <span className="flex items-center gap-1"><Navigation className="w-3 h-3" />{l.comoChegar}</span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all">
+                              {/* Marcar visitado */}
+                              <button
+                                onClick={() => updateLugar.mutate({ id: l.id, ...l, status: visited ? "planejado" : "visitado" })}
+                                className={cn("w-7 h-7 rounded-lg flex items-center justify-center transition-all text-[10px]",
+                                  visited ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100" : "bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600")}
+                                title={visited ? "Desmarcar" : "Marcar como visitado"}
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                              {/* Mover para cima */}
+                              {!isFirst && (
+                                <button
+                                  onClick={() => {
+                                    const prev = lugaresNoDia[idx - 1];
+                                    reordenar.mutate({ lugarId: l.id, ordemRoteiro: (prev.ordemRoteiro || idx) });
+                                    reordenar.mutate({ lugarId: prev.id, ordemRoteiro: (l.ordemRoteiro || idx + 1) });
+                                  }}
+                                  className="w-7 h-7 rounded-lg bg-slate-100 text-slate-400 hover:bg-primary/10 hover:text-primary flex items-center justify-center"
+                                  title="Mover para cima"
+                                >
+                                  <ArrowUp className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {/* Mover para baixo */}
+                              {!isLast && (
+                                <button
+                                  onClick={() => {
+                                    const next = lugaresNoDia[idx + 1];
+                                    reordenar.mutate({ lugarId: l.id, ordemRoteiro: (next.ordemRoteiro || idx + 2) });
+                                    reordenar.mutate({ lugarId: next.id, ordemRoteiro: (l.ordemRoteiro || idx + 1) });
+                                  }}
+                                  className="w-7 h-7 rounded-lg bg-slate-100 text-slate-400 hover:bg-primary/10 hover:text-primary flex items-center justify-center"
+                                  title="Mover para baixo"
+                                >
+                                  <ArrowDown className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {/* Mover de dia */}
+                              <select
+                                value={l.diaViagem ?? ""}
+                                onChange={e => moverDia.mutate({ lugarId: l.id, diaViagem: e.target.value ? parseInt(e.target.value) : null })}
+                                className="text-[10px] border border-slate-200 rounded-lg px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-primary/30 text-slate-500 bg-white"
+                                title="Mover para outro dia"
+                              >
+                                {diasUnicos.map((d: number) => (
+                                  <option key={d} value={d}>Dia {d}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+
+                {/* Sem dia */}
+                {lugaresSemDia.length > 0 && (
+                  <div className="bg-amber-50 rounded-2xl border border-amber-200 border-dashed overflow-hidden">
+                    <div className="px-5 py-3 border-b border-amber-100 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-500" />
+                      <p className="text-xs font-bold text-amber-700">Sem dia definido ({lugaresSemDia.length})</p>
+                      <button onClick={() => gerarRoteiro.mutate(numDiasGerar ? parseInt(numDiasGerar) : undefined)} className="ml-auto text-[10px] font-semibold text-primary hover:underline">
+                        Redistribuir
+                      </button>
+                    </div>
+                    {lugaresSemDia.map((l: any, idx: number) => (
+                      <div key={l.id} className={cn("flex items-center gap-3 px-5 py-3 group", idx > 0 && "border-t border-amber-100")}>
+                        <span className="text-base">{getCatEmoji(l.categoria)}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-slate-700 truncate">{l.nome}</p>
+                          <p className="text-[10px] text-slate-400">{getCatLabel(l.categoria)}{l.prioridade === "alta" ? " · ⭐ Alta" : ""}</p>
+                        </div>
+                        <select
+                          value=""
+                          onChange={e => moverDia.mutate({ lugarId: l.id, diaViagem: e.target.value ? parseInt(e.target.value) : null })}
+                          className="text-[10px] border border-amber-200 rounded-lg px-2 py-1 focus:outline-none bg-white text-slate-600"
+                        >
+                          <option value="">Alocar no dia...</option>
+                          {diasUnicos.map((d: number) => <option key={d} value={d}>Dia {d}</option>)}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Roteiro manual (colapsável) ────────────────────────────── */}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+              <button
+                onClick={() => setShowRoteiroManual(s => !s)}
+                className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-slate-50 transition-colors"
+              >
+                <FileText className="w-4 h-4 text-slate-400" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-700">Notas de roteiro manual</p>
+                  <p className="text-xs text-slate-400">Adicione anotações livres, eventos especiais ou itens que não são lugares</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {roteiro.length > 0 && <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">{roteiro.length}</span>}
+                  <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", showRoteiroManual && "rotate-180")} />
+                </div>
+              </button>
+
+              {showRoteiroManual && (
+                <div className="border-t border-slate-100 p-5">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+                    <div>
+                      <label className={LABEL}>Dia</label>
+                      <input type="number" min="1" value={roteiroForm.dia} onChange={e => setRoteiroForm(f => ({ ...f, dia: e.target.value }))} className={cn(INPUT, "w-full")} />
+                    </div>
+                    <div>
+                      <label className={LABEL}>Horário</label>
+                      <input type="time" value={roteiroForm.hora} onChange={e => setRoteiroForm(f => ({ ...f, hora: e.target.value }))} className={cn(INPUT, "w-full")} />
+                    </div>
+                    <div>
+                      <label className={LABEL}>Tipo</label>
+                      <select value={roteiroForm.tipo} onChange={e => setRoteiroForm(f => ({ ...f, tipo: e.target.value }))} className={cn(INPUT, "w-full")}>
+                        {TIPO_ROTEIRO.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <label className={LABEL}>Título *</label>
+                      <input value={roteiroForm.titulo} onChange={e => setRoteiroForm(f => ({ ...f, titulo: e.target.value }))} placeholder="Ex: Show de jazz às 21h" className={cn(INPUT, "w-full")} />
+                    </div>
+                    <div>
+                      <label className={LABEL}>Vincular lugar</label>
+                      <select value={roteiroForm.lugarId} onChange={e => setRoteiroForm(f => ({ ...f, lugarId: e.target.value }))} className={cn(INPUT, "w-full")}>
+                        <option value="">— Sem vínculo —</option>
+                        {lugares.map((l: any) => <option key={l.id} value={l.id}>{getCatEmoji(l.categoria)} {l.nome}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <input value={roteiroForm.descricao} onChange={e => setRoteiroForm(f => ({ ...f, descricao: e.target.value }))} placeholder="Observações..." className={cn(INPUT, "w-full mb-3")} />
+                  <button
+                    onClick={() => {
+                      if (!roteiroForm.titulo || !roteiroForm.dia) { toast({ title: "Título e dia são obrigatórios", variant: "destructive" }); return; }
+                      addRoteiro.mutate({ ...roteiroForm, dia: parseInt(roteiroForm.dia), lugarId: roteiroForm.lugarId ? parseInt(roteiroForm.lugarId) : null });
+                    }}
+                    disabled={addRoteiro.isPending}
+                    className={BTN_PRIMARY}
+                  >
+                    <Plus className="w-4 h-4" /> Adicionar nota
+                  </button>
+
+                  {roteiro.length > 0 && (
+                    <div className="mt-4 space-y-3">
+                      {Object.entries(roteiroByDay).sort(([a], [b]) => Number(a) - Number(b)).map(([dia, items]) => (
+                        <div key={dia} className="bg-slate-50 rounded-xl overflow-hidden">
+                          <div className="px-4 py-2 border-b border-slate-200 flex items-center gap-2">
+                            <div className="w-5 h-5 rounded-full bg-primary text-white text-[9px] font-bold flex items-center justify-center">{dia}</div>
+                            <p className="text-xs font-bold text-slate-600">Dia {dia}</p>
+                          </div>
+                          {(items as any[]).sort((a, b) => (a.hora || "") < (b.hora || "") ? -1 : 1).map((r: any, idx: number) => (
+                            <div key={r.id} className={cn("flex items-center gap-3 px-4 py-2.5 group hover:bg-slate-100 transition-colors", idx > 0 && "border-t border-slate-200")}>
+                              <p className="text-[10px] font-mono text-slate-400 w-10 flex-shrink-0">{r.hora || "—"}</p>
+                              <p className="text-xs font-medium text-slate-800 flex-1">{r.titulo}</p>
+                              <span className="text-[9px] text-slate-400 bg-white px-1.5 py-0.5 rounded capitalize">{r.tipo}</span>
+                              <button onClick={() => delRoteiro.mutate(r.id)} className="text-slate-200 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all">
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+          </div>
+        );
+      })()}
 
       {/* ── LUGARES ────────────────────────────────────────────────────────────── */}
       {tab === "lugares" && (
@@ -419,6 +778,10 @@ export default function ViagemDetailPage({ id }: Props) {
                     <input value={lugarForm.endereco} onChange={e => setLugarForm(f => ({ ...f, endereco: e.target.value }))} placeholder="Rua, número, bairro" className={cn(INPUT, "w-full")} />
                   </div>
                   <div>
+                    <label className={LABEL}>Bairro / Região <span className="text-sky-400 normal-case font-normal">(usado para agrupar no roteiro)</span></label>
+                    <input value={lugarForm.bairro} onChange={e => setLugarForm(f => ({ ...f, bairro: e.target.value }))} placeholder="Ex: Montmartre, Centro" className={cn(INPUT, "w-full")} />
+                  </div>
+                  <div>
                     <label className={LABEL}>Cidade</label>
                     <input value={lugarForm.cidade} onChange={e => setLugarForm(f => ({ ...f, cidade: e.target.value }))} placeholder="Ex: Paris" className={cn(INPUT, "w-full")} />
                   </div>
@@ -440,7 +803,7 @@ export default function ViagemDetailPage({ id }: Props) {
               {/* Seção 3: Planejamento */}
               <div className="mb-5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 mb-3">Planejamento & Rota</p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <div>
                     <label className={LABEL}>Prioridade</label>
                     <select value={lugarForm.prioridade} onChange={e => setLugarForm(f => ({ ...f, prioridade: e.target.value }))} className={cn(INPUT, "w-full")}>
@@ -450,18 +813,17 @@ export default function ViagemDetailPage({ id }: Props) {
                     </select>
                   </div>
                   <div>
-                    <label className={LABEL}>Dia da viagem</label>
-                    <input type="number" min="1" value={lugarForm.diaViagem} onChange={e => setLugarForm(f => ({ ...f, diaViagem: e.target.value }))} placeholder="Ex: 2" className={cn(INPUT, "w-full")} />
+                    <label className={LABEL}>Duração estimada <span className="text-slate-300 normal-case font-normal">(min)</span></label>
+                    <input type="number" min="1" value={lugarForm.duracaoEstimada} onChange={e => setLugarForm(f => ({ ...f, duracaoEstimada: e.target.value }))} placeholder="Ex: 90" className={cn(INPUT, "w-full")} />
                   </div>
                   <div>
-                    <label className={LABEL}>Ordem no roteiro</label>
-                    <input type="number" min="1" value={lugarForm.ordemRoteiro} onChange={e => setLugarForm(f => ({ ...f, ordemRoteiro: e.target.value }))} placeholder="Ex: 1" className={cn(INPUT, "w-full")} />
-                  </div>
-                  <div>
-                    <label className={LABEL}>Horário</label>
+                    <label className={LABEL}>Horário de funcionamento</label>
                     <input value={lugarForm.horario} onChange={e => setLugarForm(f => ({ ...f, horario: e.target.value }))} placeholder="9h às 18h" className={cn(INPUT, "w-full")} />
                   </div>
                 </div>
+                <p className="text-[10px] text-emerald-600 flex items-center gap-1 mt-2">
+                  <Timer className="w-3 h-3" /> O Roteiro Inteligente usa prioridade + duração para distribuir os lugares pelos dias sem sobrecarregar.
+                </p>
               </div>
 
               {/* Seção 4: Detalhes */}
@@ -498,6 +860,7 @@ export default function ViagemDetailPage({ id }: Props) {
                       lng: lugarForm.lng ? parseFloat(lugarForm.lng) : null,
                       diaViagem: lugarForm.diaViagem ? parseInt(lugarForm.diaViagem) : null,
                       ordemRoteiro: lugarForm.ordemRoteiro ? parseInt(lugarForm.ordemRoteiro) : 0,
+                      duracaoEstimada: lugarForm.duracaoEstimada ? parseInt(lugarForm.duracaoEstimada) : null,
                     });
                   }}
                   disabled={addLugar.isPending}

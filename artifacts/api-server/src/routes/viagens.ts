@@ -28,7 +28,7 @@ router.get("/viagens/trips/:id", async (req, res) => {
     db.select().from(viagensExpensesTable).where(eq(viagensExpensesTable.viagemId, id)).orderBy(desc(viagensExpensesTable.createdAt)),
     db.select().from(viagensChecklistTable).where(eq(viagensChecklistTable.viagemId, id)).orderBy(asc(viagensChecklistTable.createdAt)),
     db.select().from(viagensRoteiroTable).where(eq(viagensRoteiroTable.viagemId, id)).orderBy(asc(viagensRoteiroTable.dia), asc(viagensRoteiroTable.ordem)),
-    db.select().from(viagensLugaresTable).where(eq(viagensLugaresTable.viagemId, id)).orderBy(asc(viagensLugaresTable.createdAt)),
+    db.select().from(viagensLugaresTable).where(eq(viagensLugaresTable.viagemId, id)).orderBy(asc(viagensLugaresTable.ordemRoteiro), asc(viagensLugaresTable.createdAt)),
     db.select().from(viagensMemoriasTable).where(eq(viagensMemoriasTable.viagemId, id)).orderBy(desc(viagensMemoriasTable.createdAt)),
   ]);
 
@@ -75,16 +75,18 @@ router.delete("/viagens/trips/:id", async (req, res) => {
 
 router.post("/viagens/trips/:id/lugares", async (req, res) => {
   const viagemId = Number(req.params.id);
-  const { nome, endereco, cidade, pais, categoria, descricao, notas, horario, comoChegar, linkExterno, prioridade, status, lat, lng, diaViagem, ordemRoteiro } = req.body;
+  const { nome, endereco, cidade, pais, bairro, categoria, descricao, notas, horario, comoChegar, linkExterno, prioridade, status, lat, lng, diaViagem, ordemRoteiro, duracaoEstimada } = req.body;
   if (!nome) return res.status(400).json({ error: "nome obrigatório" });
   const [lugar] = await db.insert(viagensLugaresTable).values({
     viagemId, nome,
     endereco: endereco || null, cidade: cidade || null, pais: pais || null,
+    bairro: bairro || null,
     categoria: categoria || "ponto_turistico",
     descricao: descricao || null, notas: notas || null,
     horario: horario || null, comoChegar: comoChegar || null,
     linkExterno: linkExterno || null,
     prioridade: prioridade || "media", status: status || "planejado",
+    duracaoEstimada: duracaoEstimada ? Number(duracaoEstimada) : null,
     lat: lat ? String(lat) : null, lng: lng ? String(lng) : null,
     diaViagem: diaViagem ? Number(diaViagem) : null,
     ordemRoteiro: ordemRoteiro ? Number(ordemRoteiro) : 0,
@@ -94,17 +96,19 @@ router.post("/viagens/trips/:id/lugares", async (req, res) => {
 
 router.put("/viagens/lugares/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const { nome, endereco, cidade, pais, categoria, descricao, notas, horario, comoChegar, linkExterno, prioridade, status, lat, lng, diaViagem, ordemRoteiro } = req.body;
+  const { nome, endereco, cidade, pais, bairro, categoria, descricao, notas, horario, comoChegar, linkExterno, prioridade, status, lat, lng, diaViagem, ordemRoteiro, duracaoEstimada } = req.body;
   const [lugar] = await db.update(viagensLugaresTable).set({
     nome,
     endereco: endereco || null, cidade: cidade || null, pais: pais || null,
+    bairro: bairro || null,
     categoria: categoria || "ponto_turistico",
     descricao: descricao || null, notas: notas || null,
     horario: horario || null, comoChegar: comoChegar || null,
     linkExterno: linkExterno || null,
     prioridade: prioridade || "media", status: status || "planejado",
+    duracaoEstimada: duracaoEstimada ? Number(duracaoEstimada) : null,
     lat: lat ? String(lat) : null, lng: lng ? String(lng) : null,
-    diaViagem: diaViagem ? Number(diaViagem) : null,
+    diaViagem: diaViagem !== undefined ? (diaViagem ? Number(diaViagem) : null) : undefined,
     ordemRoteiro: ordemRoteiro !== undefined ? Number(ordemRoteiro) : 0,
   }).where(eq(viagensLugaresTable.id, id)).returning();
   res.json(lugar);
@@ -112,6 +116,126 @@ router.put("/viagens/lugares/:id", async (req, res) => {
 
 router.delete("/viagens/lugares/:id", async (req, res) => {
   await db.delete(viagensLugaresTable).where(eq(viagensLugaresTable.id, Number(req.params.id)));
+  res.json({ ok: true });
+});
+
+// ── ROTEIRO INTELIGENTE ───────────────────────────────────────────────────────
+
+function generateRoteiroInteligente(
+  lugares: any[],
+  numDias: number
+): Array<{ lugarId: number; dia: number; ordem: number }> {
+  if (!lugares.length || !numDias) return [];
+
+  const PRIO: Record<string, number> = { alta: 3, media: 2, baixa: 1 };
+
+  const CAT_SLOT: Record<string, number> = {
+    cafe: 1,
+    museu: 2,
+    ponto_turistico: 3,
+    parque: 4,
+    hotel: 5,
+    compras: 5,
+    outros: 5,
+    restaurante: 7,
+    bar: 8,
+  };
+
+  const DEFAULT_DURATION = 90;
+
+  const getGroup = (l: any) => (l.bairro?.trim() || l.categoria || "outros").toLowerCase();
+
+  const sorted = [...lugares].sort((a, b) => {
+    const pa = PRIO[a.prioridade] ?? 2;
+    const pb = PRIO[b.prioridade] ?? 2;
+    if (pa !== pb) return pb - pa;
+    return getGroup(a).localeCompare(getGroup(b));
+  });
+
+  const dayMinutes = new Array(numDias).fill(0);
+  const dayLists: number[][] = Array.from({ length: numDias }, () => []);
+
+  for (const lugar of sorted) {
+    const dur = lugar.duracaoEstimada && lugar.duracaoEstimada > 0 ? lugar.duracaoEstimada : DEFAULT_DURATION;
+    let bestDay = 0;
+    let bestLoad = dayMinutes[0];
+    for (let d = 1; d < numDias; d++) {
+      if (dayMinutes[d] < bestLoad) {
+        bestLoad = dayMinutes[d];
+        bestDay = d;
+      }
+    }
+    dayLists[bestDay].push(lugar.id);
+    dayMinutes[bestDay] += dur;
+  }
+
+  const assignments: { lugarId: number; dia: number; ordem: number }[] = [];
+
+  for (let d = 0; d < numDias; d++) {
+    if (dayLists[d].length === 0) continue;
+    const dayLugares = dayLists[d].map((id) => lugares.find((l) => l.id === id)!);
+
+    dayLugares.sort((a, b) => {
+      const sa = CAT_SLOT[a.categoria] ?? 5;
+      const sb = CAT_SLOT[b.categoria] ?? 5;
+      if (sa !== sb) return sa - sb;
+      const pa = PRIO[a.prioridade] ?? 2;
+      const pb = PRIO[b.prioridade] ?? 2;
+      return pb - pa;
+    });
+
+    dayLugares.forEach((l, idx) => {
+      assignments.push({ lugarId: l.id, dia: d + 1, ordem: idx + 1 });
+    });
+  }
+
+  return assignments;
+}
+
+router.post("/viagens/trips/:id/roteiro-inteligente", async (req, res) => {
+  const viagemId = Number(req.params.id);
+  const { numDias } = req.body;
+
+  const [trip] = await db.select().from(viagensTripsTable).where(eq(viagensTripsTable.id, viagemId));
+  if (!trip) return res.status(404).json({ error: "Viagem não encontrada" });
+
+  const lugares = await db.select().from(viagensLugaresTable).where(eq(viagensLugaresTable.viagemId, viagemId));
+  if (lugares.length === 0) return res.status(400).json({ error: "Nenhum lugar cadastrado" });
+
+  let dias = numDias ? Number(numDias) : 1;
+  if (trip.dataInicio && trip.dataFim && !numDias) {
+    const start = new Date(trip.dataInicio).getTime();
+    const end = new Date(trip.dataFim).getTime();
+    dias = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1);
+  }
+
+  const assignments = generateRoteiroInteligente(lugares, dias);
+
+  await Promise.all(
+    assignments.map((a) =>
+      db.update(viagensLugaresTable)
+        .set({ diaViagem: a.dia, ordemRoteiro: a.ordem })
+        .where(eq(viagensLugaresTable.id, a.lugarId))
+    )
+  );
+
+  const stats = {
+    totalLugares: lugares.length,
+    numDias: dias,
+    distribuicao: assignments.reduce((acc: Record<number, number>, a) => {
+      acc[a.dia] = (acc[a.dia] || 0) + 1;
+      return acc;
+    }, {}),
+  };
+
+  res.json({ ok: true, assignments, stats });
+});
+
+router.post("/viagens/trips/:id/limpar-roteiro", async (req, res) => {
+  const viagemId = Number(req.params.id);
+  await db.update(viagensLugaresTable)
+    .set({ diaViagem: null, ordemRoteiro: 0 })
+    .where(eq(viagensLugaresTable.viagemId, viagemId));
   res.json({ ok: true });
 });
 
