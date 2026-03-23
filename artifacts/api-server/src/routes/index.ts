@@ -15,6 +15,7 @@ import reportsRouter from "./reports";
 import performanceRouter from "./performance";
 import agendaRouter from "./agenda";
 import viagensRouter from "./viagens";
+import eventsRouter from "./events";
 
 const router: IRouter = Router();
 
@@ -34,5 +35,6 @@ router.use(reportsRouter);
 router.use(performanceRouter);
 router.use(agendaRouter);
 router.use(viagensRouter);
+router.use(eventsRouter);
 
 export default router;

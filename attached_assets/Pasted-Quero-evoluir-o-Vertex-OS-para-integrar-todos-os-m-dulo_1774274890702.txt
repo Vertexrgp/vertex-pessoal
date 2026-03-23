@@ -1,0 +1,101 @@
+Quero evoluir o Vertex OS para integrar todos os módulos de forma inteligente, criando uma camada de eventos que permita comunicação entre eles sem acoplamento direto.
+
+OBJETIVO
+Permitir que ações em um módulo impactem automaticamente outros módulos.
+
+IMPORTANTE
+Cada módulo deve continuar independente.
+A integração deve acontecer via eventos.
+
+====================================================
+1) CONCEITO
+====================================================
+
+Criar um sistema baseado em eventos.
+
+Toda ação relevante gera um evento.
+
+Outros módulos podem reagir a esse evento.
+
+====================================================
+2) TIPOS DE EVENTOS
+====================================================
+
+Criar estrutura para eventos como:
+
+- TASK_CREATED
+- TASK_COMPLETED
+- EXPENSE_CREATED
+- RECURRING_TRIGGERED
+- WORKOUT_CREATED
+- WORKOUT_COMPLETED
+- TRAVEL_CREATED
+- GOAL_UPDATED
+
+====================================================
+3) ESTRUTURA
+====================================================
+
+Criar:
+
+event_bus ou event_service
+
+Cada evento deve conter:
+
+- tipo
+- origem
+- payload (dados)
+- timestamp
+
+====================================================
+4) EXEMPLOS DE INTEGRAÇÃO
+====================================================
+
+1. Agenda + Performance
+- tarefa de treino criada → aparece em Performance
+
+2. Financeiro + Agenda
+- conta criada → vira lembrete
+
+3. Viagens + Financeiro
+- viagem criada → cria orçamento
+
+4. Performance + Agenda
+- treino planejado → entra na agenda
+
+====================================================
+5) REGRAS IMPORTANTES
+====================================================
+
+- módulos não devem depender diretamente uns dos outros
+- comunicação via eventos
+- fácil de expandir
+- fácil de desligar módulo
+
+====================================================
+6) VISUAL / UX
+====================================================
+
+Quero que o usuário perceba que:
+
+- o sistema está integrado
+- as informações se atualizam automaticamente
+
+====================================================
+7) ENTREGAR
+====================================================
+
+Implementar:
+
+1. estrutura básica de eventos
+2. alguns eventos iniciais
+3. exemplo de integração entre:
+   - Agenda
+   - Financeiro
+   - Performance
+4. arquitetura clara para expansão futura
+
+No final, me mostrar:
+- como funciona o fluxo de eventos
+- como os módulos se comunicam
+- exemplos práticos

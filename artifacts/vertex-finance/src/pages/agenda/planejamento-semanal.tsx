@@ -31,6 +31,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { emitEvent } from "@/lib/emit-event";
+import { EVENT_TYPES } from "@/lib/event-bus";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -987,7 +989,11 @@ export default function PlanejamentoSemanalPage() {
   const createMutation = useMutation({
     mutationFn: (body: object) =>
       fetch(apiUrl("/agenda/planner"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json()),
-    onSuccess: (t: Task) => { setTasks((prev) => [...prev, t]); toast({ title: "Tarefa criada!" }); },
+    onSuccess: (t: Task) => {
+      setTasks((prev) => [...prev, t]);
+      toast({ title: "Tarefa criada!" });
+      emitEvent(EVENT_TYPES.TASK_CREATED, "agenda", `Tarefa criada: "${t.titulo}"`, { id: t.id, titulo: t.titulo, prioridade: t.prioridade });
+    },
   });
 
   const updateMutation = useMutation({
@@ -1017,7 +1023,12 @@ export default function PlanejamentoSemanalPage() {
   const postponeMutation = useMutation({
     mutationFn: (id: number) =>
       fetch(apiUrl(`/agenda/planner/${id}/postergar`), { method: "POST" }).then((r) => r.json()),
-    onSuccess: (_, id) => { setTasks((prev) => prev.map((t) => t.id === id ? { ...t, status: "postergada" } : t)); toast({ title: "Marcada como postergada" }); },
+    onSuccess: (_, id) => {
+      const task = tasks.find((t) => t.id === id);
+      setTasks((prev) => prev.map((t) => t.id === id ? { ...t, status: "postergada" } : t));
+      toast({ title: "Marcada como postergada" });
+      if (task) emitEvent(EVENT_TYPES.TASK_POSTPONED, "agenda", `Tarefa postergada: "${task.titulo}"`, { id, titulo: task.titulo });
+    },
   });
 
   const focoMutation = useMutation({
@@ -1045,6 +1056,9 @@ export default function PlanejamentoSemanalPage() {
     const newStatus = task.status === "concluida" ? "pendente" : "concluida";
     setTasks((prev) => prev.map((t) => t.id === id ? { ...t, status: newStatus } : t));
     updateMutation.mutate({ id, status: newStatus });
+    if (newStatus === "concluida") {
+      emitEvent(EVENT_TYPES.TASK_COMPLETED, "agenda", `Tarefa concluída: "${task.titulo}"`, { id, titulo: task.titulo, prioridade: task.prioridade, categoria: task.categoria });
+    }
   };
 
   const handleSave = (data: Partial<Task>) => {

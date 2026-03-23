@@ -34,6 +34,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ActivityFeed, useUnreadEventCount } from "@/components/ActivityFeed";
 
 type NavItem = {
   name: string;
@@ -275,6 +276,9 @@ export function Sidebar() {
     setOpenModules(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const [showActivity, setShowActivity] = useState(false);
+  const unreadCount = useUnreadEventCount();
+
   const toggleCompact = () => {
     setCompact(prev => {
       const next = !prev;
@@ -283,6 +287,7 @@ export function Sidebar() {
     });
   };
 
+  const sidebarWidth = compact ? 60 : 220;
   const [isDashboard] = [location === "/" || location === ""];
 
   return (
@@ -339,14 +344,38 @@ export function Sidebar() {
         />
       </div>
 
-      {/* Bottom: Premium badge + collapse toggle */}
-      <div className={cn("border-t border-slate-100 p-3 flex-shrink-0", compact ? "flex justify-center" : "")}>
+      {/* Bottom: Premium badge + activity + collapse toggle */}
+      <div className={cn("border-t border-slate-100 p-3 flex-shrink-0", compact ? "flex flex-col items-center gap-2" : "")}>
         {!compact && (
           <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-3 border border-primary/10 mb-2">
             <p className="text-[10px] text-slate-500 font-medium">Conta Premium</p>
             <p className="text-xs font-semibold text-slate-900 mt-0.5">Plano Ativo</p>
           </div>
         )}
+
+        {/* Activity bell */}
+        <button
+          onClick={() => setShowActivity((s) => !s)}
+          title="Atividade entre módulos"
+          className={cn(
+            "relative flex items-center gap-2 rounded-lg p-2 transition-colors w-full",
+            showActivity
+              ? "bg-indigo-50 text-indigo-600"
+              : "text-slate-400 hover:text-slate-700 hover:bg-slate-50",
+            compact ? "justify-center" : ""
+          )}
+        >
+          <div className="relative">
+            <Bell className="w-4 h-4" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-0.5 leading-none">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </div>
+          {!compact && <span className="text-xs">Atividade</span>}
+        </button>
+
         <button
           onClick={toggleCompact}
           title={compact ? "Expandir menu" : "Recolher menu"}
@@ -359,6 +388,14 @@ export function Sidebar() {
           {!compact && <span className="text-xs">Recolher</span>}
         </button>
       </div>
+
+      {/* Activity feed panel */}
+      {showActivity && (
+        <ActivityFeed
+          onClose={() => setShowActivity(false)}
+          sidebarWidth={sidebarWidth}
+        />
+      )}
     </aside>
   );
 }
