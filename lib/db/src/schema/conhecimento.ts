@@ -40,3 +40,27 @@ export const conhecimentoInsights = pgTable("conhecimento_insights", {
 });
 
 export type ConhecimentoInsight = typeof conhecimentoInsights.$inferSelect;
+
+export const conhecimentoArtigos = pgTable("conhecimento_artigos", {
+  id: serial("id").primaryKey(),
+  titulo: text("titulo").notNull(),
+  fonte: text("fonte"),
+  tema: text("tema").notNull().default("geral"),
+  dataLeitura: date("data_leitura"),
+  resumo: text("resumo"),
+  cor: text("cor").notNull().default("#6366F1"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type ConhecimentoArtigo = typeof conhecimentoArtigos.$inferSelect;
+
+export const conhecimentoArtigoInsights = pgTable("conhecimento_artigo_insights", {
+  id: serial("id").primaryKey(),
+  artigoId: integer("artigo_id").notNull(),
+  conteudo: text("conteudo").notNull(),
+  tag: text("tag"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type ConhecimentoArtigoInsight = typeof conhecimentoArtigoInsights.$inferSelect;

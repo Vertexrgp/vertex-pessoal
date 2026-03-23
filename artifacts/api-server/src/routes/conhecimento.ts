@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { conhecimentoLivros, conhecimentoFrases, conhecimentoInsights } from "@workspace/db";
+import { conhecimentoLivros, conhecimentoFrases, conhecimentoInsights, conhecimentoArtigos, conhecimentoArtigoInsights } from "@workspace/db";
 import { eq, desc, asc } from "drizzle-orm";
 
 const router = Router();
@@ -131,6 +131,106 @@ router.delete("/conhecimento/insights/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     await db.delete(conhecimentoInsights).where(eq(conhecimentoInsights.id, id));
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: "Erro ao deletar insight" });
+  }
+});
+
+// ─── ARTIGOS ──────────────────────────────────────────────────────────────────
+
+router.get("/conhecimento/artigos", async (_req, res) => {
+  try {
+    const artigos = await db.select().from(conhecimentoArtigos).orderBy(desc(conhecimentoArtigos.createdAt));
+    res.json(artigos);
+  } catch {
+    res.status(500).json({ error: "Erro ao buscar artigos" });
+  }
+});
+
+router.get("/conhecimento/artigos/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [artigo] = await db.select().from(conhecimentoArtigos).where(eq(conhecimentoArtigos.id, id));
+    if (!artigo) return res.status(404).json({ error: "Artigo não encontrado" });
+    res.json(artigo);
+  } catch {
+    res.status(500).json({ error: "Erro ao buscar artigo" });
+  }
+});
+
+router.post("/conhecimento/artigos", async (req, res) => {
+  try {
+    const { titulo, fonte, tema, dataLeitura, resumo, cor } = req.body;
+    if (!titulo) return res.status(400).json({ error: "titulo é obrigatório" });
+    const [artigo] = await db
+      .insert(conhecimentoArtigos)
+      .values({ titulo, fonte: fonte || null, tema: tema || "geral", dataLeitura: dataLeitura || null, resumo: resumo || null, cor: cor || "#6366F1" })
+      .returning();
+    res.json(artigo);
+  } catch {
+    res.status(500).json({ error: "Erro ao criar artigo" });
+  }
+});
+
+router.put("/conhecimento/artigos/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { titulo, fonte, tema, dataLeitura, resumo, cor } = req.body;
+    const [updated] = await db
+      .update(conhecimentoArtigos)
+      .set({ titulo, fonte, tema, dataLeitura, resumo, cor, updatedAt: new Date() })
+      .where(eq(conhecimentoArtigos.id, id))
+      .returning();
+    if (!updated) return res.status(404).json({ error: "Artigo não encontrado" });
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: "Erro ao atualizar artigo" });
+  }
+});
+
+router.delete("/conhecimento/artigos/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(conhecimentoArtigos).where(eq(conhecimentoArtigos.id, id));
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: "Erro ao deletar artigo" });
+  }
+});
+
+// ─── ARTIGO INSIGHTS ──────────────────────────────────────────────────────────
+
+router.get("/conhecimento/artigo-insights", async (req, res) => {
+  try {
+    const artigoId = req.query.artigoId ? parseInt(req.query.artigoId as string) : null;
+    const insights = artigoId
+      ? await db.select().from(conhecimentoArtigoInsights).where(eq(conhecimentoArtigoInsights.artigoId, artigoId)).orderBy(desc(conhecimentoArtigoInsights.createdAt))
+      : await db.select().from(conhecimentoArtigoInsights).orderBy(desc(conhecimentoArtigoInsights.createdAt));
+    res.json(insights);
+  } catch {
+    res.status(500).json({ error: "Erro ao buscar insights" });
+  }
+});
+
+router.post("/conhecimento/artigo-insights", async (req, res) => {
+  try {
+    const { artigoId, conteudo, tag } = req.body;
+    if (!artigoId || !conteudo) return res.status(400).json({ error: "artigoId e conteudo são obrigatórios" });
+    const [ins] = await db
+      .insert(conhecimentoArtigoInsights)
+      .values({ artigoId: parseInt(artigoId), conteudo, tag: tag || null })
+      .returning();
+    res.json(ins);
+  } catch {
+    res.status(500).json({ error: "Erro ao criar insight" });
+  }
+});
+
+router.delete("/conhecimento/artigo-insights/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(conhecimentoArtigoInsights).where(eq(conhecimentoArtigoInsights.id, id));
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: "Erro ao deletar insight" });

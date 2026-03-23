@@ -65,3 +65,37 @@ export const insightsApi = {
   create: (data: { livroId: number; conteudo: string; tag?: string }) => req<Insight>("POST", "/api/conhecimento/insights", data),
   remove: (id: number) => req<{ ok: true }>("DELETE", `/api/conhecimento/insights/${id}`),
 };
+
+export interface Artigo {
+  id: number;
+  titulo: string;
+  fonte: string | null;
+  tema: string;
+  dataLeitura: string | null;
+  resumo: string | null;
+  cor: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ArtigoInsight {
+  id: number;
+  artigoId: number;
+  conteudo: string;
+  tag: string | null;
+  createdAt: string;
+}
+
+export const artigosApi = {
+  list: () => req<Artigo[]>("GET", "/api/conhecimento/artigos"),
+  get: (id: number) => req<Artigo>("GET", `/api/conhecimento/artigos/${id}`),
+  create: (data: Omit<Artigo, "id" | "createdAt" | "updatedAt">) => req<Artigo>("POST", "/api/conhecimento/artigos", data),
+  update: (id: number, data: Partial<Artigo>) => req<Artigo>("PUT", `/api/conhecimento/artigos/${id}`, data),
+  remove: (id: number) => req<{ ok: true }>("DELETE", `/api/conhecimento/artigos/${id}`),
+};
+
+export const artigoInsightsApi = {
+  list: (artigoId: number) => req<ArtigoInsight[]>("GET", `/api/conhecimento/artigo-insights?artigoId=${artigoId}`),
+  create: (data: { artigoId: number; conteudo: string; tag?: string }) => req<ArtigoInsight>("POST", "/api/conhecimento/artigo-insights", data),
+  remove: (id: number) => req<{ ok: true }>("DELETE", `/api/conhecimento/artigo-insights/${id}`),
+};

@@ -45,6 +45,8 @@ import VisionBoardPage from "./pages/crescimento/vision-board";
 
 import LivrosPage from "./pages/conhecimento/livros";
 import LivroDetailPage from "./pages/conhecimento/livro-detalhe";
+import ArtigosPage from "./pages/conhecimento/artigos";
+import ArtigoDetailPage from "./pages/conhecimento/artigo-detalhe";
 
 import InglesPage from "./pages/idiomas/ingles";
 
@@ -97,6 +99,10 @@ function Router() {
       <Route path="/conhecimento/livros" component={LivrosPage} />
       <Route path="/conhecimento/livros/:id">
         {(params) => <LivroDetailPage id={params.id} />}
+      </Route>
+      <Route path="/conhecimento/artigos" component={ArtigosPage} />
+      <Route path="/conhecimento/artigos/:id">
+        {(params) => <ArtigoDetailPage id={params.id} />}
       </Route>
 
       <Route path="/idiomas/ingles" component={InglesPage} />
