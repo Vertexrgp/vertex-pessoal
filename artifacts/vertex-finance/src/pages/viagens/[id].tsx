@@ -6,7 +6,8 @@ import {
   ArrowLeft, Calendar, DollarSign, Plus, Trash2, Check, X,
   MapPin, ListChecks, ReceiptText, Route, Camera, Eye, Star,
   Clock, Navigation, Tag, FileText, Globe, Sparkles, ChevronDown,
-  BookOpen, Flag, CheckCircle2, Circle,
+  BookOpen, Flag, CheckCircle2, Circle, ExternalLink, Zap, ArrowUpDown,
+  Link2, LocateFixed, SortAsc,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -91,10 +92,13 @@ export default function ViagemDetailPage({ id }: Props) {
   const tripId = id;
 
   // ── Forms ────────────────────────────────────────────────────────────────
-  const [lugarForm, setLugarForm] = useState({
-    nome: "", endereco: "", categoria: "ponto_turistico", descricao: "",
-    notas: "", horario: "", comoChegar: "", prioridade: "media", status: "planejado",
-  });
+  const BLANK_LUGAR = {
+    nome: "", endereco: "", cidade: "", pais: "", categoria: "ponto_turistico",
+    descricao: "", notas: "", horario: "", comoChegar: "", linkExterno: "",
+    prioridade: "media", status: "planejado", lat: "", lng: "",
+    diaViagem: "", ordemRoteiro: "",
+  };
+  const [lugarForm, setLugarForm] = useState(BLANK_LUGAR);
   const [showLugarForm, setShowLugarForm] = useState(false);
 
   const [roteiroForm, setRoteiroForm] = useState({ dia: "1", titulo: "", hora: "", descricao: "", tipo: "atividade", lugarId: "" });
@@ -114,7 +118,7 @@ export default function ViagemDetailPage({ id }: Props) {
   // ── Mutations ─────────────────────────────────────────────────────────────
   const inv = () => qc.invalidateQueries({ queryKey: ["viagem-detail", tripId] });
 
-  const addLugar     = useMutation({ mutationFn: (b: any) => fetch(apiUrl(`/viagens/trips/${tripId}/lugares`), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }).then(r => r.json()), onSuccess: () => { inv(); setShowLugarForm(false); setLugarForm({ nome:"", endereco:"", categoria:"ponto_turistico", descricao:"", notas:"", horario:"", comoChegar:"", prioridade:"media", status:"planejado" }); toast({ title: "Lugar adicionado" }); } });
+  const addLugar     = useMutation({ mutationFn: (b: any) => fetch(apiUrl(`/viagens/trips/${tripId}/lugares`), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }).then(r => r.json()), onSuccess: () => { inv(); setShowLugarForm(false); setLugarForm(BLANK_LUGAR); toast({ title: "Lugar adicionado" }); } });
   const updateLugar  = useMutation({ mutationFn: ({ id, ...b }: any) => fetch(apiUrl(`/viagens/lugares/${id}`), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }).then(r => r.json()), onSuccess: inv });
   const deleteLugar  = useMutation({ mutationFn: (id: number) => fetch(apiUrl(`/viagens/lugares/${id}`), { method: "DELETE" }).then(r => r.json()), onSuccess: inv });
   const addRoteiro   = useMutation({ mutationFn: (b: any) => fetch(apiUrl(`/viagens/trips/${tripId}/roteiro`), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }).then(r => r.json()), onSuccess: () => { inv(); setRoteiroForm({ dia: "1", titulo: "", hora: "", descricao: "", tipo: "atividade", lugarId: "" }); toast({ title: "Adicionado ao roteiro" }); } });
@@ -386,51 +390,116 @@ export default function ViagemDetailPage({ id }: Props) {
 
           {showLugarForm && (
             <div className="bg-white rounded-2xl border border-primary/20 shadow-sm p-5">
-              <h3 className="text-sm font-semibold text-slate-700 mb-4">Novo Lugar</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="md:col-span-2">
-                  <label className={LABEL}>Nome *</label>
-                  <input value={lugarForm.nome} onChange={e => setLugarForm(f => ({ ...f, nome: e.target.value }))} placeholder="Ex: Torre Eiffel" className={cn(INPUT, "w-full")} />
-                </div>
-                <div>
-                  <label className={LABEL}>Categoria</label>
-                  <select value={lugarForm.categoria} onChange={e => setLugarForm(f => ({ ...f, categoria: e.target.value }))} className={cn(INPUT, "w-full")}>
-                    {CATEGORIAS_LUGAR.map(c => <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className={LABEL}>Prioridade</label>
-                  <select value={lugarForm.prioridade} onChange={e => setLugarForm(f => ({ ...f, prioridade: e.target.value }))} className={cn(INPUT, "w-full")}>
-                    <option value="alta">Alta</option>
-                    <option value="media">Média</option>
-                    <option value="baixa">Baixa</option>
-                  </select>
-                </div>
-                <div className="md:col-span-2">
-                  <label className={LABEL}>Endereço</label>
-                  <input value={lugarForm.endereco} onChange={e => setLugarForm(f => ({ ...f, endereco: e.target.value }))} placeholder="Rua, bairro, cidade" className={cn(INPUT, "w-full")} />
-                </div>
-                <div>
-                  <label className={LABEL}>Horário de funcionamento</label>
-                  <input value={lugarForm.horario} onChange={e => setLugarForm(f => ({ ...f, horario: e.target.value }))} placeholder="Ex: 9h às 18h" className={cn(INPUT, "w-full")} />
-                </div>
-                <div>
-                  <label className={LABEL}>Como chegar</label>
-                  <input value={lugarForm.comoChegar} onChange={e => setLugarForm(f => ({ ...f, comoChegar: e.target.value }))} placeholder="Metro, táxi, caminhada..." className={cn(INPUT, "w-full")} />
-                </div>
-                <div className="md:col-span-2">
-                  <label className={LABEL}>Descrição</label>
-                  <textarea value={lugarForm.descricao} onChange={e => setLugarForm(f => ({ ...f, descricao: e.target.value }))} rows={2} placeholder="O que há de especial neste lugar?" className={cn(INPUT, "w-full resize-none")} />
-                </div>
-                <div className="md:col-span-2">
-                  <label className={LABEL}>Notas pessoais</label>
-                  <input value={lugarForm.notas} onChange={e => setLugarForm(f => ({ ...f, notas: e.target.value }))} placeholder="Dicas, observações..." className={cn(INPUT, "w-full")} />
+              <h3 className="text-sm font-semibold text-slate-700 mb-1">Novo Lugar</h3>
+              <p className="text-xs text-slate-400 mb-5">Todos os campos são salvos e usados para gerar rotas no mapa</p>
+
+              {/* Seção 1: Identificação */}
+              <div className="mb-5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-3">Identificação</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="md:col-span-2">
+                    <label className={LABEL}>Nome *</label>
+                    <input value={lugarForm.nome} onChange={e => setLugarForm(f => ({ ...f, nome: e.target.value }))} placeholder="Ex: Torre Eiffel" className={cn(INPUT, "w-full")} />
+                  </div>
+                  <div>
+                    <label className={LABEL}>Categoria</label>
+                    <select value={lugarForm.categoria} onChange={e => setLugarForm(f => ({ ...f, categoria: e.target.value }))} className={cn(INPUT, "w-full")}>
+                      {CATEGORIAS_LUGAR.map(c => <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>)}
+                    </select>
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-3 mt-4">
+
+              {/* Seção 2: Localização */}
+              <div className="mb-5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-sky-500 mb-3">Localização</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="md:col-span-2">
+                    <label className={LABEL}>Endereço completo</label>
+                    <input value={lugarForm.endereco} onChange={e => setLugarForm(f => ({ ...f, endereco: e.target.value }))} placeholder="Rua, número, bairro" className={cn(INPUT, "w-full")} />
+                  </div>
+                  <div>
+                    <label className={LABEL}>Cidade</label>
+                    <input value={lugarForm.cidade} onChange={e => setLugarForm(f => ({ ...f, cidade: e.target.value }))} placeholder="Ex: Paris" className={cn(INPUT, "w-full")} />
+                  </div>
+                  <div>
+                    <label className={LABEL}>País</label>
+                    <input value={lugarForm.pais} onChange={e => setLugarForm(f => ({ ...f, pais: e.target.value }))} placeholder="Ex: França" className={cn(INPUT, "w-full")} />
+                  </div>
+                  <div>
+                    <label className={LABEL}>Latitude <span className="text-slate-300 normal-case font-normal">(para mapa)</span></label>
+                    <input type="number" step="0.0000001" value={lugarForm.lat} onChange={e => setLugarForm(f => ({ ...f, lat: e.target.value }))} placeholder="Ex: 48.8584" className={cn(INPUT, "w-full")} />
+                  </div>
+                  <div>
+                    <label className={LABEL}>Longitude <span className="text-slate-300 normal-case font-normal">(para mapa)</span></label>
+                    <input type="number" step="0.0000001" value={lugarForm.lng} onChange={e => setLugarForm(f => ({ ...f, lng: e.target.value }))} placeholder="Ex: 2.2945" className={cn(INPUT, "w-full")} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Seção 3: Planejamento */}
+              <div className="mb-5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 mb-3">Planejamento & Rota</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className={LABEL}>Prioridade</label>
+                    <select value={lugarForm.prioridade} onChange={e => setLugarForm(f => ({ ...f, prioridade: e.target.value }))} className={cn(INPUT, "w-full")}>
+                      <option value="alta">⭐ Alta</option>
+                      <option value="media">Média</option>
+                      <option value="baixa">Baixa</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={LABEL}>Dia da viagem</label>
+                    <input type="number" min="1" value={lugarForm.diaViagem} onChange={e => setLugarForm(f => ({ ...f, diaViagem: e.target.value }))} placeholder="Ex: 2" className={cn(INPUT, "w-full")} />
+                  </div>
+                  <div>
+                    <label className={LABEL}>Ordem no roteiro</label>
+                    <input type="number" min="1" value={lugarForm.ordemRoteiro} onChange={e => setLugarForm(f => ({ ...f, ordemRoteiro: e.target.value }))} placeholder="Ex: 1" className={cn(INPUT, "w-full")} />
+                  </div>
+                  <div>
+                    <label className={LABEL}>Horário</label>
+                    <input value={lugarForm.horario} onChange={e => setLugarForm(f => ({ ...f, horario: e.target.value }))} placeholder="9h às 18h" className={cn(INPUT, "w-full")} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Seção 4: Detalhes */}
+              <div className="mb-5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Detalhes</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className={LABEL}>Como chegar</label>
+                    <input value={lugarForm.comoChegar} onChange={e => setLugarForm(f => ({ ...f, comoChegar: e.target.value }))} placeholder="Metrô, táxi, caminhada..." className={cn(INPUT, "w-full")} />
+                  </div>
+                  <div>
+                    <label className={LABEL}>Link externo <span className="text-slate-300 normal-case font-normal">(Google Maps, site...)</span></label>
+                    <input value={lugarForm.linkExterno} onChange={e => setLugarForm(f => ({ ...f, linkExterno: e.target.value }))} placeholder="https://maps.google.com/..." className={cn(INPUT, "w-full")} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className={LABEL}>Descrição</label>
+                    <textarea value={lugarForm.descricao} onChange={e => setLugarForm(f => ({ ...f, descricao: e.target.value }))} rows={2} placeholder="O que há de especial neste lugar?" className={cn(INPUT, "w-full resize-none")} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className={LABEL}>Notas pessoais</label>
+                    <input value={lugarForm.notas} onChange={e => setLugarForm(f => ({ ...f, notas: e.target.value }))} placeholder="Dicas, observações, recomendações..." className={cn(INPUT, "w-full")} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
                 <button onClick={() => setShowLugarForm(false)} className={BTN_GHOST}>Cancelar</button>
                 <button
-                  onClick={() => { if (!lugarForm.nome) { toast({ title: "Nome obrigatório", variant: "destructive" }); return; } addLugar.mutate(lugarForm); }}
+                  onClick={() => {
+                    if (!lugarForm.nome) { toast({ title: "Nome obrigatório", variant: "destructive" }); return; }
+                    addLugar.mutate({
+                      ...lugarForm,
+                      lat: lugarForm.lat ? parseFloat(lugarForm.lat) : null,
+                      lng: lugarForm.lng ? parseFloat(lugarForm.lng) : null,
+                      diaViagem: lugarForm.diaViagem ? parseInt(lugarForm.diaViagem) : null,
+                      ordemRoteiro: lugarForm.ordemRoteiro ? parseInt(lugarForm.ordemRoteiro) : 0,
+                    });
+                  }}
                   disabled={addLugar.isPending}
                   className={BTN_PRIMARY}
                 >
@@ -454,41 +523,218 @@ export default function ViagemDetailPage({ id }: Props) {
 
       {/* ── MAPA ───────────────────────────────────────────────────────────────── */}
       {tab === "mapa" && (
-        <div className="space-y-4">
-          <div className="bg-gradient-to-br from-sky-50 to-blue-50 rounded-2xl border border-sky-200 p-6 text-center">
-            <Globe className="w-10 h-10 text-sky-400 mx-auto mb-3" />
-            <h3 className="font-bold text-slate-800 mb-1">Mapa interativo</h3>
-            <p className="text-sm text-slate-500 mb-4">Em breve com mapa completo. Por agora, veja seus lugares organizados abaixo.</p>
+        <div className="space-y-5">
+
+          {/* Status bar: preparação Google Maps */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center flex-shrink-0">
+                <Globe className="w-5 h-5 text-sky-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-sm font-bold text-slate-900">Integração com Google Maps</h3>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Fase 2</span>
+                </div>
+                <p className="text-xs text-slate-500 mb-3">A estrutura está preparada: seus lugares têm campos de lat/lng, endereço, cidade, país e link externo. Quando ativarmos a API do Google Maps, o mapa interativo aparece automaticamente aqui.</p>
+                <div className="flex flex-wrap gap-2">
+                  <IntegrationBadge icon={LocateFixed} label="Geocoding API" status="pronto" />
+                  <IntegrationBadge icon={Route} label="Directions API" status="pronto" />
+                  <IntegrationBadge icon={MapPin} label="Places API" status="pronto" />
+                  <IntegrationBadge icon={Zap} label="Rota otimizada" status="pronto" />
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-3">
-            {["alta","media","baixa"].map(prio => {
-              const filtered = lugares.filter((l: any) => l.prioridade === prio);
-              if (filtered.length === 0) return null;
-              return (
-                <div key={prio} className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                  <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
-                    <Flag className={cn("w-3.5 h-3.5", prio === "alta" ? "text-rose-500" : prio === "media" ? "text-amber-500" : "text-slate-400")} />
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{prio === "alta" ? "Alta" : prio === "media" ? "Média" : "Baixa"} prioridade</span>
-                    <span className="ml-auto text-xs text-slate-400">{filtered.length}</span>
-                  </div>
-                  {filtered.map((l: any, idx: number) => (
-                    <div key={l.id} className={cn("flex items-start gap-4 px-5 py-3.5 hover:bg-slate-50 transition-colors", idx > 0 && "border-t border-slate-100")}>
-                      <span className="text-xl flex-shrink-0">{getCatEmoji(l.categoria)}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-slate-900">{l.nome}</p>
-                        {l.endereco && <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5"><MapPin className="w-3 h-3" />{l.endereco}</p>}
-                        {l.horario && <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5"><Clock className="w-3 h-3" />{l.horario}</p>}
-                      </div>
-                      <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0", l.status === "visitado" ? "bg-emerald-100 text-emerald-700" : "bg-blue-50 text-blue-600")}>
-                        {l.status === "visitado" ? "✓" : "Planejado"}
-                      </span>
+          {/* Rota otimizada - preview */}
+          {lugares.length > 1 && (
+            <div className="bg-white rounded-2xl border border-slate-200 p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-amber-500" />
+                  <h3 className="text-sm font-bold text-slate-900">Otimização de rota</h3>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Fase 2</span>
+                </div>
+                <button
+                  disabled
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-100 text-slate-400 rounded-lg cursor-not-allowed"
+                  title="Disponível após integração com Google Directions API"
+                >
+                  <SortAsc className="w-3.5 h-3.5" /> Otimizar rota
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 mb-4">
+                Com {lugares.length} lugares cadastrados, a otimização de rota vai sugerir a ordem ideal para minimizar deslocamento e aproveitar melhor cada dia.
+              </p>
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 border-dashed">
+                <p className="text-xs font-semibold text-slate-500 mb-3">Como vai funcionar:</p>
+                <div className="space-y-2">
+                  {["Coletar coordenadas de cada lugar via Geocoding API", "Calcular distâncias com Google Directions API", "Sugerir sequência otimizada por dia", "Permitir ajuste manual da ordem"].map((step, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <div className="w-4 h-4 rounded-full bg-primary/10 text-primary text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i+1}</div>
+                      <p className="text-xs text-slate-600">{step}</p>
                     </div>
                   ))}
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            </div>
+          )}
+
+          {/* Lugares por dia */}
+          {lugares.length === 0 ? (
+            <EmptyState icon={MapPin} msg="Nenhum lugar salvo ainda" action="Adicione lugares na aba Lugares com coordenadas para ativar o mapa" />
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">{lugares.length} lugares cadastrados</h3>
+                <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                  <LocateFixed className="w-3.5 h-3.5" />
+                  {lugares.filter((l: any) => l.lat && l.lng).length} com coordenadas
+                </div>
+              </div>
+
+              {/* Por dia */}
+              {(() => {
+                const comDia = lugares.filter((l: any) => l.diaViagem);
+                const semDia = lugares.filter((l: any) => !l.diaViagem);
+                const diasUnicos = [...new Set(comDia.map((l: any) => l.diaViagem))].sort((a: any, b: any) => a - b);
+
+                return (
+                  <div className="space-y-3">
+                    {diasUnicos.map((dia: any) => {
+                      const lugaresNoDia = comDia
+                        .filter((l: any) => l.diaViagem === dia)
+                        .sort((a: any, b: any) => (a.ordemRoteiro ?? 99) - (b.ordemRoteiro ?? 99));
+
+                      return (
+                        <div key={dia} className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                          <div className="px-5 py-3 bg-gradient-to-r from-primary/5 to-transparent border-b border-slate-100 flex items-center gap-3">
+                            <div className="w-7 h-7 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                              {dia}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-slate-800">Dia {dia}</p>
+                              <p className="text-[10px] text-slate-400">{lugaresNoDia.length} lugar{lugaresNoDia.length !== 1 ? "es" : ""} planejado{lugaresNoDia.length !== 1 ? "s" : ""}</p>
+                            </div>
+                            {lugaresNoDia.length > 1 && (
+                              <button
+                                disabled
+                                className="ml-auto flex items-center gap-1 text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg cursor-not-allowed"
+                                title="Disponível na Fase 2"
+                              >
+                                <ArrowUpDown className="w-3 h-3" /> Otimizar dia
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Linha de rota visual */}
+                          <div className="px-5 py-3">
+                            {lugaresNoDia.map((l: any, idx: number) => {
+                              const gmapsUrl = buildGmapsUrl(l);
+                              const directionsUrl = buildDirectionsUrl(l);
+                              return (
+                                <div key={l.id} className="relative">
+                                  {idx < lugaresNoDia.length - 1 && (
+                                    <div className="absolute left-3.5 top-10 w-0.5 h-4 bg-slate-200" />
+                                  )}
+                                  <div className="flex items-start gap-3 py-2">
+                                    {/* Ordem indicator */}
+                                    <div className={cn(
+                                      "w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5",
+                                      l.status === "visitado" ? "bg-emerald-500 border-emerald-500 text-white" : "bg-white border-slate-300 text-slate-600"
+                                    )}>
+                                      {l.status === "visitado" ? <Check className="w-3.5 h-3.5" /> : (l.ordemRoteiro || idx + 1)}
+                                    </div>
+
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-1.5 flex-wrap">
+                                            <span className="text-base">{getCatEmoji(l.categoria)}</span>
+                                            <p className="text-sm font-semibold text-slate-900">{l.nome}</p>
+                                            {l.prioridade === "alta" && <span className="text-[9px] text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded font-semibold">⭐ Alta</span>}
+                                          </div>
+                                          {l.endereco && (
+                                            <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                                              <MapPin className="w-3 h-3 flex-shrink-0" />
+                                              {[l.endereco, l.cidade, l.pais].filter(Boolean).join(", ")}
+                                            </p>
+                                          )}
+                                          {l.horario && (
+                                            <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                                              <Clock className="w-3 h-3 flex-shrink-0" />{l.horario}
+                                            </p>
+                                          )}
+                                          {(l.lat && l.lng) && (
+                                            <p className="text-[10px] text-emerald-600 font-medium mt-0.5 flex items-center gap-1">
+                                              <LocateFixed className="w-3 h-3" /> {Number(l.lat).toFixed(4)}, {Number(l.lng).toFixed(4)}
+                                            </p>
+                                          )}
+                                        </div>
+                                        {/* Action buttons */}
+                                        <div className="flex flex-col gap-1.5 flex-shrink-0">
+                                          <a
+                                            href={gmapsUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-sky-50 text-sky-600 hover:bg-sky-100 transition-colors whitespace-nowrap"
+                                          >
+                                            <ExternalLink className="w-3 h-3" /> Abrir no mapa
+                                          </a>
+                                          <a
+                                            href={directionsUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors whitespace-nowrap"
+                                          >
+                                            <Navigation className="w-3 h-3" /> Como chegar
+                                          </a>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Lugares sem dia definido */}
+                    {semDia.length > 0 && (
+                      <div className="bg-white rounded-2xl border border-slate-200 border-dashed overflow-hidden">
+                        <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-slate-400" />
+                          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Sem dia definido</p>
+                          <span className="ml-auto text-xs text-slate-400">{semDia.length}</span>
+                        </div>
+                        {semDia.map((l: any, idx: number) => {
+                          const gmapsUrl = buildGmapsUrl(l);
+                          const directionsUrl = buildDirectionsUrl(l);
+                          return (
+                            <div key={l.id} className={cn("flex items-start gap-3 px-5 py-3.5", idx > 0 && "border-t border-slate-100")}>
+                              <span className="text-xl flex-shrink-0">{getCatEmoji(l.categoria)}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-slate-700">{l.nome}</p>
+                                {l.endereco && <p className="text-xs text-slate-500">{[l.endereco, l.cidade].filter(Boolean).join(", ")}</p>}
+                                <p className="text-[10px] text-slate-400 mt-0.5">Defina o dia na aba Lugares para incluir no roteiro por dia</p>
+                              </div>
+                              <div className="flex gap-1.5">
+                                <a href={gmapsUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] font-semibold px-2 py-1 rounded bg-sky-50 text-sky-600 hover:bg-sky-100">Mapa</a>
+                                <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] font-semibold px-2 py-1 rounded bg-emerald-50 text-emerald-600 hover:bg-emerald-100">Rota</a>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
         </div>
       )}
 
@@ -705,6 +951,29 @@ const LABEL = "block text-[10px] font-semibold text-slate-400 uppercase tracking
 const BTN_PRIMARY = "flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors";
 const BTN_GHOST = "px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors";
 
+function buildGmapsUrl(l: any): string {
+  if (l.lat && l.lng) {
+    return `https://www.google.com/maps/search/?api=1&query=${l.lat},${l.lng}`;
+  }
+  const q = [l.nome, l.endereco, l.cidade, l.pais].filter(Boolean).join(", ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+}
+
+function buildDirectionsUrl(l: any): string {
+  const dest = l.lat && l.lng ? `${l.lat},${l.lng}` : encodeURIComponent([l.nome, l.endereco, l.cidade, l.pais].filter(Boolean).join(", "));
+  return `https://www.google.com/maps/dir/?api=1&destination=${dest}`;
+}
+
+function IntegrationBadge({ icon: Icon, label, status }: { icon: React.ElementType; label: string; status: string }) {
+  return (
+    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+      <Icon className="w-3 h-3 text-emerald-500" />
+      <span className="text-[10px] font-semibold text-emerald-700">{label}</span>
+      <span className="text-[9px] text-emerald-500 capitalize">· {status}</span>
+    </div>
+  );
+}
+
 function KpiMini({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div>
@@ -740,6 +1009,10 @@ function LugarCard({ lugar, onMarkVisited, onDelete }: { lugar: any; onMarkVisit
   const [expanded, setExpanded] = useState(false);
   const visited = lugar.status === "visitado";
   const prioColor = { alta: "border-l-rose-400", media: "border-l-amber-400", baixa: "border-l-slate-200" }[lugar.prioridade as string] ?? "border-l-slate-200";
+  const gmapsUrl = buildGmapsUrl(lugar);
+  const directionsUrl = buildDirectionsUrl(lugar);
+  const locationLine = [lugar.endereco, lugar.cidade, lugar.pais].filter(Boolean).join(", ");
+  const hasCoords = !!(lugar.lat && lugar.lng);
 
   return (
     <div className={cn("bg-white rounded-2xl border border-slate-200 border-l-4 overflow-hidden group transition-all hover:shadow-sm", prioColor)}>
@@ -747,34 +1020,70 @@ function LugarCard({ lugar, onMarkVisited, onDelete }: { lugar: any; onMarkVisit
         <div className="flex items-start gap-3">
           <span className="text-2xl flex-shrink-0">{getCatEmoji(lugar.categoria)}</span>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
               <h4 className="font-bold text-slate-900 text-sm leading-tight">{lugar.nome}</h4>
               <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{getCatLabel(lugar.categoria)}</span>
+              {lugar.diaViagem && (
+                <span className="text-[10px] font-semibold bg-primary/10 text-primary px-1.5 py-0.5 rounded">Dia {lugar.diaViagem}</span>
+              )}
             </div>
-            {lugar.endereco && <p className="text-xs text-slate-500 flex items-center gap-1 mt-1"><MapPin className="w-3 h-3" />{lugar.endereco}</p>}
-            {lugar.horario && <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5"><Clock className="w-3 h-3" />{lugar.horario}</p>}
+            {locationLine && <p className="text-xs text-slate-500 flex items-center gap-1"><MapPin className="w-3 h-3 flex-shrink-0" />{locationLine}</p>}
+            {lugar.horario && <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5"><Clock className="w-3 h-3 flex-shrink-0" />{lugar.horario}</p>}
+            {hasCoords && <p className="text-[10px] text-emerald-600 flex items-center gap-1 mt-0.5"><LocateFixed className="w-3 h-3" />Com coordenadas</p>}
           </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <button
-              onClick={onMarkVisited}
-              className={cn("flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full transition-all", visited ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600")}
+          <button
+            onClick={onMarkVisited}
+            className={cn("flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full transition-all flex-shrink-0", visited ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600")}
+          >
+            {visited ? <><Check className="w-3 h-3" /> Visitado</> : "Marcar"}
+          </button>
+        </div>
+
+        {/* Map action buttons */}
+        <div className="flex items-center gap-2 mt-3">
+          <a
+            href={gmapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-sky-50 text-sky-600 hover:bg-sky-100 transition-colors"
+          >
+            <ExternalLink className="w-3 h-3" /> Abrir no mapa
+          </a>
+          <a
+            href={directionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+          >
+            <Navigation className="w-3 h-3" /> Como chegar
+          </a>
+          {lugar.linkExterno && (
+            <a
+              href={lugar.linkExterno}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-100 transition-colors"
             >
-              {visited ? <><Check className="w-3 h-3" /> Visitado</> : "Marcar"}
-            </button>
-          </div>
+              <Link2 className="w-3 h-3" /> Site
+            </a>
+          )}
         </div>
 
         {(lugar.descricao || lugar.notas || lugar.comoChegar) && (
-          <button onClick={() => setExpanded(s => !s)} className="mt-2 flex items-center gap-1 text-[10px] text-primary hover:underline">
+          <button onClick={() => setExpanded(s => !s)} className="mt-2.5 flex items-center gap-1 text-[10px] text-primary hover:underline">
             <ChevronDown className={cn("w-3 h-3 transition-transform", expanded && "rotate-180")} />
-            {expanded ? "Menos" : "Mais detalhes"}
+            {expanded ? "Menos detalhes" : "Ver detalhes"}
           </button>
         )}
 
         {expanded && (
           <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
             {lugar.descricao && <p className="text-xs text-slate-600">{lugar.descricao}</p>}
-            {lugar.comoChegar && <p className="text-xs text-slate-500 flex items-start gap-1"><Navigation className="w-3 h-3 flex-shrink-0 mt-0.5 text-slate-400" />{lugar.comoChegar}</p>}
+            {lugar.comoChegar && (
+              <p className="text-xs text-slate-500 flex items-start gap-1">
+                <Navigation className="w-3 h-3 flex-shrink-0 mt-0.5 text-slate-400" />{lugar.comoChegar}
+              </p>
+            )}
             {lugar.notas && <p className="text-xs text-slate-400 italic">{lugar.notas}</p>}
           </div>
         )}

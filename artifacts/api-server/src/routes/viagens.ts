@@ -75,29 +75,37 @@ router.delete("/viagens/trips/:id", async (req, res) => {
 
 router.post("/viagens/trips/:id/lugares", async (req, res) => {
   const viagemId = Number(req.params.id);
-  const { nome, endereco, categoria, descricao, notas, horario, comoChegar, prioridade, status, lat, lng } = req.body;
+  const { nome, endereco, cidade, pais, categoria, descricao, notas, horario, comoChegar, linkExterno, prioridade, status, lat, lng, diaViagem, ordemRoteiro } = req.body;
   if (!nome) return res.status(400).json({ error: "nome obrigatório" });
   const [lugar] = await db.insert(viagensLugaresTable).values({
-    viagemId, nome, endereco: endereco || null,
+    viagemId, nome,
+    endereco: endereco || null, cidade: cidade || null, pais: pais || null,
     categoria: categoria || "ponto_turistico",
     descricao: descricao || null, notas: notas || null,
     horario: horario || null, comoChegar: comoChegar || null,
+    linkExterno: linkExterno || null,
     prioridade: prioridade || "media", status: status || "planejado",
     lat: lat ? String(lat) : null, lng: lng ? String(lng) : null,
+    diaViagem: diaViagem ? Number(diaViagem) : null,
+    ordemRoteiro: ordemRoteiro ? Number(ordemRoteiro) : 0,
   }).returning();
   res.json(lugar);
 });
 
 router.put("/viagens/lugares/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const { nome, endereco, categoria, descricao, notas, horario, comoChegar, prioridade, status, lat, lng } = req.body;
+  const { nome, endereco, cidade, pais, categoria, descricao, notas, horario, comoChegar, linkExterno, prioridade, status, lat, lng, diaViagem, ordemRoteiro } = req.body;
   const [lugar] = await db.update(viagensLugaresTable).set({
-    nome, endereco: endereco || null,
+    nome,
+    endereco: endereco || null, cidade: cidade || null, pais: pais || null,
     categoria: categoria || "ponto_turistico",
     descricao: descricao || null, notas: notas || null,
     horario: horario || null, comoChegar: comoChegar || null,
+    linkExterno: linkExterno || null,
     prioridade: prioridade || "media", status: status || "planejado",
     lat: lat ? String(lat) : null, lng: lng ? String(lng) : null,
+    diaViagem: diaViagem ? Number(diaViagem) : null,
+    ordemRoteiro: ordemRoteiro !== undefined ? Number(ordemRoteiro) : 0,
   }).where(eq(viagensLugaresTable.id, id)).returning();
   res.json(lugar);
 });

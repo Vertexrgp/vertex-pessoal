@@ -1,0 +1,122 @@
+Quero evoluir o módulo Viagens para incluir também uma camada avançada de mapa e rota.
+
+OBJETIVO
+Preparar o módulo para usar Google Maps API e otimização de rota, sem perder simplicidade na primeira fase.
+
+IMPORTANTE
+Quero fazer isso em duas etapas:
+1. estruturar bem agora
+2. integrar mapa e otimização em seguida
+
+====================================================
+1) PREPARAR ESTRUTURA DOS LUGARES
+====================================================
+
+Cada lugar da viagem deve ter:
+
+- nome
+- endereço
+- cidade
+- país
+- categoria
+- descrição
+- notas
+- horário
+- prioridade
+- status
+- link externo
+- latitude
+- longitude
+- dia da viagem
+- ordem no roteiro
+
+====================================================
+2) MAPA — FASE 1
+====================================================
+
+Criar base para mapa:
+
+- lista de lugares com localização
+- exibição organizada por dia
+- botão “abrir no mapa”
+- botão “como chegar”
+
+Mesmo que o mapa interativo completo ainda não esteja pronto, quero a estrutura preparada.
+
+====================================================
+3) GOOGLE MAPS API — FASE 2
+====================================================
+
+Preparar o módulo para futura integração com:
+
+- Google Maps Places API
+- Google Maps Directions / rotas
+- geocoding
+- exibição dos pontos no mapa
+
+====================================================
+4) OTIMIZAÇÃO DE ROTA
+====================================================
+
+Criar base para no futuro otimizar a sequência dos lugares.
+
+Objetivo:
+- reduzir deslocamento
+- sugerir ordem mais lógica
+- organizar melhor cada dia da viagem
+
+Exemplo:
+Dia 1:
+- hotel
+- café
+- museu
+- restaurante
+
+O sistema deve poder sugerir a melhor ordem.
+
+====================================================
+5) ROTEIRO POR DIA
+====================================================
+
+Melhorar o roteiro para:
+- vincular lugares aos dias
+- definir ordem
+- permitir reorder manual
+- permitir futura otimização automática
+
+====================================================
+6) INTEGRAÇÃO
+====================================================
+
+Integrar com:
+- Agenda (datas e compromissos da viagem)
+- Financeiro (gastos da viagem)
+- Fotos & Memórias
+- Checklist
+
+====================================================
+7) VISUAL
+====================================================
+
+Quero visual premium:
+- limpo
+- bonito
+- organizado
+- com sensação de planejamento de viagem real
+
+====================================================
+8) ENTREGAR
+====================================================
+
+Implementar agora:
+
+1. estrutura completa dos lugares
+2. campos de localização
+3. vínculo com roteiro por dia
+4. base preparada para Google Maps API
+5. base preparada para otimização de rota
+
+No final, me mostrar:
+- o que já ficou pronto
+- o que está preparado para integração com mapa
+- como depois ligaremos Google Maps e rota otimizada
