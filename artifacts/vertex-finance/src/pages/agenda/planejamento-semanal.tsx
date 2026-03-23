@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
@@ -472,11 +472,9 @@ function DayBlock({
 type SideTab = "pool" | "postergadas" | "concluidas" | "notas";
 
 function SidePanel({
-  tasks,
-  notes,
-  onNotesChange,
-  onAddTask,
+  tasks, notes, onNotesChange, onAddTask,
   onComplete, onDelete, onDuplicate, onMoveNext, onPostpone, onEdit,
+  panelWidth,
 }: {
   tasks: Task[];
   notes: string;
@@ -488,6 +486,7 @@ function SidePanel({
   onMoveNext: (id: number) => void;
   onPostpone: (id: number) => void;
   onEdit: (task: Task) => void;
+  panelWidth: number;
 }) {
   const [tab, setTab] = useState<SideTab>("pool");
   const { setNodeRef, isOver } = useDroppable({ id: "pool" });
@@ -530,7 +529,7 @@ function SidePanel({
   );
 
   return (
-    <div className="w-[296px] flex-shrink-0 flex flex-col border-l border-slate-100 bg-slate-50/40">
+    <div className="flex-shrink-0 flex flex-col border-l border-slate-100 bg-slate-50/40" style={{ width: panelWidth }}>
       {/* Panel header */}
       <div className="px-4 pt-4 pb-3 border-b border-slate-100 bg-white">
         <div className="flex items-center justify-between mb-3">
@@ -750,6 +749,60 @@ export default function PlanejamentoSemanalPage() {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [notes, setNotes] = useState("");
 
+  // ─── Resizable panel ───────────────────────────────────────────────────────
+  const PANEL_KEY = "planner-panel-width";
+  const [panelWidth, setPanelWidth] = useState<number>(() => {
+    const saved = localStorage.getItem(PANEL_KEY);
+    return saved ? parseInt(saved, 10) : 300;
+  });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const panelWidthRef = useRef(panelWidth);
+  panelWidthRef.current = panelWidth;
+  const [isDragging, setIsDragging] = useState(false);
+
+  const PRESET_BALANCED = 0.5;   // 50/50
+  const PRESET_FOCUS_DAYS = 0.28; // 72/28 — foco nos dias
+  const PRESET_FOCUS_TASKS = 0.55; // 45/55 — foco nas tarefas
+
+  const applyPreset = useCallback((ratio: number) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const total = container.offsetWidth;
+    const minLeft = total * 0.40, minRight = total * 0.25;
+    const raw = total * ratio;
+    const clamped = Math.max(minRight, Math.min(total - minLeft, raw));
+    setPanelWidth(Math.round(clamped));
+    localStorage.setItem(PANEL_KEY, String(Math.round(clamped)));
+  }, []);
+
+  const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    const startX = e.clientX;
+    const startWidth = panelWidthRef.current;
+
+    const onMove = (ev: MouseEvent) => {
+      const container = containerRef.current;
+      if (!container) return;
+      const total = container.offsetWidth;
+      const minRight = total * 0.25;
+      const maxRight = total * 0.60;
+      const delta = startX - ev.clientX; // drag left → wider right panel
+      const next = Math.max(minRight, Math.min(maxRight, startWidth + delta));
+      setPanelWidth(Math.round(next));
+    };
+
+    const onUp = () => {
+      setIsDragging(false);
+      localStorage.setItem(PANEL_KEY, String(panelWidthRef.current));
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }, []);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -888,12 +941,39 @@ export default function PlanejamentoSemanalPage() {
         <div className="flex flex-col h-[calc(100vh-2rem)]">
 
           {/* ─── Header ──────────────────────────────────────────── */}
-          <div className="flex items-center justify-between mb-5 flex-shrink-0">
-            <div>
+          <div className="flex items-center justify-between mb-5 flex-shrink-0 gap-3">
+            <div className="min-w-0">
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Planejamento Semanal</h1>
               <p className="text-sm text-slate-400 mt-0.5">{formatWeekRange(weekStart)}</p>
             </div>
-            <div className="flex items-center gap-2">
+
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Layout presets */}
+              <div className="flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm text-xs">
+                <button
+                  onClick={() => applyPreset(PRESET_FOCUS_DAYS)}
+                  title="Foco nos dias (72/28)"
+                  className="px-2.5 py-2 hover:bg-slate-50 transition-colors border-r border-slate-200 text-slate-500 hover:text-slate-700 font-semibold"
+                >
+                  72·28
+                </button>
+                <button
+                  onClick={() => applyPreset(PRESET_BALANCED)}
+                  title="Equilibrado (50/50)"
+                  className="px-2.5 py-2 hover:bg-slate-50 transition-colors border-r border-slate-200 text-slate-500 hover:text-slate-700 font-semibold"
+                >
+                  50·50
+                </button>
+                <button
+                  onClick={() => applyPreset(PRESET_FOCUS_TASKS)}
+                  title="Foco nas tarefas (45/55)"
+                  className="px-2.5 py-2 hover:bg-slate-50 transition-colors text-slate-500 hover:text-slate-700 font-semibold"
+                >
+                  45·55
+                </button>
+              </div>
+
+              {/* Week nav */}
               <div className="flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                 <button onClick={prevWeek} className="p-2.5 hover:bg-slate-50 transition-colors border-r border-slate-200">
                   <ChevronLeft className="w-4 h-4 text-slate-600" />
@@ -905,6 +985,7 @@ export default function PlanejamentoSemanalPage() {
                   <ChevronRight className="w-4 h-4 text-slate-600" />
                 </button>
               </div>
+
               <button
                 onClick={() => { setEditTask(null); setAddToDay(null); setShowModal(true); }}
                 className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors shadow-sm"
@@ -915,7 +996,13 @@ export default function PlanejamentoSemanalPage() {
           </div>
 
           {/* ─── Main: days + sidebar ────────────────────────────── */}
-          <div className="flex flex-1 min-h-0 gap-0 rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-white">
+          <div
+            ref={containerRef}
+            className={cn(
+              "flex flex-1 min-h-0 gap-0 rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-white",
+              isDragging && "select-none"
+            )}
+          >
             {/* Day blocks (scrollable) */}
             <div className="flex-1 overflow-y-auto min-w-0">
               {DIAS.map((day, i) => {
@@ -940,6 +1027,24 @@ export default function PlanejamentoSemanalPage() {
               })}
             </div>
 
+            {/* Resizable divider */}
+            <div
+              onMouseDown={handleDividerMouseDown}
+              className={cn(
+                "group w-1.5 flex-shrink-0 cursor-col-resize flex items-center justify-center relative",
+                "hover:bg-indigo-100/60 transition-colors duration-150",
+                isDragging && "bg-indigo-200"
+              )}
+              title="Arrastar para ajustar"
+            >
+              <div className={cn(
+                "w-[2px] h-12 rounded-full transition-all duration-150",
+                isDragging
+                  ? "bg-indigo-500 h-20 opacity-100"
+                  : "bg-slate-300 opacity-50 group-hover:bg-indigo-400 group-hover:opacity-100 group-hover:h-16"
+              )} />
+            </div>
+
             {/* Side panel */}
             <SidePanel
               tasks={tasks.filter((t) => t.status !== "proxima_semana")}
@@ -952,6 +1057,7 @@ export default function PlanejamentoSemanalPage() {
               onMoveNext={(id) => moveNextMutation.mutate(id)}
               onPostpone={(id) => postponeMutation.mutate(id)}
               onEdit={(task) => { setEditTask(task); setShowModal(true); }}
+              panelWidth={panelWidth}
             />
           </div>
         </div>

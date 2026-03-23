@@ -1,0 +1,90 @@
+Quero melhorar a tela de Planejamento Semanal adicionando controle de layout flexível entre os painéis.
+
+OBJETIVO
+Permitir que o usuário ajuste o tamanho da área dos dias da semana e da área de tarefas da semana.
+
+====================================================
+1) DIVISOR AJUSTÁVEL
+====================================================
+
+Adicionar um divisor vertical entre:
+
+- área esquerda (dias da semana)
+- área direita (tarefas da semana)
+
+Esse divisor deve:
+
+- ser arrastável (drag)
+- mudar o tamanho das duas áreas em tempo real
+- ter feedback visual no hover
+- usar cursor resize (col-resize)
+
+====================================================
+2) COMPORTAMENTO
+====================================================
+
+- arrastar para esquerda → aumenta tarefas da semana
+- arrastar para direita → aumenta dias da semana
+
+====================================================
+3) SALVAR PREFERÊNCIA
+====================================================
+
+Salvar proporção escolhida:
+
+- localStorage ou backend
+- restaurar ao abrir novamente
+
+====================================================
+4) LIMITES
+====================================================
+
+Definir limites mínimos:
+
+- dias da semana: mínimo 40%
+- tarefas da semana: mínimo 25%
+
+====================================================
+5) PRESETS RÁPIDOS
+====================================================
+
+Adicionar botões opcionais no topo:
+
+- Equilibrado (50/50)
+- Foco nos dias (70/30)
+- Foco na semana (30/70)
+
+====================================================
+6) RESPONSIVIDADE
+====================================================
+
+Em telas menores:
+
+- empilhar os blocos
+ou
+- colapsar painel lateral
+
+====================================================
+7) VISUAL
+====================================================
+
+- divisor discreto
+- hover com leve destaque
+- transição suave
+
+====================================================
+8) ENTREGAR
+====================================================
+
+Implementar:
+
+1. divisor arrastável
+2. ajuste de largura em tempo real
+3. salvar preferência
+4. limites mínimos
+5. presets opcionais
+
+No final, me mostrar:
+- como funciona o ajuste
+- como a preferência é salva
+- opções disponíveis
