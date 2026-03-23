@@ -27,7 +27,7 @@ import {
   Plus, ChevronLeft, ChevronRight, Grip, Trash2, Copy,
   ArrowRight, X, Clock, CheckCircle2, Circle, Pencil,
   MoreHorizontal, AlertTriangle, CalendarClock, StickyNote,
-  Inbox, CheckSquare,
+  Inbox, CheckSquare, Star, Target, Sparkles, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -104,6 +104,7 @@ interface Task {
   ordem: number;
   observacao: string | null;
   postergadaCount: number;
+  isFoco: boolean;
 }
 
 // ─── TaskRow ─────────────────────────────────────────────────────────────────
@@ -463,6 +464,170 @@ function DayBlock({
           Adicionar tarefa
         </button>
       </div>
+    </div>
+  );
+}
+
+// ─── FocoDoDia ────────────────────────────────────────────────────────────────
+
+function FocoDoDia({ tasks, todayId, onComplete, onToggleFoco }: {
+  tasks: Task[];
+  todayId: string | null;
+  onComplete: (id: number) => void;
+  onToggleFoco: (id: number, current: boolean) => void;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  const calcScore = (t: Task): number => {
+    let s = 0;
+    if (t.isFoco) s += 1000;
+    if (t.diaSemana === todayId) s += 100;
+    if (t.status === "postergada") s += 50;
+    if (t.prioridade === "alta") s += 30;
+    else if (t.prioridade === "media") s += 15;
+    return s;
+  };
+
+  const focusTasks = [...tasks]
+    .filter((t) => t.status !== "concluida" && t.status !== "proxima_semana")
+    .sort((a, b) => calcScore(b) - calcScore(a))
+    .slice(0, 3);
+
+  const hasManualFocus = focusTasks.some((t) => t.isFoco);
+
+  const rankColors = [
+    { bg: "bg-indigo-600", text: "text-white" },
+    { bg: "bg-slate-300", text: "text-slate-700" },
+    { bg: "bg-slate-200", text: "text-slate-600" },
+  ];
+
+  const prioBorderColor = (p: string) =>
+    p === "alta" ? "border-l-rose-500" : p === "media" ? "border-l-amber-400" : "border-l-emerald-400";
+
+  const prioBg = (p: string) =>
+    p === "alta" ? "bg-rose-50/70" : p === "media" ? "bg-amber-50/60" : "bg-emerald-50/40";
+
+  return (
+    <div className="mb-4 flex-shrink-0">
+      {/* Section header */}
+      <div className="flex items-center justify-between mb-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5">
+            <Target className="w-4 h-4 text-indigo-500" />
+            <span className="text-sm font-bold text-slate-900">Foco do Dia</span>
+          </div>
+          <span className="flex items-center gap-1 px-2 py-0.5 bg-indigo-50 border border-indigo-100 rounded-full text-[10px] font-semibold text-indigo-600">
+            <Sparkles className="w-3 h-3" />
+            {hasManualFocus ? "personalizado" : "automático"}
+          </span>
+          <span className="text-[11px] text-slate-400">
+            {focusTasks.length === 0
+              ? "Sem tarefas pendentes"
+              : `${focusTasks.length} tarefa${focusTasks.length > 1 ? "s" : ""} principal${focusTasks.length > 1 ? "is" : ""}`}
+          </span>
+        </div>
+        <button
+          onClick={() => setCollapsed((c) => !c)}
+          className="p-1 rounded-lg hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600"
+        >
+          {collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+        </button>
+      </div>
+
+      {/* Focus cards */}
+      {!collapsed && (
+        focusTasks.length === 0 ? (
+          <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-5 py-4 shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-xl flex-shrink-0">🎉</div>
+            <div>
+              <p className="text-sm font-semibold text-slate-700">Sem tarefas pendentes para hoje</p>
+              <p className="text-xs text-slate-400 mt-0.5">Adicione tarefas ou desfrute do tempo livre</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${focusTasks.length}, 1fr)` }}>
+            {focusTasks.map((task, i) => {
+              const rank = rankColors[i] ?? rankColors[2];
+              return (
+                <div
+                  key={task.id}
+                  className={cn(
+                    "relative flex flex-col gap-2.5 rounded-2xl border-l-[4px] border border-slate-200/80 p-4 bg-white shadow-sm transition-all",
+                    prioBorderColor(task.prioridade),
+                    prioBg(task.prioridade),
+                    task.isFoco && "ring-2 ring-indigo-300/60 border-indigo-200"
+                  )}
+                >
+                  {/* Rank + title + action buttons */}
+                  <div className="flex items-start gap-2.5">
+                    <div className={cn(
+                      "w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-black mt-0.5",
+                      rank.bg, rank.text
+                    )}>
+                      {i + 1}
+                    </div>
+                    <p className="flex-1 text-sm font-semibold text-slate-900 leading-snug">
+                      {task.titulo}
+                    </p>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => onToggleFoco(task.id, task.isFoco)}
+                        title={task.isFoco ? "Remover foco manual" : "Fixar como foco"}
+                        className={cn(
+                          "p-1.5 rounded-lg transition-all",
+                          task.isFoco
+                            ? "text-indigo-500 bg-indigo-100 hover:bg-indigo-200"
+                            : "text-slate-300 hover:text-indigo-400 hover:bg-slate-100"
+                        )}
+                      >
+                        <Star className={cn("w-3.5 h-3.5", task.isFoco && "fill-indigo-500")} />
+                      </button>
+                      <button
+                        onClick={() => onComplete(task.id)}
+                        title="Marcar como concluída"
+                        className="p-1.5 rounded-lg text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 transition-all"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Meta info */}
+                  <div className="flex items-center gap-2 flex-wrap pl-8">
+                    {task.categoria && (
+                      <span className="flex items-center gap-1 text-[11px] text-slate-500">
+                        <span>{CAT_EMOJI[task.categoria] ?? "📌"}</span>
+                        <span className="capitalize">{task.categoria}</span>
+                      </span>
+                    )}
+                    {task.estimativaTempo && (
+                      <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                        <Clock className="w-3 h-3" />
+                        {task.estimativaTempo}
+                      </span>
+                    )}
+                    {task.status === "postergada" && (
+                      <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full">
+                        Postergada{task.postergadaCount > 0 ? ` (${task.postergadaCount}x)` : ""}
+                      </span>
+                    )}
+                    {task.isFoco && (
+                      <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded-full flex items-center gap-1">
+                        <Star className="w-2.5 h-2.5 fill-indigo-500" /> Fixado
+                      </span>
+                    )}
+                    {!task.isFoco && task.diaSemana === todayId && (
+                      <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-semibold rounded-full">
+                        Hoje
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
+      )}
     </div>
   );
 }
@@ -855,6 +1020,23 @@ export default function PlanejamentoSemanalPage() {
     onSuccess: (_, id) => { setTasks((prev) => prev.map((t) => t.id === id ? { ...t, status: "postergada" } : t)); toast({ title: "Marcada como postergada" }); },
   });
 
+  const focoMutation = useMutation({
+    mutationFn: ({ id, isFoco }: { id: number; isFoco: boolean }) =>
+      fetch(apiUrl(`/agenda/planner/${id}`), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isFoco }),
+      }).then((r) => r.json()),
+    onSuccess: (_, { id, isFoco }) => {
+      setTasks((prev) => prev.map((t) => t.id === id ? { ...t, isFoco } : t));
+      toast({ title: isFoco ? "⭐ Tarefa fixada no foco" : "Foco removido" });
+    },
+  });
+
+  const handleToggleFoco = (id: number, current: boolean) => {
+    focoMutation.mutate({ id, isFoco: !current });
+  };
+
   // ─── Ops ───────────────────────────────────────────────────────────────────
 
   const handleComplete = (id: number) => {
@@ -935,6 +1117,10 @@ export default function PlanejamentoSemanalPage() {
   const todayStr = toDateStr(new Date());
   const weekDates = DIAS.map((_, i) => addDays(weekStart, i));
 
+  // Map JS getDay() (0=Sun, 1=Mon…6=Sat) to diaSemana string
+  const DAY_MAP = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+  const todayId = DAY_MAP[new Date().getDay()] ?? null;
+
   return (
     <AppLayout>
       <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
@@ -994,6 +1180,14 @@ export default function PlanejamentoSemanalPage() {
               </button>
             </div>
           </div>
+
+          {/* ─── Foco do Dia ─────────────────────────────────────── */}
+          <FocoDoDia
+            tasks={tasks.filter((t) => t.status !== "proxima_semana")}
+            todayId={todayId}
+            onComplete={handleComplete}
+            onToggleFoco={handleToggleFoco}
+          />
 
           {/* ─── Main: days + sidebar ────────────────────────────── */}
           <div

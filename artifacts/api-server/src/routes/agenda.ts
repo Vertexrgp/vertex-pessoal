@@ -112,7 +112,7 @@ router.post("/agenda/planner", async (req, res) => {
 router.put("/agenda/planner/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { titulo, descricao, prioridade, categoria, estimativaTempo, status, diaSemana, ordem, observacao, postergadaCount } = req.body;
+    const { titulo, descricao, prioridade, categoria, estimativaTempo, status, diaSemana, ordem, observacao, postergadaCount, isFoco } = req.body;
     const setObj: Record<string, unknown> = { updatedAt: new Date() };
     if (titulo !== undefined) setObj.titulo = titulo;
     if (descricao !== undefined) setObj.descricao = descricao;
@@ -124,6 +124,7 @@ router.put("/agenda/planner/:id", async (req, res) => {
     if (ordem !== undefined) setObj.ordem = ordem;
     if (observacao !== undefined) setObj.observacao = observacao;
     if (postergadaCount !== undefined) setObj.postergadaCount = postergadaCount;
+    if (isFoco !== undefined) setObj.isFoco = isFoco;
     const [updated] = await db
       .update(agendaPlannerTasksTable)
       .set(setObj)
