@@ -18,6 +18,7 @@ import viagensRouter from "./viagens";
 import eventsRouter from "./events";
 import crescimentoRouter from "./crescimento";
 import conhecimentoRouter from "./conhecimento";
+import sugestoesRouter from "./sugestoes";
 
 const router: IRouter = Router();
 
@@ -40,5 +41,6 @@ router.use(viagensRouter);
 router.use(eventsRouter);
 router.use(crescimentoRouter);
 router.use(conhecimentoRouter);
+router.use(sugestoesRouter);
 
 export default router;

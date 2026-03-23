@@ -49,6 +49,7 @@ import ArtigosPage from "./pages/conhecimento/artigos";
 import ArtigoDetailPage from "./pages/conhecimento/artigo-detalhe";
 
 import InglesPage from "./pages/idiomas/ingles";
+import SugestoesPage from "./pages/sugestoes";
 
 const queryClient = new QueryClient();
 
@@ -108,6 +109,8 @@ function Router() {
       </Route>
 
       <Route path="/idiomas/ingles" component={InglesPage} />
+
+      <Route path="/sugestoes" component={SugestoesPage} />
 
       {/* Legacy */}
       <Route path="/assets" component={PatrimonioPage} />

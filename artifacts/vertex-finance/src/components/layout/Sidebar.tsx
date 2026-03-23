@@ -41,6 +41,7 @@ import {
   Flag,
   Star,
   Rocket,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActivityFeed, useUnreadEventCount } from "@/components/ActivityFeed";
@@ -340,6 +341,10 @@ export function Sidebar() {
         {/* Dashboard */}
         <NavItem
           item={{ name: "Dashboard", path: "/", icon: LayoutDashboard }}
+          compact={compact}
+        />
+        <NavItem
+          item={{ name: "Sugestões", path: "/sugestoes", icon: Sparkles }}
           compact={compact}
         />
 

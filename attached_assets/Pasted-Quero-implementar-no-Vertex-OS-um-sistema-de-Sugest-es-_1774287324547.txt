@@ -1,0 +1,147 @@
+Quero implementar no Vertex OS um sistema de Sugestões Inteligentes, sem automação direta.
+
+OBJETIVO
+Permitir que o sistema analise meu comportamento e meus dados ao longo do tempo, aprenda com meu padrão e gere sugestões cada vez melhores.
+
+IMPORTANTE
+O sistema nunca deve alterar nada sozinho.
+Toda ação deve depender da minha confirmação explícita.
+
+====================================================
+1) REGRA PRINCIPAL
+====================================================
+
+O sistema deve funcionar assim:
+
+- observar padrões
+- identificar desvios, atrasos e oportunidades
+- gerar sugestões
+- aguardar aprovação do usuário
+
+Nunca:
+- mover tarefas sozinho
+- alterar agenda sozinho
+- mudar planejamento sozinho
+- editar dados sozinho
+- reprogramar metas sozinho
+
+====================================================
+2) APRENDIZADO DE PADRÃO
+====================================================
+
+Quero que o sistema passe a aprender com meu comportamento real.
+
+Exemplos:
+- quais tarefas eu mais postergo
+- quais dias sou mais produtivo
+- quais horários funcionam melhor
+- quais treinos eu falho mais
+- quais categorias financeiras eu mais desvio
+- como costumo redistribuir tarefas
+- como costumo reagir a sugestões
+
+Esse aprendizado deve servir apenas para melhorar a qualidade das sugestões futuras.
+
+====================================================
+3) SUGESTÕES POR MÓDULO
+====================================================
+
+Agenda:
+- tarefas postergadas
+- redistribuição sugerida
+- foco do dia sugerido
+
+Financeiro:
+- alertas de orçamento
+- cortes sugeridos
+- ajustes de planejamento
+
+Performance:
+- ajuste de treino
+- frequência sugerida
+- revisão de rotina
+
+Crescimento:
+- checkpoints atrasados
+- replanejamento sugerido
+- tarefas sugeridas para avançar na meta
+
+====================================================
+4) INTERFACE
+====================================================
+
+Criar um bloco chamado:
+
+Sugestões Inteligentes
+
+Cada sugestão deve mostrar:
+- título
+- explicação
+- motivo da sugestão
+- impacto esperado
+- botão "Aplicar"
+- botão "Ignorar"
+
+====================================================
+5) MEMÓRIA DE COMPORTAMENTO
+====================================================
+
+Registrar:
+- sugestões aceitas
+- sugestões ignoradas
+- padrões recorrentes
+- hábitos do usuário
+
+Objetivo:
+melhorar futuras recomendações
+
+====================================================
+6) NÍVEIS DE CONFIANÇA
+====================================================
+
+Cada sugestão deve ter um nível de confiança interno, com base no histórico do usuário.
+
+Exemplo:
+- baixa confiança
+- média confiança
+- alta confiança
+
+Mas isso não precisa aparecer agora na interface, pode ser apenas lógica interna.
+
+====================================================
+7) SEGURANÇA
+====================================================
+
+Nenhuma mudança pode ser aplicada sem confirmação explícita do usuário.
+
+Mesmo se a sugestão estiver correta, o sistema nunca deve agir sozinho.
+
+====================================================
+8) EVOLUÇÃO FUTURA
+====================================================
+
+Preparar a arquitetura para no futuro:
+- Steve central usar essas sugestões
+- assistente conversar com o usuário
+- automação opcional (se um dia for ativada)
+
+Mas por enquanto:
+somente sugestão + aprovação manual.
+
+====================================================
+9) ENTREGAR
+====================================================
+
+Quero que você implemente agora:
+
+1. estrutura de sugestões inteligentes
+2. memória de comportamento
+3. interface de sugestões
+4. fluxo aplicar / ignorar
+5. integração com Agenda, Financeiro, Performance e Crescimento
+
+No final, me mostrar:
+- como o sistema aprende
+- como gera sugestões
+- como garante que nada muda sem minha aprovação
+- próximos passos recomendados

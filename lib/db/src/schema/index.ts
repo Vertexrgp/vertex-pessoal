@@ -13,3 +13,4 @@ export * from "./viagens";
 export * from "./events";
 export * from "./crescimento";
 export * from "./conhecimento";
+export * from "./sugestoes";
