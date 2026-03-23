@@ -39,7 +39,7 @@ import ViagensPage from "./pages/viagens/index";
 import ViagemDetailPage from "./pages/viagens/[id]";
 
 import MetasPage from "./pages/crescimento/metas";
-import ObjetivosPage from "./pages/crescimento/objetivos";
+import MetaDetailPage from "./pages/crescimento/meta-detalhe";
 import CheckpointsPage from "./pages/crescimento/checkpoints";
 import VisionBoardPage from "./pages/crescimento/vision-board";
 
@@ -92,7 +92,9 @@ function Router() {
       </Route>
 
       <Route path="/crescimento/metas" component={MetasPage} />
-      <Route path="/crescimento/objetivos" component={ObjetivosPage} />
+      <Route path="/crescimento/metas/:id">
+        {(params) => <MetaDetailPage id={params.id} />}
+      </Route>
       <Route path="/crescimento/checkpoints" component={CheckpointsPage} />
       <Route path="/crescimento/vision-board" component={VisionBoardPage} />
 

@@ -132,7 +132,6 @@ const modules: Module[] = [
     prefixes: ["/crescimento"],
     items: [
       { name: "Metas", path: "/crescimento/metas", icon: Flag },
-      { name: "Objetivos", path: "/crescimento/objetivos", icon: Target },
       { name: "Checkpoints", path: "/crescimento/checkpoints", icon: Layers },
       { name: "Vision Board", path: "/crescimento/vision-board", icon: Star },
     ],

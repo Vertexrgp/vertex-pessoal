@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { goalsApi, objectivesApi, type Goal, type Objective } from "@/lib/crescimento-api";
+import { goalsApi, type Goal } from "@/lib/crescimento-api";
 import {
-  Flag, Plus, Target, Clock, TrendingUp, CheckCircle2, Circle,
-  ChevronDown, ChevronRight, Pencil, Trash2, X, Loader2, AlertCircle,
+  Flag, Plus, Target, Clock, TrendingUp, Pencil, Trash2, X, Loader2,
+  AlertCircle, ArrowRight, Layers,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -149,98 +150,62 @@ function GoalCard({
   onDelete,
 }: {
   goal: Goal;
-  onEdit: () => void;
-  onDelete: () => void;
+  onEdit: (e: React.MouseEvent) => void;
+  onDelete: (e: React.MouseEvent) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const qc = useQueryClient();
-
-  const { data: objectives = [] } = useQuery<Objective[]>({
-    queryKey: ["objectives", goal.id],
-    queryFn: () => objectivesApi.list(goal.id),
-    enabled: open,
-  });
-
-  const toggleObj = useMutation({
-    mutationFn: ({ id, status }: { id: number; status: string }) => objectivesApi.update(id, { status }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["objectives", goal.id] }),
-  });
-
   const prazoFmt = goal.prazo ? format(new Date(goal.prazo + "T00:00:00"), "dd MMM yyyy", { locale: ptBR }) : null;
   const isAtrasada = goal.prazo && new Date(goal.prazo) < new Date() && goal.status === "ativa";
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-      <div className="p-5">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-start gap-3 flex-1 min-w-0">
-            <div className="w-3 h-3 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: goal.cor }} />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${tipoColor(goal.tipo)}`}>{TIPO_OPTS.find((t) => t.value === goal.tipo)?.label}</span>
-                <span className="flex items-center gap-1 text-[11px] text-slate-400">
-                  <div className={`w-1.5 h-1.5 rounded-full ${statusDot(goal.status)}`} />
-                  {STATUS_OPTS.find((s) => s.value === goal.status)?.label}
-                </span>
-                {goal.prioridade === "alta" && <span className="text-[10px] font-bold text-rose-600">↑ Alta</span>}
+    <Link href={`/crescimento/metas/${goal.id}`}>
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer group">
+        <div className="p-5">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: goal.cor + "22" }}>
+                <Flag className="w-5 h-5" style={{ color: goal.cor }} />
               </div>
-              <p className="font-bold text-slate-900 leading-snug">{goal.titulo}</p>
-              {goal.descricao && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{goal.descricao}</p>}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${tipoColor(goal.tipo)}`}>{TIPO_OPTS.find((t) => t.value === goal.tipo)?.label}</span>
+                  <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                    <div className={`w-1.5 h-1.5 rounded-full ${statusDot(goal.status)}`} />
+                    {STATUS_OPTS.find((s) => s.value === goal.status)?.label}
+                  </span>
+                  {goal.prioridade === "alta" && <span className="text-[10px] font-bold text-rose-600">↑ Alta</span>}
+                </div>
+                <p className="font-bold text-slate-900 leading-snug">{goal.titulo}</p>
+                {goal.descricao && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{goal.descricao}</p>}
+              </div>
+            </div>
+            <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+              <button onClick={onEdit} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700"><Pencil className="w-3.5 h-3.5" /></button>
+              <button onClick={onDelete} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
             </div>
           </div>
-          <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-            <button onClick={onEdit} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700"><Pencil className="w-3.5 h-3.5" /></button>
-            <button onClick={onDelete} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all" style={{ width: `${goal.progresso}%`, backgroundColor: goal.cor }} />
+            </div>
+            <span className="text-sm font-black w-10 text-right" style={{ color: goal.cor }}>{goal.progresso}%</span>
+          </div>
+
+          <div className="flex items-center justify-between">
+            {prazoFmt ? (
+              <div className={`flex items-center gap-1.5 text-xs ${isAtrasada ? "text-red-500" : "text-slate-400"}`}>
+                <Clock className="w-3.5 h-3.5" />
+                {isAtrasada ? "Atrasada · " : ""}{prazoFmt}
+                {isAtrasada && <AlertCircle className="w-3.5 h-3.5" />}
+              </div>
+            ) : <span />}
+            <span className="flex items-center gap-1 text-xs text-indigo-500 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+              Ver detalhes <ArrowRight className="w-3 h-3" />
+            </span>
           </div>
         </div>
-
-        <div className="flex items-center gap-3 mb-3">
-          <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all" style={{ width: `${goal.progresso}%`, backgroundColor: goal.cor }} />
-          </div>
-          <span className="text-sm font-black text-slate-700 w-10 text-right">{goal.progresso}%</span>
-        </div>
-
-        {prazoFmt && (
-          <div className={`flex items-center gap-1.5 text-xs ${isAtrasada ? "text-red-500" : "text-slate-400"}`}>
-            <Clock className="w-3.5 h-3.5" />
-            {isAtrasada ? "Atrasada · " : ""}{prazoFmt}
-            {isAtrasada && <AlertCircle className="w-3.5 h-3.5" />}
-          </div>
-        )}
       </div>
-
-      <button
-        onClick={() => setOpen((p) => !p)}
-        className="w-full flex items-center justify-between px-5 py-3 border-t border-slate-100 text-xs font-semibold text-slate-500 hover:bg-slate-50 transition-colors"
-      >
-        <span className="flex items-center gap-1.5"><Target className="w-3.5 h-3.5" /> Objetivos</span>
-        {open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-      </button>
-
-      {open && (
-        <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/60">
-          {objectives.length === 0 ? (
-            <p className="text-xs text-slate-400 py-1">Nenhum objetivo ainda. Adicione em <strong>Objetivos</strong>.</p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {objectives.map((obj) => (
-                <button
-                  key={obj.id}
-                  onClick={() => toggleObj.mutate({ id: obj.id, status: obj.status === "concluido" ? "pendente" : "concluido" })}
-                  className="flex items-center gap-2.5 text-left"
-                >
-                  {obj.status === "concluido"
-                    ? <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                    : <Circle className="w-4 h-4 text-slate-300 flex-shrink-0" />}
-                  <span className={`text-xs ${obj.status === "concluido" ? "line-through text-slate-400" : "text-slate-700"}`}>{obj.titulo}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+    </Link>
   );
 }
 
@@ -329,8 +294,8 @@ export default function MetasPage() {
               <GoalCard
                 key={goal.id}
                 goal={goal}
-                onEdit={() => setModal(goal)}
-                onDelete={() => deleteMeta.mutate(goal.id)}
+                onEdit={(e) => { e.preventDefault(); e.stopPropagation(); setModal(goal); }}
+                onDelete={(e) => { e.preventDefault(); e.stopPropagation(); deleteMeta.mutate(goal.id); }}
               />
             ))}
           </div>

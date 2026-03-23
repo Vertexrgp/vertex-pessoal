@@ -197,11 +197,11 @@ router.get("/crescimento/checkpoints", async (req, res) => {
 
 router.post("/crescimento/checkpoints", async (req, res) => {
   try {
-    const { goalId, titulo, descricao, data, concluido } = req.body;
+    const { goalId, titulo, descricao, data, concluido, status, progresso } = req.body;
     if (!goalId || !titulo) return res.status(400).json({ error: "goalId e titulo são obrigatórios" });
     const [cp] = await db
       .insert(growthCheckpoints)
-      .values({ goalId: parseInt(goalId), titulo, descricao: descricao || null, data: data || null, concluido: concluido ?? false })
+      .values({ goalId: parseInt(goalId), titulo, descricao: descricao || null, data: data || null, concluido: concluido ?? false, status: status || "pendente", progresso: progresso ?? 0 })
       .returning();
     res.json(cp);
   } catch {
@@ -212,10 +212,17 @@ router.post("/crescimento/checkpoints", async (req, res) => {
 router.put("/crescimento/checkpoints/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { titulo, descricao, data, concluido } = req.body;
+    const { titulo, descricao, data, concluido, status, progresso } = req.body;
+    const setObj: Record<string, unknown> = {};
+    if (titulo !== undefined) setObj.titulo = titulo;
+    if (descricao !== undefined) setObj.descricao = descricao;
+    if (data !== undefined) setObj.data = data;
+    if (concluido !== undefined) setObj.concluido = concluido;
+    if (status !== undefined) setObj.status = status;
+    if (progresso !== undefined) setObj.progresso = progresso;
     const [updated] = await db
       .update(growthCheckpoints)
-      .set({ titulo, descricao, data, concluido })
+      .set(setObj)
       .where(eq(growthCheckpoints.id, id))
       .returning();
     if (!updated) return res.status(404).json({ error: "Checkpoint não encontrado" });

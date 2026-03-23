@@ -49,6 +49,8 @@ export const growthCheckpoints = pgTable("growth_checkpoints", {
   descricao: text("descricao"),
   data: date("data"),
   concluido: boolean("concluido").notNull().default(false),
+  status: text("status").notNull().default("pendente"),
+  progresso: integer("progresso").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

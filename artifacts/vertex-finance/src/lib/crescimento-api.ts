@@ -59,7 +59,24 @@ export interface Checkpoint {
   descricao: string | null;
   data: string | null;
   concluido: boolean;
+  status: "pendente" | "em_andamento" | "concluido" | "bloqueado";
+  progresso: number;
   createdAt: string;
+}
+
+export interface PlannerTask {
+  id: number;
+  titulo: string;
+  descricao: string | null;
+  prioridade: string;
+  categoria: string | null;
+  status: string;
+  semanaInicio: string;
+  diaSemana: string | null;
+  goalId: number | null;
+  checkpointId: number | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface VisionItem {
@@ -100,9 +117,18 @@ export const plansApi = {
 // Checkpoints
 export const checkpointsApi = {
   list: (goalId?: number) => req<Checkpoint[]>("GET", `/api/crescimento/checkpoints${goalId ? `?goalId=${goalId}` : ""}`),
-  create: (data: { goalId: number; titulo: string; descricao?: string; data?: string }) => req<Checkpoint>("POST", "/api/crescimento/checkpoints", data),
+  create: (data: { goalId: number; titulo: string; descricao?: string; data?: string; status?: string; progresso?: number }) => req<Checkpoint>("POST", "/api/crescimento/checkpoints", data),
   update: (id: number, data: Partial<Checkpoint>) => req<Checkpoint>("PUT", `/api/crescimento/checkpoints/${id}`, data),
   remove: (id: number) => req<{ ok: true }>("DELETE", `/api/crescimento/checkpoints/${id}`),
+};
+
+// Planner Tasks (Agenda) linked to goals/checkpoints
+export const plannerTasksApi = {
+  listByGoal: (goalId: number) => req<PlannerTask[]>("GET", `/api/agenda/planner?goalId=${goalId}`),
+  createLinked: (data: { titulo: string; goalId: number; checkpointId?: number; prioridade?: string; semanaInicio: string }) =>
+    req<PlannerTask>("POST", "/api/agenda/planner", { ...data, status: "pendente" }),
+  update: (id: number, data: Partial<PlannerTask>) => req<PlannerTask>("PUT", `/api/agenda/planner/${id}`, data),
+  remove: (id: number) => req<{ ok: true }>("DELETE", `/api/agenda/planner/${id}`),
 };
 
 // Vision

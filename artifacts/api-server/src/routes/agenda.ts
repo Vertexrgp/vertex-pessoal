@@ -70,7 +70,15 @@ router.delete("/agenda/events/:id", async (req, res) => {
 // ─── Planner Tasks ────────────────────────────────────────
 router.get("/agenda/planner", async (req, res) => {
   try {
-    const { semana } = req.query;
+    const { semana, goalId } = req.query;
+    if (goalId) {
+      const tasks = await db
+        .select()
+        .from(agendaPlannerTasksTable)
+        .where(eq(agendaPlannerTasksTable.goalId, parseInt(String(goalId))))
+        .orderBy(agendaPlannerTasksTable.createdAt);
+      return res.json(tasks);
+    }
     if (!semana) return res.status(400).json({ error: "semana é obrigatória (YYYY-MM-DD)" });
     const tasks = await db
       .select()
@@ -85,7 +93,7 @@ router.get("/agenda/planner", async (req, res) => {
 
 router.post("/agenda/planner", async (req, res) => {
   try {
-    const { semanaInicio, titulo, descricao, prioridade, categoria, estimativaTempo, status, diaSemana, ordem, observacao } = req.body;
+    const { semanaInicio, titulo, descricao, prioridade, categoria, estimativaTempo, status, diaSemana, ordem, observacao, goalId, checkpointId } = req.body;
     if (!semanaInicio || !titulo) return res.status(400).json({ error: "semanaInicio e titulo são obrigatórios" });
     const [task] = await db
       .insert(agendaPlannerTasksTable)
@@ -101,6 +109,8 @@ router.post("/agenda/planner", async (req, res) => {
         ordem: ordem || 0,
         observacao,
         postergadaCount: 0,
+        goalId: goalId ? parseInt(goalId) : null,
+        checkpointId: checkpointId ? parseInt(checkpointId) : null,
       })
       .returning();
     res.json(task);
