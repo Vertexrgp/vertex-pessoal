@@ -1,0 +1,158 @@
+Quero refazer a tela de Planejamento Semanal para que ela fique muito mais próxima da minha agenda física real.
+
+PROBLEMA
+O layout atual ficou com cara de quadro/kanban, com colunas estreitas e cards apertados. Isso dificulta a leitura e não representa bem a forma como eu realmente organizo minha semana.
+
+OBJETIVO
+Quero que a tela siga a lógica da minha agenda física:
+
+- lado esquerdo: os dias da semana
+- lado direito: tudo o que preciso fazer na semana
+
+Ou seja:
+primeiro organizo as tarefas da semana, depois distribuo pelos dias.
+
+====================================================
+1) NOVO CONCEITO DE LAYOUT
+====================================================
+
+Quero abandonar o layout atual de 7 colunas estreitas com cards comprimidos.
+
+Novo layout:
+
+A) ÁREA PRINCIPAL ESQUERDA
+Mostrar os dias da semana com mais espaço e legibilidade.
+
+B) ÁREA LATERAL DIREITA
+Mostrar “Tarefas da Semana”, “Postergadas”, “Concluídas” e notas.
+
+====================================================
+2) DIAS DA SEMANA
+====================================================
+
+Na área esquerda, criar blocos amplos para:
+
+- Segunda
+- Terça
+- Quarta
+- Quinta
+- Sexta
+- Sábado
+- Domingo
+
+Esses blocos devem ser em formato de agenda/planner, com mais espaço visual.
+
+Cada dia deve permitir:
+- listar tarefas de forma legível
+- reordenar tarefas
+- marcar como concluída
+- adicionar nova tarefa direto no dia
+- mostrar horário opcional
+- mostrar prioridade e categoria de forma discreta
+
+Quero leitura fácil, sem cards estreitos e sem quebra ruim de texto.
+
+====================================================
+3) TAREFAS DA SEMANA (LADO DIREITO)
+====================================================
+
+No lado direito, criar um painel fixo chamado:
+
+Tarefas da Semana
+
+Ele deve funcionar como minha área de descarrego semanal.
+
+Também incluir subáreas ou filtros para:
+- Não alocadas
+- Postergadas
+- Concluídas
+- Notas da semana
+
+====================================================
+4) POSTERGADAS
+====================================================
+
+Quero manter a lógica de postergar tarefa para a próxima semana, mas com alerta visual.
+
+Se uma tarefa não for concluída:
+- pode ser movida para a próxima semana
+- recebe status de Postergada
+- contador de postergação
+- destaque visual de alerta
+
+Exemplo:
+Postergada (1x)
+Postergada (2x)
+
+====================================================
+5) LEGIBILIDADE
+====================================================
+
+Quero melhorar muito a legibilidade:
+
+- títulos maiores
+- mais espaçamento
+- menos densidade
+- linhas ou blocos mais amplos
+- sem texto cortado
+- sem cards apertados
+
+Cada tarefa deve ser lida inteira.
+
+====================================================
+6) ESTILO VISUAL
+====================================================
+
+Quero que essa tela pareça um planner executivo premium digital.
+
+Referência:
+- agenda física refinada
+- planner semanal elegante
+- visual limpo
+- muito espaço em branco
+- sem cara de quadro kanban tradicional
+
+====================================================
+7) INTERAÇÃO
+====================================================
+
+Quero manter:
+- drag and drop entre tarefas da semana e os dias
+- marcar concluída
+- editar tarefa
+- mover para próxima semana
+
+====================================================
+8) ESTRUTURA IDEAL
+====================================================
+
+Sugestão:
+- esquerda maior para os dias
+- direita fixa para tarefas da semana
+- layout responsivo, mas focado primeiro em desktop
+
+====================================================
+9) IMPORTANTE
+====================================================
+
+Não quero apenas “melhorar” a tela atual.
+Quero realmente refazer o layout com base no modelo da minha agenda física.
+
+====================================================
+10) ENTREGAR
+====================================================
+
+Quero que você implemente agora:
+
+1. novo layout inspirado na agenda física
+2. dias da semana com mais espaço e melhor leitura
+3. painel lateral de tarefas da semana
+4. área de postergadas
+5. área de concluídas
+6. melhor legibilidade e UX premium
+
+No final, me mostre:
+- como ficou a nova estrutura
+- como as tarefas são distribuídas
+- como funciona a postergação
+- por que esse layout ficou mais próximo da agenda física
