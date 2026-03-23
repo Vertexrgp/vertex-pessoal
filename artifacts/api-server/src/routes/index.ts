@@ -17,6 +17,7 @@ import agendaRouter from "./agenda";
 import viagensRouter from "./viagens";
 import eventsRouter from "./events";
 import crescimentoRouter from "./crescimento";
+import conhecimentoRouter from "./conhecimento";
 
 const router: IRouter = Router();
 
@@ -38,5 +39,6 @@ router.use(agendaRouter);
 router.use(viagensRouter);
 router.use(eventsRouter);
 router.use(crescimentoRouter);
+router.use(conhecimentoRouter);
 
 export default router;

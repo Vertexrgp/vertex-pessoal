@@ -145,9 +145,6 @@ const modules: Module[] = [
     prefixes: ["/conhecimento"],
     items: [
       { name: "Livros", path: "/conhecimento/livros", icon: BookOpen },
-      { name: "Artigos", path: "/conhecimento/artigos", icon: FileText },
-      { name: "Resumos", path: "/conhecimento/resumos", icon: Bookmark },
-      { name: "Frases", path: "/conhecimento/frases", icon: Quote },
     ],
   },
   {
