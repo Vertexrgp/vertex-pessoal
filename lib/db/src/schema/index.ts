@@ -11,3 +11,4 @@ export * from "./performance";
 export * from "./agenda";
 export * from "./viagens";
 export * from "./events";
+export * from "./crescimento";

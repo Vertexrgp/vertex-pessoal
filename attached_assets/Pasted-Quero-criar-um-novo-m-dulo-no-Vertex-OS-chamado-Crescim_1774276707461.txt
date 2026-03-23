@@ -1,0 +1,180 @@
+Quero criar um novo módulo no Vertex OS chamado:
+
+Crescimento
+
+OBJETIVO
+Criar o centro de direção da vida do usuário, onde ele define metas, objetivos e planos estruturados para evolução pessoal e profissional.
+
+Este módulo deve ser o mais estratégico do sistema.
+
+====================================================
+1) CONCEITO
+====================================================
+
+O módulo Crescimento não é lista de tarefas.
+
+Ele deve responder:
+
+- para onde estou indo
+- o que quero alcançar
+- como vou chegar lá
+- em que etapa estou
+
+====================================================
+2) ESTRUTURA DO MÓDULO
+====================================================
+
+Criar:
+
+Crescimento
+
+Submódulos:
+
+- Metas
+- Objetivos
+- Planos
+- Checkpoints
+- Vision Board
+
+====================================================
+3) METAS
+====================================================
+
+Criar estrutura para metas:
+
+Campos:
+- título
+- descrição
+- tipo (financeiro, físico, profissional, pessoal)
+- prazo
+- status
+- prioridade
+
+Exemplo:
+"Faturar R$100k/mês"
+"Ter físico X"
+"Morar no Canadá"
+
+====================================================
+4) OBJETIVOS (subdivisão da meta)
+====================================================
+
+Cada meta deve ter objetivos menores:
+
+Exemplo:
+
+Meta: Morar no Canadá
+
+Objetivos:
+- aprender inglês
+- juntar dinheiro
+- organizar documentação
+
+====================================================
+5) PLANOS
+====================================================
+
+Cada objetivo deve ter um plano:
+
+- etapas
+- tarefas
+- sequência lógica
+
+Exemplo:
+
+Aprender inglês:
+- estudar 30min/dia
+- aula 2x semana
+- prática oral
+
+====================================================
+6) CHECKPOINTS
+====================================================
+
+Criar sistema de progresso:
+
+- % concluído
+- etapas finalizadas
+- etapas pendentes
+- datas
+
+====================================================
+7) VISION BOARD
+====================================================
+
+Criar área visual:
+
+- upload de imagens
+- frases
+- referências
+- inspiração
+
+Deve ser visual, não só texto.
+
+====================================================
+8) INTEGRAÇÃO COM OUTROS MÓDULOS
+====================================================
+
+Preparar para:
+
+- metas puxarem tarefas para Agenda
+- metas impactarem Performance
+- metas impactarem Financeiro
+
+Exemplo:
+Meta: morar no Canadá
+→ cria tarefa estudar inglês
+→ cria meta financeira
+
+====================================================
+9) VISUAL
+====================================================
+
+Quero:
+
+- layout premium
+- visual estratégico
+- sensação de controle de vida
+- não parecer lista de tarefas
+
+====================================================
+10) EXPERIÊNCIA
+====================================================
+
+O usuário deve:
+
+- visualizar metas claramente
+- entender progresso
+- saber próximos passos
+- sentir evolução
+
+====================================================
+11) ARQUITETURA
+====================================================
+
+Criar tabelas:
+
+- growth_goals
+- growth_objectives
+- growth_plans
+- growth_checkpoints
+- growth_vision
+
+====================================================
+12) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. módulo Crescimento completo
+2. estrutura de metas
+3. objetivos e planos
+4. checkpoints
+5. vision board
+6. navegação clara
+
+No final, me mostrar:
+
+- como está estruturado
+- como as metas se conectam
+- como evoluir isso depois
