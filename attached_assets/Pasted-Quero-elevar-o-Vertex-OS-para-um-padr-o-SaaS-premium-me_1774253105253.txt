@@ -1,0 +1,191 @@
+Quero elevar o Vertex OS para um padrão SaaS premium, melhorando UX, organização do menu e já estruturando os próximos módulos (Agenda e Viagens).
+
+OBJETIVO
+Transformar o sistema em um produto mais limpo, organizado, escalável e com experiência premium.
+
+====================================================
+1) MENU LATERAL — UX PREMIUM
+====================================================
+
+Problema atual:
+O menu está com muitas sub-abas visíveis, ficando poluído e longo.
+
+Quero implementar:
+
+1. Menu colapsável por módulo
+- Financeiro
+- Performance
+- Agenda
+- Viagens
+
+2. Comportamento:
+- Apenas o módulo ativo fica expandido
+- Os outros ficam recolhidos
+- Permitir abrir/fechar manualmente
+
+3. Versão compacta (collapsed sidebar)
+- opção de reduzir menu para ícones
+- ao passar o mouse → expandir
+
+4. Destaque visual:
+- módulo ativo com cor mais forte
+- subitens com hierarquia clara
+
+====================================================
+2) PADRÃO DE NAVEGAÇÃO (IMPORTANTE)
+====================================================
+
+Cada módulo deve ter:
+
+- página principal (overview)
+- subpáginas internas
+
+Exemplo:
+
+Financeiro
+- Dashboard
+- Lançamentos
+- Planejamento
+- etc.
+
+Performance
+- Overview
+- Exames
+- Dieta
+- Treinos
+- etc.
+
+====================================================
+3) CRIAR MÓDULO AGENDA
+====================================================
+
+Adicionar no menu:
+
+Agenda
+
+Criar estrutura inicial:
+
+- Agenda (visão geral)
+- Calendário mensal
+- Eventos
+- Lembretes
+
+Funcionalidades Fase 1:
+- criar evento
+- data e hora
+- descrição
+- categoria
+- alerta simples
+
+Visual:
+- estilo Google Calendar simplificado
+- limpo e premium
+
+====================================================
+4) CRIAR MÓDULO VIAGENS
+====================================================
+
+Adicionar no menu:
+
+Viagens
+
+Criar estrutura inicial:
+
+- Minhas viagens
+- Detalhe da viagem
+
+Campos de viagem:
+- destino
+- datas
+- orçamento
+- status
+
+Dentro da viagem:
+- despesas da viagem
+- roteiro (simples)
+- checklist
+
+====================================================
+5) PADRÃO SaaS PREMIUM (MUITO IMPORTANTE)
+====================================================
+
+Quero elevar o design para padrão produto vendável:
+
+1. Layout
+- espaçamento maior
+- menos densidade
+- mais respiro visual
+
+2. Componentes
+- cards mais elegantes
+- sombras suaves
+- bordas arredondadas consistentes
+
+3. Tipografia
+- hierarquia clara (título, subtítulo, conteúdo)
+
+4. Cores
+- manter identidade atual
+- usar cores com mais consistência
+
+5. Estados
+- hover
+- loading
+- vazio (empty state)
+- erro
+
+====================================================
+6) HEADER GLOBAL
+====================================================
+
+Criar header superior com:
+
+- nome do sistema (Vertex OS)
+- módulo atual
+- usuário
+- possíveis ações rápidas
+
+====================================================
+7) PADRÃO DE PÁGINAS
+====================================================
+
+Todas páginas devem seguir:
+
+- título claro
+- descrição curta
+- ações no topo (botões)
+- conteúdo organizado em blocos
+
+====================================================
+8) ESTRUTURA TÉCNICA
+====================================================
+
+Manter padrão modular:
+
+modules/
+- financeiro
+- performance
+- agenda
+- viagens
+
+Cada módulo independente.
+
+====================================================
+9) ENTREGAR
+====================================================
+
+Quero que você implemente agora:
+
+1. menu colapsável por módulo
+2. sidebar compacta (modo ícone)
+3. melhoria visual geral (UX premium)
+4. criação do módulo Agenda (estrutura base)
+5. criação do módulo Viagens (estrutura base)
+6. padronização visual do sistema
+
+No final, me mostre:
+- como ficou o menu
+- como funciona o colapso
+- estrutura criada para Agenda
+- estrutura criada para Viagens
+- melhorias de UX aplicadas

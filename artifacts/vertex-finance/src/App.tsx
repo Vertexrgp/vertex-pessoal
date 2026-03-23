@@ -19,6 +19,7 @@ import CartoesPage from "./pages/cartoes";
 import RecorrenciasPage from "./pages/recorrencias";
 import CustoDeVidaPage from "./pages/custo-de-vida";
 import SimuladorPage from "./pages/simulador";
+
 import ObjetivoPage from "./pages/performance/objetivo";
 import ObjetivoFisicoPage from "./pages/performance/objetivo-fisico";
 import AvaliacaoPage from "./pages/performance/avaliacao";
@@ -28,6 +29,13 @@ import TreinosPage from "./pages/performance/treinos";
 import NutricaoPage from "./pages/performance/nutricao";
 import ProgressoPage from "./pages/performance/progresso";
 import RecomendacoesPage from "./pages/performance/recomendacoes";
+
+import AgendaPage from "./pages/agenda/index";
+import EventosPage from "./pages/agenda/eventos";
+import LembretesPage from "./pages/agenda/lembretes";
+
+import ViagensPage from "./pages/viagens/index";
+import ViagemDetailPage from "./pages/viagens/[id]";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +57,7 @@ function Router() {
       <Route path="/recorrencias" component={RecorrenciasPage} />
       <Route path="/custo-de-vida" component={CustoDeVidaPage} />
       <Route path="/simulador-financeiro" component={SimuladorPage} />
+
       <Route path="/performance/objetivo" component={ObjetivoPage} />
       <Route path="/performance/objetivo-fisico" component={ObjetivoFisicoPage} />
       <Route path="/performance/avaliacao" component={AvaliacaoPage} />
@@ -58,7 +67,17 @@ function Router() {
       <Route path="/performance/nutricao" component={NutricaoPage} />
       <Route path="/performance/progresso" component={ProgressoPage} />
       <Route path="/performance/recomendacoes" component={RecomendacoesPage} />
-      {/* Legacy redirect */}
+
+      <Route path="/agenda" component={AgendaPage} />
+      <Route path="/agenda/eventos" component={EventosPage} />
+      <Route path="/agenda/lembretes" component={LembretesPage} />
+
+      <Route path="/viagens" component={ViagensPage} />
+      <Route path="/viagens/:id">
+        {(params) => <ViagemDetailPage id={params.id} />}
+      </Route>
+
+      {/* Legacy */}
       <Route path="/assets" component={PatrimonioPage} />
       <Route path="/credit-cards" component={FaturasPage} />
       <Route component={NotFound} />

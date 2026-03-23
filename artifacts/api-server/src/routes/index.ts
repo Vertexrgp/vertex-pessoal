@@ -13,6 +13,8 @@ import budgetRouter from "./budget";
 import dashboardRouter from "./dashboard";
 import reportsRouter from "./reports";
 import performanceRouter from "./performance";
+import agendaRouter from "./agenda";
+import viagensRouter from "./viagens";
 
 const router: IRouter = Router();
 
@@ -30,5 +32,7 @@ router.use(budgetRouter);
 router.use(dashboardRouter);
 router.use(reportsRouter);
 router.use(performanceRouter);
+router.use(agendaRouter);
+router.use(viagensRouter);
 
 export default router;

@@ -8,3 +8,5 @@ export * from "./recurring-transactions";
 export * from "./assets";
 export * from "./budget";
 export * from "./performance";
+export * from "./agenda";
+export * from "./viagens";

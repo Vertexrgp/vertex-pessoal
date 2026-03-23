@@ -2,7 +2,7 @@
 
 ## Overview
 
-Full-stack personal OS — modules for finance management and physical performance. Premium fintech product built with React + Vite frontend, Express backend, and PostgreSQL database. All UI in Brazilian Portuguese.
+Full-stack personal OS — 4 modules: Financeiro, Performance, Agenda, Viagens. Premium SaaS product built with React + Vite frontend, Express backend, and PostgreSQL database. All UI in Brazilian Portuguese. Collapsible sidebar with compact (icon-only) mode.
 
 ## Stack
 
