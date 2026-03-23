@@ -2,7 +2,7 @@
 
 ## Overview
 
-Full-stack personal OS — 4 modules: Financeiro, Performance, Agenda, Viagens. Premium SaaS product built with React + Vite frontend, Express backend, and PostgreSQL database. All UI in Brazilian Portuguese. Collapsible sidebar with compact (icon-only) mode.
+Full-stack personal OS — 7 modules: Financeiro (incl. Cartões + Patrimônio), Performance, Agenda, Viagens, Crescimento, Conhecimento, Idiomas. Premium SaaS product built with React + Vite frontend, Express backend, and PostgreSQL database. All UI in Brazilian Portuguese. Collapsible sidebar with compact (icon-only) mode and cross-module event bus.
 
 ## Stack
 

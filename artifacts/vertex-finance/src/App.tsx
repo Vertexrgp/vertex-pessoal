@@ -38,6 +38,18 @@ import PlanejamentoSemanalPage from "./pages/agenda/planejamento-semanal";
 import ViagensPage from "./pages/viagens/index";
 import ViagemDetailPage from "./pages/viagens/[id]";
 
+import MetasPage from "./pages/crescimento/metas";
+import ObjetivosPage from "./pages/crescimento/objetivos";
+import CheckpointsPage from "./pages/crescimento/checkpoints";
+import VisionBoardPage from "./pages/crescimento/vision-board";
+
+import LivrosPage from "./pages/conhecimento/livros";
+import ArtigosPage from "./pages/conhecimento/artigos";
+import ResumosPage from "./pages/conhecimento/resumos";
+import FrasesPage from "./pages/conhecimento/frases";
+
+import InglesPage from "./pages/idiomas/ingles";
+
 const queryClient = new QueryClient();
 
 function Router() {
@@ -78,6 +90,18 @@ function Router() {
       <Route path="/viagens/:id">
         {(params) => <ViagemDetailPage id={params.id} />}
       </Route>
+
+      <Route path="/crescimento/metas" component={MetasPage} />
+      <Route path="/crescimento/objetivos" component={ObjetivosPage} />
+      <Route path="/crescimento/checkpoints" component={CheckpointsPage} />
+      <Route path="/crescimento/vision-board" component={VisionBoardPage} />
+
+      <Route path="/conhecimento/livros" component={LivrosPage} />
+      <Route path="/conhecimento/artigos" component={ArtigosPage} />
+      <Route path="/conhecimento/resumos" component={ResumosPage} />
+      <Route path="/conhecimento/frases" component={FrasesPage} />
+
+      <Route path="/idiomas/ingles" component={InglesPage} />
 
       {/* Legacy */}
       <Route path="/assets" component={PatrimonioPage} />

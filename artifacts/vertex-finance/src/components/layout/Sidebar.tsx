@@ -32,6 +32,15 @@ import {
   PanelLeftOpen,
   PersonStanding,
   ChevronRight,
+  BookOpen,
+  Languages,
+  Globe,
+  Bookmark,
+  Quote,
+  Layers,
+  Flag,
+  Star,
+  Rocket,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActivityFeed, useUnreadEventCount } from "@/components/ActivityFeed";
@@ -57,7 +66,7 @@ const modules: Module[] = [
     label: "Financeiro",
     icon: DollarSign,
     color: "text-emerald-600",
-    prefixes: ["/transactions", "/monthly-planning", "/recorrencias", "/custo-de-vida", "/simulador-financeiro", "/budget", "/reports"],
+    prefixes: ["/transactions", "/monthly-planning", "/recorrencias", "/custo-de-vida", "/simulador-financeiro", "/budget", "/reports", "/patrimonio", "/receivables", "/debts", "/incomes", "/faturas", "/cartoes"],
     items: [
       { name: "Lançamentos", path: "/transactions", icon: ListTree },
       { name: "Planejamento Mensal", path: "/monthly-planning", icon: CalendarDays },
@@ -66,30 +75,12 @@ const modules: Module[] = [
       { name: "Simulador", path: "/simulador-financeiro", icon: FlaskConical },
       { name: "Orçamento", path: "/budget", icon: PieChart },
       { name: "Relatórios", path: "/reports", icon: BarChart3 },
-    ],
-  },
-  {
-    id: "patrimonio",
-    label: "Patrimônio",
-    icon: Landmark,
-    color: "text-amber-600",
-    prefixes: ["/patrimonio", "/receivables", "/debts", "/incomes"],
-    items: [
-      { name: "Visão Geral", path: "/patrimonio", icon: Building2 },
+      { name: "Patrimônio", path: "/patrimonio", icon: Building2 },
       { name: "Recebíveis", path: "/receivables", icon: HandCoins },
       { name: "Dívidas", path: "/debts", icon: FileText },
       { name: "Rendas", path: "/incomes", icon: TrendingUp },
-    ],
-  },
-  {
-    id: "cartoes",
-    label: "Cartões",
-    icon: CreditCard,
-    color: "text-violet-600",
-    prefixes: ["/faturas", "/cartoes"],
-    items: [
       { name: "Faturas", path: "/faturas", icon: Receipt },
-      { name: "Cartões Cadastrados", path: "/cartoes", icon: CreditCard },
+      { name: "Cartões", path: "/cartoes", icon: CreditCard },
     ],
   },
   {
@@ -131,6 +122,42 @@ const modules: Module[] = [
     prefixes: ["/viagens"],
     items: [
       { name: "Minhas Viagens", path: "/viagens", icon: MapPin },
+    ],
+  },
+  {
+    id: "crescimento",
+    label: "Crescimento",
+    icon: Rocket,
+    color: "text-indigo-600",
+    prefixes: ["/crescimento"],
+    items: [
+      { name: "Metas", path: "/crescimento/metas", icon: Flag },
+      { name: "Objetivos", path: "/crescimento/objetivos", icon: Target },
+      { name: "Checkpoints", path: "/crescimento/checkpoints", icon: Layers },
+      { name: "Vision Board", path: "/crescimento/vision-board", icon: Star },
+    ],
+  },
+  {
+    id: "conhecimento",
+    label: "Conhecimento",
+    icon: BookOpen,
+    color: "text-amber-600",
+    prefixes: ["/conhecimento"],
+    items: [
+      { name: "Livros", path: "/conhecimento/livros", icon: BookOpen },
+      { name: "Artigos", path: "/conhecimento/artigos", icon: FileText },
+      { name: "Resumos", path: "/conhecimento/resumos", icon: Bookmark },
+      { name: "Frases", path: "/conhecimento/frases", icon: Quote },
+    ],
+  },
+  {
+    id: "idiomas",
+    label: "Idiomas",
+    icon: Languages,
+    color: "text-sky-600",
+    prefixes: ["/idiomas"],
+    items: [
+      { name: "Inglês", path: "/idiomas/ingles", icon: Globe },
     ],
   },
 ];

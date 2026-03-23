@@ -1,0 +1,119 @@
+Quero evoluir a arquitetura do Vertex OS adicionando novos módulos para tornar o sistema completo para gestão da vida.
+
+OBJETIVO
+Transformar o sistema em uma plataforma de gestão pessoal completa, não apenas financeira.
+
+====================================================
+1) REORGANIZAÇÃO
+====================================================
+
+Mover:
+
+- Cartões → dentro de Financeiro
+- Patrimônio → dentro de Financeiro
+
+====================================================
+2) NOVO MÓDULO: CRESCIMENTO
+====================================================
+
+Criar módulo:
+
+Crescimento
+
+Submódulos:
+
+- Metas
+- Objetivos
+- Checkpoints
+- Vision Board
+
+Funcionalidades:
+
+- criar meta
+- dividir em etapas
+- acompanhar progresso
+- visualizar objetivos
+
+====================================================
+3) NOVO MÓDULO: CONHECIMENTO
+====================================================
+
+Criar módulo:
+
+Conhecimento
+
+Submódulos:
+
+- Livros
+- Artigos
+- Resumos
+- Frases
+
+Funcionalidades:
+
+- registrar leitura
+- adicionar resumo
+- marcar frases
+- acompanhar progresso
+
+====================================================
+4) NOVO MÓDULO: IDIOMAS
+====================================================
+
+Criar módulo:
+
+Idiomas
+
+Submódulos:
+
+- Inglês
+
+Funcionalidades:
+
+- nível atual
+- plano de estudo
+- acompanhamento de evolução
+- vocabulário
+- registro de estudo
+
+====================================================
+5) ARQUITETURA
+====================================================
+
+Manter padrão:
+
+modules/
+- financeiro
+- performance
+- agenda
+- viagens
+- crescimento
+- conhecimento
+- idiomas
+
+====================================================
+6) VISUAL
+====================================================
+
+Manter padrão premium:
+
+- clean
+- organizado
+- com hierarquia clara
+- estilo SaaS moderno
+
+====================================================
+7) ENTREGAR
+====================================================
+
+Implementar:
+
+1. reorganização do menu
+2. criação dos novos módulos
+3. páginas base (estrutura inicial)
+4. navegação funcional
+
+No final, me mostrar:
+- nova arquitetura do sistema
+- como os módulos estão organizados
+- próximos passos recomendados
