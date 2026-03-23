@@ -1,0 +1,195 @@
+Quero implementar dentro do módulo Crescimento uma funcionalidade chamada:
+
+Roadmap Automático
+
+OBJETIVO
+Gerar automaticamente um plano estruturado (checkpoints + tarefas) a partir de uma meta, conectando com Agenda, Financeiro e Performance.
+
+IMPORTANTE
+O sistema já usa:
+- Metas
+- Checkpoints
+- Agenda (tarefas)
+- Performance
+- Financeiro
+
+O roadmap deve usar essa base existente.
+
+====================================================
+1) CONCEITO
+====================================================
+
+O usuário cria uma Meta:
+
+Exemplo:
+- Morar no Canadá
+- Ter físico X
+- Faturar 100k/mês
+
+O sistema gera automaticamente:
+
+- Checkpoints (marcos)
+- Tarefas (execução)
+- Estrutura de progresso
+
+====================================================
+2) GERAÇÃO DE CHECKPOINTS
+====================================================
+
+Para cada meta, criar checkpoints baseados em templates.
+
+Exemplo:
+
+Meta: Morar no Canadá
+
+Checkpoints:
+- Inglês nível B2
+- Valor financeiro acumulado (R$ X)
+- Documentação completa
+- Aplicação realizada
+
+Meta: Ter físico X
+
+Checkpoints:
+- Peso alvo atingido
+- Percentual de gordura
+- Consistência de treino
+- Dieta ajustada
+
+====================================================
+3) GERAÇÃO DE TAREFAS
+====================================================
+
+Cada checkpoint gera tarefas automaticamente.
+
+Exemplo:
+
+Checkpoint: Aprender inglês
+
+Tarefas:
+- estudar 30min/dia
+- aula 2x semana
+- revisão semanal
+
+====================================================
+4) INTEGRAÇÃO COM AGENDA
+====================================================
+
+As tarefas devem:
+
+- aparecer automaticamente na Agenda
+- respeitar frequência (diária, semanal)
+- poder ser editadas pelo usuário
+
+====================================================
+5) INTEGRAÇÃO COM PERFORMANCE
+====================================================
+
+Se a meta for física:
+
+- criar vínculo com Performance
+- conectar com treino, dieta e progresso
+
+====================================================
+6) INTEGRAÇÃO COM FINANCEIRO
+====================================================
+
+Se a meta envolver dinheiro:
+
+- criar objetivo financeiro
+- conectar com simulador
+- atualizar planejamento
+
+====================================================
+7) ESTRUTURA DE DADOS
+====================================================
+
+Criar ou ajustar:
+
+- growth_roadmaps
+- roadmap_checkpoints
+- roadmap_tasks
+
+Cada item deve ter:
+
+- vínculo com meta
+- status
+- progresso
+- datas
+
+====================================================
+8) VISUAL
+====================================================
+
+Mostrar roadmap como:
+
+- lista estruturada por etapas
+OU
+- timeline vertical
+
+Cada checkpoint deve mostrar:
+
+- status
+- progresso
+- tarefas associadas
+
+====================================================
+9) INTERAÇÃO
+====================================================
+
+Permitir:
+
+- editar roadmap
+- adicionar/remover checkpoints
+- editar tarefas
+- marcar progresso manual
+
+====================================================
+10) REGRAS IMPORTANTES
+====================================================
+
+- roadmap é gerado automaticamente, mas pode ser editado
+- tarefas não devem sobrescrever manualmente o usuário
+- checkpoints são marcos, não tarefas
+
+====================================================
+11) EXPERIÊNCIA
+====================================================
+
+O usuário deve sentir:
+
+- clareza do caminho
+- direção
+- controle
+- evolução real
+
+====================================================
+12) FUTURO
+====================================================
+
+Preparar para:
+
+- IA gerar roadmap mais inteligente
+- personalização automática
+- ajuste contínuo com base em comportamento
+
+====================================================
+13) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. geração automática de roadmap
+2. criação de checkpoints
+3. criação de tarefas
+4. integração com Agenda
+5. integração com Performance
+6. integração com Financeiro
+7. visual estruturado do roadmap
+
+No final, me mostrar:
+
+- exemplo de roadmap gerado
+- como os checkpoints foram criados
+- como as tarefas aparecem na agenda
+- como editar o roadmap

@@ -7,6 +7,7 @@ import {
   growthCheckpoints,
   growthVision,
   visionBoardItems,
+  agendaPlannerTasksTable,
 } from "@workspace/db";
 import { eq, asc, desc } from "drizzle-orm";
 
@@ -341,6 +342,66 @@ router.delete("/crescimento/vision-board-items/:id", async (req, res) => {
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: "Erro ao deletar item" });
+  }
+});
+
+// ─── ROADMAP GENERATION ──────────────────────────────────────────────────────
+
+router.post("/crescimento/roadmap/generate", async (req, res) => {
+  try {
+    const { goalId, checkpoints } = req.body;
+    if (!goalId || !Array.isArray(checkpoints) || checkpoints.length === 0) {
+      return res.status(400).json({ error: "goalId e checkpoints são obrigatórios" });
+    }
+
+    const createdCheckpoints: unknown[] = [];
+    const createdTasks: unknown[] = [];
+
+    for (const cp of checkpoints) {
+      const { titulo, descricao, dataAlvo, tarefas } = cp;
+      if (!titulo) continue;
+
+      const [checkpoint] = await db
+        .insert(growthCheckpoints)
+        .values({
+          goalId: parseInt(goalId),
+          titulo,
+          descricao: descricao || null,
+          data: dataAlvo || null,
+          concluido: false,
+          status: "pendente",
+          progresso: 0,
+        })
+        .returning();
+
+      createdCheckpoints.push(checkpoint);
+
+      if (Array.isArray(tarefas) && tarefas.length > 0) {
+        const semanaInicio = cp.semanaInicio || new Date().toISOString().split("T")[0];
+        for (const task of tarefas) {
+          if (!task.titulo) continue;
+          const [t] = await db
+            .insert(agendaPlannerTasksTable)
+            .values({
+              titulo: task.titulo,
+              semanaInicio,
+              prioridade: task.prioridade || "media",
+              categoria: "crescimento",
+              status: "pendente",
+              goalId: parseInt(goalId),
+              checkpointId: checkpoint.id,
+              ordem: 0,
+              postergadaCount: 0,
+            })
+            .returning();
+          createdTasks.push(t);
+        }
+      }
+    }
+
+    res.json({ checkpoints: createdCheckpoints, tasks: createdTasks });
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao gerar roadmap" });
   }
 });
 

@@ -131,6 +131,20 @@ export const plannerTasksApi = {
   remove: (id: number) => req<{ ok: true }>("DELETE", `/api/agenda/planner/${id}`),
 };
 
+// Roadmap Generation
+export interface RoadmapCheckpointInput {
+  titulo: string;
+  descricao: string;
+  dataAlvo: string;
+  semanaInicio: string;
+  tarefas: { titulo: string; prioridade: string }[];
+}
+
+export const roadmapApi = {
+  generate: (data: { goalId: number; checkpoints: RoadmapCheckpointInput[] }) =>
+    req<{ checkpoints: Checkpoint[]; tasks: PlannerTask[] }>("POST", "/api/crescimento/roadmap/generate", data),
+};
+
 // Vision
 export const visionApi = {
   list: () => req<VisionItem[]>("GET", "/api/crescimento/vision"),

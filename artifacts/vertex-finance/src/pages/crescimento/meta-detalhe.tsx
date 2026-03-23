@@ -10,10 +10,11 @@ import {
   Flag, ChevronLeft, CheckCircle2, Circle, Layers, Star,
   ListTodo, BarChart2, Pencil, Trash2, Plus, X, Loader2,
   CalendarDays, AlertCircle, ArrowRight, TrendingUp, Clock,
-  Tag, Zap, BookOpen, ExternalLink,
+  Tag, Zap, BookOpen, ExternalLink, Route,
 } from "lucide-react";
 import { format, addDays, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import RoadmapTab from "./meta-roadmap";
 
 const STATUS_CP = {
   pendente:    { label: "Pendente",    dot: "bg-slate-300",   badge: "bg-slate-100 text-slate-600" },
@@ -195,12 +196,12 @@ function AddTarefaModal({
   );
 }
 
-type Tab = "visao" | "checkpoints" | "tarefas" | "vision";
+type Tab = "roadmap" | "visao" | "checkpoints" | "tarefas" | "vision";
 
 export default function MetaDetailPage({ id }: { id?: string }) {
   const goalId = parseInt(id ?? "0");
   const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>("visao");
+  const [tab, setTab] = useState<Tab>("roadmap");
   const [addCp, setAddCp] = useState(false);
   const [addTarefa, setAddTarefa] = useState(false);
   const [editProgress, setEditProgress] = useState<{ id: number; progresso: number } | null>(null);
@@ -217,7 +218,7 @@ export default function MetaDetailPage({ id }: { id?: string }) {
   const { data: tarefas = [], isLoading: tLoading } = useQuery<PlannerTask[]>({
     queryKey: ["planner-goal", goalId],
     queryFn: () => plannerTasksApi.listByGoal(goalId),
-    enabled: tab === "tarefas" && !!goalId,
+    enabled: (tab === "tarefas" || tab === "roadmap") && !!goalId,
   });
 
   const { data: visionItems = [] } = useQuery<VisionItem[]>({
@@ -271,6 +272,7 @@ export default function MetaDetailPage({ id }: { id?: string }) {
   }
 
   const TABS = [
+    { key: "roadmap" as Tab,     label: "Roadmap",      icon: Route },
     { key: "visao" as Tab,       label: "Visão Geral",  icon: BarChart2 },
     { key: "checkpoints" as Tab, label: "Checkpoints",  icon: Layers },
     { key: "tarefas" as Tab,     label: "Tarefas",      icon: ListTodo },
@@ -369,6 +371,16 @@ export default function MetaDetailPage({ id }: { id?: string }) {
             </button>
           ))}
         </div>
+
+        {/* ── Roadmap ── */}
+        {tab === "roadmap" && goal && (
+          <RoadmapTab
+            goal={goal}
+            checkpoints={checkpoints}
+            tarefas={tarefas}
+            onAddTask={(cp) => { setAddTarefa(true); }}
+          />
+        )}
 
         {/* ── Visão Geral ── */}
         {tab === "visao" && goal && (
