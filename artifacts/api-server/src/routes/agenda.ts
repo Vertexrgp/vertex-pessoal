@@ -100,6 +100,7 @@ router.post("/agenda/planner", async (req, res) => {
         diaSemana: diaSemana || null,
         ordem: ordem || 0,
         observacao,
+        postergadaCount: 0,
       })
       .returning();
     res.json(task);
@@ -111,10 +112,21 @@ router.post("/agenda/planner", async (req, res) => {
 router.put("/agenda/planner/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { titulo, descricao, prioridade, categoria, estimativaTempo, status, diaSemana, ordem, observacao } = req.body;
+    const { titulo, descricao, prioridade, categoria, estimativaTempo, status, diaSemana, ordem, observacao, postergadaCount } = req.body;
+    const setObj: Record<string, unknown> = { updatedAt: new Date() };
+    if (titulo !== undefined) setObj.titulo = titulo;
+    if (descricao !== undefined) setObj.descricao = descricao;
+    if (prioridade !== undefined) setObj.prioridade = prioridade;
+    if (categoria !== undefined) setObj.categoria = categoria;
+    if (estimativaTempo !== undefined) setObj.estimativaTempo = estimativaTempo;
+    if (status !== undefined) setObj.status = status;
+    if (diaSemana !== undefined) setObj.diaSemana = diaSemana;
+    if (ordem !== undefined) setObj.ordem = ordem;
+    if (observacao !== undefined) setObj.observacao = observacao;
+    if (postergadaCount !== undefined) setObj.postergadaCount = postergadaCount;
     const [updated] = await db
       .update(agendaPlannerTasksTable)
-      .set({ titulo, descricao, prioridade, categoria, estimativaTempo, status, diaSemana, ordem, observacao, updatedAt: new Date() })
+      .set(setObj)
       .where(eq(agendaPlannerTasksTable.id, id))
       .returning();
     if (!updated) return res.status(404).json({ error: "Tarefa não encontrada" });
@@ -140,7 +152,10 @@ router.post("/agenda/planner/:id/duplicar", async (req, res) => {
     const [original] = await db.select().from(agendaPlannerTasksTable).where(eq(agendaPlannerTasksTable.id, id));
     if (!original) return res.status(404).json({ error: "Tarefa não encontrada" });
     const { id: _id, createdAt: _c, updatedAt: _u, ...rest } = original;
-    const [copy] = await db.insert(agendaPlannerTasksTable).values({ ...rest, titulo: `${original.titulo} (cópia)`, status: "pendente", diaSemana: null }).returning();
+    const [copy] = await db
+      .insert(agendaPlannerTasksTable)
+      .values({ ...rest, titulo: `${original.titulo} (cópia)`, status: "pendente", diaSemana: null, postergadaCount: 0 })
+      .returning();
     res.json(copy);
   } catch (err) {
     res.status(500).json({ error: "Erro ao duplicar tarefa" });
@@ -152,7 +167,6 @@ router.post("/agenda/planner/:id/proxima-semana", async (req, res) => {
     const id = parseInt(req.params.id);
     const [task] = await db.select().from(agendaPlannerTasksTable).where(eq(agendaPlannerTasksTable.id, id));
     if (!task) return res.status(404).json({ error: "Tarefa não encontrada" });
-    // Calculate next week Monday
     const current = new Date(task.semanaInicio);
     current.setDate(current.getDate() + 7);
     const nextWeek = current.toISOString().split("T")[0];
@@ -161,10 +175,38 @@ router.post("/agenda/planner/:id/proxima-semana", async (req, res) => {
       .insert(agendaPlannerTasksTable)
       .values({ ...rest, semanaInicio: nextWeek, status: "pendente", diaSemana: null })
       .returning();
-    await db.update(agendaPlannerTasksTable).set({ status: "proxima_semana", updatedAt: new Date() }).where(eq(agendaPlannerTasksTable.id, id));
+    await db
+      .update(agendaPlannerTasksTable)
+      .set({ status: "proxima_semana", updatedAt: new Date() })
+      .where(eq(agendaPlannerTasksTable.id, id));
     res.json(moved);
   } catch (err) {
     res.status(500).json({ error: "Erro ao mover tarefa" });
+  }
+});
+
+// NEW: Mark as postergada (postpone) — increments counter + moves to next week
+router.post("/agenda/planner/:id/postergar", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [task] = await db.select().from(agendaPlannerTasksTable).where(eq(agendaPlannerTasksTable.id, id));
+    if (!task) return res.status(404).json({ error: "Tarefa não encontrada" });
+    const current = new Date(task.semanaInicio);
+    current.setDate(current.getDate() + 7);
+    const nextWeek = current.toISOString().split("T")[0];
+    const newCount = (task.postergadaCount || 0) + 1;
+    const { id: _id, createdAt: _c, updatedAt: _u, ...rest } = task;
+    const [moved] = await db
+      .insert(agendaPlannerTasksTable)
+      .values({ ...rest, semanaInicio: nextWeek, status: "postergada", diaSemana: null, postergadaCount: newCount })
+      .returning();
+    await db
+      .update(agendaPlannerTasksTable)
+      .set({ status: "postergada", updatedAt: new Date() })
+      .where(eq(agendaPlannerTasksTable.id, id));
+    res.json(moved);
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao postergar tarefa" });
   }
 });
 

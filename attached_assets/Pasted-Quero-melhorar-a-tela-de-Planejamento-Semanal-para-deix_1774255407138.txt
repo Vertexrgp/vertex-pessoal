@@ -1,0 +1,147 @@
+Quero melhorar a tela de Planejamento Semanal para deixá-la mais legível, funcional e com UX de produto premium.
+
+OBJETIVO
+Resolver problemas de leitura, organização e controle de execução das tarefas.
+
+====================================================
+1) MELHORAR LEGIBILIDADE (CRÍTICO)
+====================================================
+
+Problema:
+Os cards estão com texto "comido" e difícil de ler.
+
+Ajustes:
+
+- aumentar largura das colunas dos dias
+- permitir até 2 linhas de título sem quebra ruim
+- aumentar padding interno dos cards
+- melhorar espaçamento entre elementos
+- aumentar levemente a fonte
+
+====================================================
+2) NOVO PADRÃO DE CARD
+====================================================
+
+Estrutura do card:
+
+- título (mais destacado)
+- tempo estimado
+- categoria
+- prioridade
+
+Separar melhor visualmente cada informação.
+
+====================================================
+3) FILTROS FUNCIONAIS
+====================================================
+
+Os indicadores no topo devem ser clicáveis:
+
+- Total
+- Alocadas
+- Concluídas
+- Não alocadas
+
+Ao clicar:
+abrir lista filtrada correspondente.
+
+====================================================
+4) CRIAR STATUS POSTERGADA
+====================================================
+
+Nova lógica:
+
+Se tarefa não for concluída na semana:
+
+- mover automaticamente para próxima semana
+- marcar como POSTERGADA
+- incrementar contador de postergação
+
+Visual:
+
+- etiqueta: "Postergada"
+- mostrar número de vezes
+
+Exemplo:
+Postergada (1x)
+Postergada (2x)
+
+====================================================
+5) ÁREA DE TAREFAS NÃO ALOCADAS MELHORADA
+====================================================
+
+Melhorar painel lateral:
+
+- permitir ver mais tarefas
+- scroll interno
+- melhor espaçamento
+- botão claro para distribuir tarefas
+
+====================================================
+6) FOCO DO DIA
+====================================================
+
+Adicionar no topo de cada dia:
+
+"Foco do dia"
+
+Regra:
+- tarefas de alta prioridade aparecem primeiro
+- destaque visual
+
+====================================================
+7) CONCLUÍDAS E ATRASADAS
+====================================================
+
+Criar visual para:
+
+- tarefas concluídas (mais suaves, riscadas)
+- tarefas atrasadas/postergadas (com alerta visual)
+
+====================================================
+8) INTERAÇÃO
+====================================================
+
+Manter:
+
+- drag and drop
+- reorder
+- edição
+- duplicação
+
+Adicionar:
+
+- mover para próxima semana
+- marcar como postergada manualmente
+
+====================================================
+9) VISUAL PREMIUM
+====================================================
+
+Quero:
+
+- layout mais limpo
+- menos densidade
+- mais respiro visual
+- hierarquia clara
+- aparência de produto SaaS premium
+
+====================================================
+10) ENTREGAR
+====================================================
+
+Implementar:
+
+1. melhoria de layout dos cards
+2. aumento de legibilidade
+3. filtros clicáveis
+4. sistema de tarefas postergadas
+5. melhoria do painel lateral
+6. destaque de foco do dia
+7. melhoria geral de UX
+
+No final, me mostrar:
+- o que mudou no layout
+- como funciona o sistema de postergadas
+- como funcionam os filtros
+- próximos ajustes recomendados
