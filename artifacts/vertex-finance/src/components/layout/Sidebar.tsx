@@ -8,7 +8,6 @@ import {
   Settings,
   CreditCard,
   Receipt,
-  Landmark,
   TrendingUp,
   DollarSign,
   HandCoins,
@@ -31,17 +30,19 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   PersonStanding,
-  ChevronRight,
   BookOpen,
   Languages,
   Globe,
-  Bookmark,
-  Quote,
   Layers,
   Flag,
   Star,
   Rocket,
   Sparkles,
+  Wallet,
+  LineChart,
+  Banknote,
+  Landmark,
+  ArrowLeftRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActivityFeed, useUnreadEventCount } from "@/components/ActivityFeed";
@@ -52,13 +53,21 @@ type NavItem = {
   icon: React.ElementType;
 };
 
+type NavGroup = {
+  label: string;
+  icon: React.ElementType;
+  path?: string;
+  items?: NavItem[];
+};
+
 type Module = {
   id: string;
   label: string;
   icon: React.ElementType;
   color: string;
-  items: NavItem[];
   prefixes?: string[];
+  items?: NavItem[];
+  groups?: NavGroup[];
 };
 
 const modules: Module[] = [
@@ -67,21 +76,57 @@ const modules: Module[] = [
     label: "Financeiro",
     icon: DollarSign,
     color: "text-emerald-600",
-    prefixes: ["/transactions", "/monthly-planning", "/recorrencias", "/custo-de-vida", "/simulador-financeiro", "/budget", "/reports", "/patrimonio", "/receivables", "/debts", "/incomes", "/faturas", "/cartoes"],
-    items: [
-      { name: "Lançamentos", path: "/transactions", icon: ListTree },
-      { name: "Planejamento Mensal", path: "/monthly-planning", icon: CalendarDays },
-      { name: "Recorrências", path: "/recorrencias", icon: RefreshCw },
-      { name: "Custo de Vida", path: "/custo-de-vida", icon: HeartPulse },
-      { name: "Simulador", path: "/simulador-financeiro", icon: FlaskConical },
-      { name: "Orçamento", path: "/budget", icon: PieChart },
-      { name: "Relatórios", path: "/reports", icon: BarChart3 },
-      { name: "Patrimônio", path: "/patrimonio", icon: Building2 },
-      { name: "Recebíveis", path: "/receivables", icon: HandCoins },
-      { name: "Dívidas", path: "/debts", icon: FileText },
-      { name: "Rendas", path: "/incomes", icon: TrendingUp },
-      { name: "Faturas", path: "/faturas", icon: Receipt },
-      { name: "Cartões", path: "/cartoes", icon: CreditCard },
+    prefixes: ["/", "/transactions", "/monthly-planning", "/recorrencias", "/custo-de-vida", "/simulador-financeiro", "/budget", "/reports", "/patrimonio", "/receivables", "/debts", "/incomes", "/faturas", "/cartoes", "/assets"],
+    groups: [
+      {
+        label: "Dashboard",
+        icon: LayoutDashboard,
+        path: "/",
+      },
+      {
+        label: "Movimentações",
+        icon: ArrowLeftRight,
+        items: [
+          { name: "Lançamentos",  path: "/transactions",  icon: ListTree },
+          { name: "Recorrências", path: "/recorrencias",  icon: RefreshCw },
+          { name: "Rendas",       path: "/incomes",       icon: Banknote },
+          { name: "Recebíveis",   path: "/receivables",   icon: HandCoins },
+        ],
+      },
+      {
+        label: "Planejamento",
+        icon: CalendarDays,
+        items: [
+          { name: "Plano Mensal", path: "/monthly-planning",     icon: CalendarDays },
+          { name: "Orçamento",    path: "/budget",               icon: PieChart },
+          { name: "Simulador",    path: "/simulador-financeiro",  icon: FlaskConical },
+        ],
+      },
+      {
+        label: "Cartões",
+        icon: CreditCard,
+        items: [
+          { name: "Cartões", path: "/cartoes", icon: CreditCard },
+          { name: "Faturas", path: "/faturas", icon: Receipt },
+        ],
+      },
+      {
+        label: "Patrimônio",
+        icon: Landmark,
+        items: [
+          { name: "Ativos",           path: "/patrimonio",  icon: Building2 },
+          { name: "Dívidas",          path: "/debts",       icon: FileText },
+          { name: "Patrimônio total", path: "/patrimonio",  icon: Landmark },
+        ],
+      },
+      {
+        label: "Análises",
+        icon: LineChart,
+        items: [
+          { name: "Relatórios",    path: "/reports",       icon: BarChart3 },
+          { name: "Custo de vida", path: "/custo-de-vida", icon: HeartPulse },
+        ],
+      },
     ],
   },
   {
@@ -91,15 +136,15 @@ const modules: Module[] = [
     color: "text-rose-600",
     prefixes: ["/performance"],
     items: [
-      { name: "Objetivo", path: "/performance/objetivo", icon: Target },
-      { name: "Objetivo Físico", path: "/performance/objetivo-fisico", icon: PersonStanding },
-      { name: "Avaliação", path: "/performance/avaliacao", icon: Activity },
-      { name: "Exames", path: "/performance/exames", icon: FileText },
-      { name: "Protocolos", path: "/performance/protocolos", icon: FlaskConical },
-      { name: "Treinos", path: "/performance/treinos", icon: Dumbbell },
-      { name: "Nutrição", path: "/performance/nutricao", icon: Utensils },
-      { name: "Progresso", path: "/performance/progresso", icon: TrendingUp },
-      { name: "Recomendações", path: "/performance/recomendacoes", icon: Lightbulb },
+      { name: "Objetivo",         path: "/performance/objetivo",        icon: Target },
+      { name: "Objetivo Físico",  path: "/performance/objetivo-fisico", icon: PersonStanding },
+      { name: "Avaliação",        path: "/performance/avaliacao",       icon: Activity },
+      { name: "Exames",           path: "/performance/exames",          icon: FileText },
+      { name: "Protocolos",       path: "/performance/protocolos",      icon: FlaskConical },
+      { name: "Treinos",          path: "/performance/treinos",         icon: Dumbbell },
+      { name: "Nutrição",         path: "/performance/nutricao",        icon: Utensils },
+      { name: "Progresso",        path: "/performance/progresso",       icon: TrendingUp },
+      { name: "Recomendações",    path: "/performance/recomendacoes",   icon: Lightbulb },
     ],
   },
   {
@@ -110,9 +155,9 @@ const modules: Module[] = [
     prefixes: ["/agenda"],
     items: [
       { name: "Planejamento Semanal", path: "/agenda/planejamento-semanal", icon: CalendarDays },
-      { name: "Visão Geral", path: "/agenda", icon: CalendarCheck },
-      { name: "Eventos", path: "/agenda/eventos", icon: CalendarDays },
-      { name: "Lembretes", path: "/agenda/lembretes", icon: Bell },
+      { name: "Visão Geral",          path: "/agenda",                      icon: CalendarCheck },
+      { name: "Eventos",              path: "/agenda/eventos",               icon: CalendarDays },
+      { name: "Lembretes",            path: "/agenda/lembretes",             icon: Bell },
     ],
   },
   {
@@ -132,8 +177,8 @@ const modules: Module[] = [
     color: "text-indigo-600",
     prefixes: ["/crescimento"],
     items: [
-      { name: "Metas", path: "/crescimento/metas", icon: Flag },
-      { name: "Checkpoints", path: "/crescimento/checkpoints", icon: Layers },
+      { name: "Metas",        path: "/crescimento/metas",        icon: Flag },
+      { name: "Checkpoints",  path: "/crescimento/checkpoints",  icon: Layers },
       { name: "Vision Board", path: "/crescimento/vision-board", icon: Star },
     ],
   },
@@ -144,8 +189,8 @@ const modules: Module[] = [
     color: "text-amber-600",
     prefixes: ["/conhecimento"],
     items: [
-      { name: "Livros", path: "/conhecimento/livros", icon: BookOpen },
-      { name: "Artigos", path: "/conhecimento/artigos", icon: FileText },
+      { name: "Livros",   path: "/conhecimento/livros",   icon: BookOpen },
+      { name: "Artigos",  path: "/conhecimento/artigos",  icon: FileText },
     ],
   },
   {
@@ -161,16 +206,18 @@ const modules: Module[] = [
 ];
 
 function getActiveModule(pathname: string): string | null {
-  if (pathname === "/" || pathname === "") return null;
   for (const mod of modules) {
-    if (mod.prefixes?.some(p => pathname === p || pathname.startsWith(p + "/"))) {
+    if (mod.prefixes?.some(p => {
+      if (p === "/") return pathname === "/" || pathname === "";
+      return pathname === p || pathname.startsWith(p + "/");
+    })) {
       return mod.id;
     }
   }
   return null;
 }
 
-function NavItem({ item, compact }: { item: NavItem; compact: boolean }) {
+function NavItem({ item, compact, indent = false }: { item: NavItem; compact: boolean; indent?: boolean }) {
   const [location] = useLocation();
   const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
   const Icon = item.icon;
@@ -181,6 +228,7 @@ function NavItem({ item, compact }: { item: NavItem; compact: boolean }) {
       title={compact ? item.name : undefined}
       className={cn(
         "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg transition-all duration-150 text-sm font-medium group relative",
+        indent && !compact && "pl-4",
         isActive
           ? "bg-primary/10 text-primary"
           : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
@@ -189,11 +237,11 @@ function NavItem({ item, compact }: { item: NavItem; compact: boolean }) {
       <Icon
         className={cn(
           "flex-shrink-0 transition-colors",
-          compact ? "w-5 h-5" : "w-4 h-4",
+          compact ? "w-5 h-5" : "w-3.5 h-3.5",
           isActive ? "text-primary" : "text-slate-400 group-hover:text-slate-600"
         )}
       />
-      {!compact && <span className="truncate leading-none">{item.name}</span>}
+      {!compact && <span className="truncate leading-none text-xs">{item.name}</span>}
       {compact && (
         <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
           {item.name}
@@ -203,20 +251,101 @@ function NavItem({ item, compact }: { item: NavItem; compact: boolean }) {
   );
 }
 
+function GroupSection({
+  group,
+  isOpen,
+  onToggle,
+}: {
+  group: NavGroup;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  const [location] = useLocation();
+  const Icon = group.icon;
+
+  if (group.path) {
+    const isActive = location === group.path || (group.path !== "/" && location.startsWith(group.path + "/"));
+    const isDash = group.path === "/";
+    const active = isDash ? (location === "/" || location === "") : isActive;
+    return (
+      <Link
+        href={group.path}
+        className={cn(
+          "flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 group",
+          active
+            ? "bg-emerald-50 text-emerald-700"
+            : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+        )}
+      >
+        <Icon className={cn("w-3.5 h-3.5 flex-shrink-0", active ? "text-emerald-600" : "text-slate-400 group-hover:text-slate-500")} />
+        <span>{group.label}</span>
+      </Link>
+    );
+  }
+
+  const hasActiveChild = group.items?.some(item =>
+    location === item.path || (item.path !== "/" && location.startsWith(item.path))
+  );
+
+  return (
+    <div>
+      <button
+        onClick={onToggle}
+        className={cn(
+          "w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 group",
+          hasActiveChild
+            ? "text-emerald-700 bg-emerald-50/60"
+            : "text-slate-400 hover:text-slate-600 hover:bg-slate-50/80"
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <Icon className={cn("w-3.5 h-3.5 flex-shrink-0", hasActiveChild ? "text-emerald-600" : "text-slate-400 group-hover:text-slate-500")} />
+          <span>{group.label}</span>
+        </div>
+        <ChevronDown
+          className={cn(
+            "w-3 h-3 transition-transform duration-200",
+            isOpen ? "rotate-0" : "-rotate-90",
+            hasActiveChild ? "text-emerald-500" : "text-slate-300"
+          )}
+        />
+      </button>
+
+      <div className={cn(
+        "overflow-hidden transition-all duration-200",
+        isOpen ? "max-h-[200px] opacity-100 mt-0.5" : "max-h-0 opacity-0"
+      )}>
+        <nav className="flex flex-col gap-0.5 pl-1 border-l border-slate-100 ml-3">
+          {group.items?.map(item => (
+            <NavItem key={item.path + item.name} item={item} compact={false} indent />
+          ))}
+        </nav>
+      </div>
+    </div>
+  );
+}
+
 function ModuleSection({
   mod,
   isOpen,
   isActive,
   compact,
   onToggle,
+  openGroups,
+  onToggleGroup,
 }: {
   mod: Module;
   isOpen: boolean;
   isActive: boolean;
   compact: boolean;
   onToggle: () => void;
+  openGroups: Record<string, boolean>;
+  onToggleGroup: (label: string) => void;
 }) {
   const Icon = mod.icon;
+  const allItems: NavItem[] = mod.groups
+    ? mod.groups.flatMap(g => g.items ?? (g.path ? [{ name: g.label, path: g.path, icon: g.icon }] : []))
+    : (mod.items ?? []);
 
   if (compact) {
     return (
@@ -224,8 +353,8 @@ function ModuleSection({
         <div className="flex justify-center py-1">
           <div className={cn("w-[3px] h-3 rounded-full bg-current opacity-20", mod.color)} />
         </div>
-        {mod.items.map(item => (
-          <NavItem key={item.path} item={item} compact={true} />
+        {allItems.map(item => (
+          <NavItem key={item.path + item.name} item={item} compact={true} />
         ))}
       </div>
     );
@@ -255,17 +384,28 @@ function ModuleSection({
         />
       </button>
 
-      <div
-        className={cn(
-          "overflow-hidden transition-all duration-200",
-          isOpen ? "max-h-[500px] opacity-100 mt-0.5" : "max-h-0 opacity-0"
+      <div className={cn(
+        "overflow-hidden transition-all duration-200",
+        isOpen ? "max-h-[600px] opacity-100 mt-0.5" : "max-h-0 opacity-0"
+      )}>
+        {mod.groups ? (
+          <nav className="flex flex-col gap-0.5 pl-1.5 border-l border-slate-100 ml-2.5">
+            {mod.groups.map(group => (
+              <GroupSection
+                key={group.label}
+                group={group}
+                isOpen={openGroups[group.label] ?? false}
+                onToggle={() => onToggleGroup(group.label)}
+              />
+            ))}
+          </nav>
+        ) : (
+          <nav className="flex flex-col gap-0.5 pl-1.5 border-l border-slate-100 ml-2.5">
+            {(mod.items ?? []).map(item => (
+              <NavItem key={item.path} item={item} compact={false} />
+            ))}
+          </nav>
         )}
-      >
-        <nav className="flex flex-col gap-0.5 pl-1.5 border-l border-slate-100 ml-2.5">
-          {mod.items.map(item => (
-            <NavItem key={item.path} item={item} compact={false} />
-          ))}
-        </nav>
       </div>
     </div>
   );
@@ -281,24 +421,39 @@ export function Sidebar() {
 
   const [openModules, setOpenModules] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    modules.forEach(m => {
-      initial[m.id] = m.id === activeModule;
-    });
+    modules.forEach(m => { initial[m.id] = m.id === activeModule; });
     return initial;
   });
 
-  // Auto-expand active module when route changes
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    const fin = modules.find(m => m.id === "financeiro");
+    const initial: Record<string, boolean> = {};
+    fin?.groups?.forEach(g => { initial[g.label] = false; });
+    return initial;
+  });
+
   useEffect(() => {
     if (activeModule) {
-      setOpenModules(prev => ({
-        ...prev,
-        [activeModule]: true,
-      }));
+      setOpenModules(prev => ({ ...prev, [activeModule]: true }));
     }
-  }, [activeModule]);
+    if (activeModule === "financeiro") {
+      const fin = modules.find(m => m.id === "financeiro");
+      fin?.groups?.forEach(g => {
+        if (g.items?.some(item =>
+          location === item.path || (item.path !== "/" && location.startsWith(item.path))
+        )) {
+          setOpenGroups(prev => ({ ...prev, [g.label]: true }));
+        }
+      });
+    }
+  }, [activeModule, location]);
 
   const toggleModule = (id: string) => {
     setOpenModules(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const toggleGroup = (label: string) => {
+    setOpenGroups(prev => ({ ...prev, [label]: !prev[label] }));
   };
 
   const [showActivity, setShowActivity] = useState(false);
@@ -313,7 +468,6 @@ export function Sidebar() {
   };
 
   const sidebarWidth = compact ? 60 : 220;
-  const [isDashboard] = [location === "/" || location === ""];
 
   return (
     <aside
@@ -338,11 +492,7 @@ export function Sidebar() {
 
       {/* Nav */}
       <div className={cn("flex-1 overflow-y-auto py-3 space-y-1", compact ? "px-1.5" : "px-3")}>
-        {/* Dashboard */}
-        <NavItem
-          item={{ name: "Dashboard", path: "/", icon: LayoutDashboard }}
-          compact={compact}
-        />
+        {/* Sugestões */}
         <NavItem
           item={{ name: "Sugestões", path: "/sugestoes", icon: Sparkles }}
           compact={compact}
@@ -360,6 +510,8 @@ export function Sidebar() {
               isActive={mod.id === activeModule}
               compact={compact}
               onToggle={() => toggleModule(mod.id)}
+              openGroups={openGroups}
+              onToggleGroup={toggleGroup}
             />
           ))}
         </div>
