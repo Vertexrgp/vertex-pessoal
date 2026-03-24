@@ -8,6 +8,7 @@ import Dashboard from "./pages/dashboard";
 import TransactionsPage from "./pages/transactions";
 import MonthlyPlanningPage from "./pages/monthly-planning";
 import PatrimonioPage from "./pages/patrimonio";
+import AssetsPage from "./pages/assets";
 import ReceivablesPage from "./pages/receivables";
 import DebtsPage from "./pages/debts";
 import IncomesPage from "./pages/incomes";
@@ -59,7 +60,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/transactions" component={TransactionsPage} />
       <Route path="/monthly-planning" component={MonthlyPlanningPage} />
-      <Route path="/patrimonio" component={PatrimonioPage} />
+      <Route path="/patrimonio" component={AssetsPage} />
       <Route path="/receivables" component={ReceivablesPage} />
       <Route path="/debts" component={DebtsPage} />
       <Route path="/incomes" component={IncomesPage} />
@@ -113,7 +114,7 @@ function Router() {
       <Route path="/sugestoes" component={SugestoesPage} />
 
       {/* Legacy */}
-      <Route path="/assets" component={PatrimonioPage} />
+      <Route path="/assets" component={AssetsPage} />
       <Route path="/credit-cards" component={FaturasPage} />
       <Route component={NotFound} />
     </Switch>
