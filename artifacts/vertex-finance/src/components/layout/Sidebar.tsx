@@ -474,21 +474,31 @@ export function Sidebar() {
       {/* Logo */}
       <div className={cn(
         "flex items-center flex-shrink-0 bg-slate-900 border-b border-slate-800 h-14",
-        compact ? "justify-center px-0" : "px-5"
+        compact ? "justify-center px-0" : "px-4"
       )}>
         {compact ? (
-          <div className="w-8 h-8 flex items-center justify-center">
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <polygon points="1,2 11,20 21,2 18.5,2 11,16 3.5,2" fill="white"/>
-            </svg>
-          </div>
+          /* Versão colapsada — apenas o "V" */
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="1,2 12,22 23,2 20,2 12,18 4,2" fill="white"/>
+          </svg>
         ) : (
-          <img
-            src={`${import.meta.env.BASE_URL}images/vertex-logo-full.png`}
-            alt="Vertex OS"
-            className="h-7 object-contain object-left w-full"
-            style={{ maxWidth: "170px" }}
-          />
+          /* Versão completa — V | Vertex OS */
+          <div className="flex items-center gap-3 w-full">
+            {/* Ícone V */}
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+              <polygon points="1,2 12,22 23,2 20,2 12,18 4,2" fill="white"/>
+            </svg>
+            {/* Separador vertical */}
+            <div className="w-px h-7 bg-slate-600 flex-shrink-0" />
+            {/* Texto */}
+            <div className="flex flex-col leading-none">
+              <div className="flex items-baseline gap-1">
+                <span className="text-white font-bold text-sm tracking-tight">Vertex</span>
+                <span className="text-slate-400 font-light text-sm tracking-tight">OS</span>
+              </div>
+              <span className="text-slate-500 text-[9px] tracking-[0.18em] uppercase mt-0.5">Operating System</span>
+            </div>
+          </div>
         )}
       </div>
 

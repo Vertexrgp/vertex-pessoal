@@ -35,13 +35,18 @@ export function AppLayout({ children, noPadding }: { children: ReactNode; noPadd
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
         {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between px-4 bg-slate-900 border-b border-slate-800 sticky top-0 z-30 h-14">
-          <div className="flex items-center">
-            <img 
-              src={`${import.meta.env.BASE_URL}images/vertex-logo-full.png`} 
-              alt="Vertex OS" 
-              className="h-6 object-contain object-left"
-              style={{ maxWidth: "160px" }}
-            />
+          <div className="flex items-center gap-3">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+              <polygon points="1,2 12,22 23,2 20,2 12,18 4,2" fill="white"/>
+            </svg>
+            <div className="w-px h-6 bg-slate-600 flex-shrink-0" />
+            <div className="flex flex-col leading-none">
+              <div className="flex items-baseline gap-1">
+                <span className="text-white font-bold text-sm tracking-tight">Vertex</span>
+                <span className="text-slate-400 font-light text-sm tracking-tight">OS</span>
+              </div>
+              <span className="text-slate-500 text-[8px] tracking-[0.18em] uppercase mt-0.5">Operating System</span>
+            </div>
           </div>
           
           <Sheet>
