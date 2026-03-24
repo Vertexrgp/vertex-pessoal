@@ -25,6 +25,26 @@ export interface Livro {
   resumo: string | null;
   cor: string;
   totalPaginas: number | null;
+  capa: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Video {
+  id: number;
+  titulo: string;
+  link: string | null;
+  plataforma: string;
+  categoria: string;
+  tema: string | null;
+  thumbnail: string | null;
+  status: "quero_ver" | "vendo" | "concluido";
+  dataInicio: string | null;
+  dataFim: string | null;
+  resumo: string | null;
+  insights: string | null;
+  pontosImportantes: string | null;
+  frasesMarcantes: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -98,4 +118,12 @@ export const artigoInsightsApi = {
   list: (artigoId: number) => req<ArtigoInsight[]>("GET", `/api/conhecimento/artigo-insights?artigoId=${artigoId}`),
   create: (data: { artigoId: number; conteudo: string; tag?: string }) => req<ArtigoInsight>("POST", "/api/conhecimento/artigo-insights", data),
   remove: (id: number) => req<{ ok: true }>("DELETE", `/api/conhecimento/artigo-insights/${id}`),
+};
+
+export const videosApi = {
+  list: () => req<Video[]>("GET", "/api/conhecimento/videos"),
+  get: (id: number) => req<Video>("GET", `/api/conhecimento/videos/${id}`),
+  create: (data: Omit<Video, "id" | "createdAt" | "updatedAt">) => req<Video>("POST", "/api/conhecimento/videos", data),
+  update: (id: number, data: Partial<Video>) => req<Video>("PUT", `/api/conhecimento/videos/${id}`, data),
+  remove: (id: number) => req<{ ok: true }>("DELETE", `/api/conhecimento/videos/${id}`),
 };

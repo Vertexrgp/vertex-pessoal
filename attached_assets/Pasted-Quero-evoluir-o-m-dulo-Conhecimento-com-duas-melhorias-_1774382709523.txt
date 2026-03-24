@@ -1,0 +1,151 @@
+Quero evoluir o módulo Conhecimento com duas melhorias importantes:
+
+1. permitir capa/imagem nos livros
+2. criar uma nova aba chamada Vídeos
+
+OBJETIVO
+Transformar o módulo Conhecimento em uma biblioteca premium e multimídia, permitindo organizar livros, artigos e vídeos de forma visual e inteligente.
+
+====================================================
+1) LIVROS — CAPA / IMAGEM
+====================================================
+
+Quero que cada livro possa ter:
+
+- capa / imagem
+- título
+- autor
+- categoria
+- status
+- progresso
+- data de início
+- data de término
+- resumo
+- frases
+- insights
+
+Implementar:
+
+- upload de imagem/capa
+- exibição da capa na lista de livros
+- exibição da capa no detalhe do livro
+
+Visual:
+- quero que a tela pareça uma biblioteca premium
+- muito mais visual e agradável
+
+====================================================
+2) VÍDEOS — NOVA ABA
+====================================================
+
+Criar dentro de Conhecimento uma nova aba:
+
+Vídeos
+
+Objetivo:
+salvar vídeos que gosto e quero revisar, estudar ou usar como referência.
+
+====================================================
+3) CAMPOS DOS VÍDEOS
+====================================================
+
+Cada vídeo deve ter:
+
+- título
+- link
+- plataforma (YouTube, Instagram, curso, outro)
+- categoria
+- tema
+- thumbnail/imagem (opcional)
+- status (quero ver / vendo / concluído)
+- data de início
+- data de término
+- resumo
+- insights
+- frases/pontos importantes
+
+====================================================
+4) CATEGORIAS DOS VÍDEOS
+====================================================
+
+Permitir categorizar por tema, por exemplo:
+
+- Motivacional
+- IA
+- Processos
+- Negócios
+- Liderança
+- Filosofia
+- Saúde
+- Performance
+- Outros
+
+Quero que essas categorias possam ser usadas como filtro.
+
+====================================================
+5) DETALHE DO VÍDEO
+====================================================
+
+Cada vídeo deve ter uma página ou drawer de detalhe com:
+
+- informações básicas
+- resumo
+- insights
+- pontos importantes
+- frases marcantes
+- status
+- categoria
+
+====================================================
+6) CONHECIMENTO — ESTRUTURA FINAL
+====================================================
+
+Quero que o módulo Conhecimento fique assim:
+
+- Livros
+- Artigos
+- Vídeos
+
+Cada um como entidade principal.
+Nada de conteúdo solto e global sem vínculo com o item.
+
+====================================================
+7) CRUD
+====================================================
+
+Aplicar padrão completo de CRUD aos vídeos e livros:
+
+- criar
+- editar
+- excluir
+- duplicar (se fizer sentido)
+- atualizar status
+
+====================================================
+8) VISUAL
+====================================================
+
+Quero visual premium, limpo, moderno e agradável.
+Nada com cara de lista seca.
+
+Objetivo:
+parecer uma biblioteca / acervo pessoal inteligente.
+
+====================================================
+9) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. capa/imagem nos livros
+2. nova aba Vídeos
+3. estrutura dos vídeos
+4. filtros por categoria
+5. detalhe completo do vídeo
+6. visual mais premium do módulo Conhecimento
+
+No final, me mostrar:
+- como ficou a estrutura do módulo
+- como cadastrar livros com capa
+- como cadastrar vídeos
+- como filtrar por categoria

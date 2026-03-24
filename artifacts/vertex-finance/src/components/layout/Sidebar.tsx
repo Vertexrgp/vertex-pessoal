@@ -43,6 +43,7 @@ import {
   Banknote,
   Landmark,
   ArrowLeftRight,
+  Play,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActivityFeed, useUnreadEventCount } from "@/components/ActivityFeed";
@@ -186,6 +187,7 @@ const modules: Module[] = [
     items: [
       { name: "Livros",   path: "/conhecimento/livros",   icon: BookOpen },
       { name: "Artigos",  path: "/conhecimento/artigos",  icon: FileText },
+      { name: "Vídeos",   path: "/conhecimento/videos",   icon: Play },
     ],
   },
   {

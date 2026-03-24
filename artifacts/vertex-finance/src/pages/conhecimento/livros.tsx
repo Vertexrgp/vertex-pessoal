@@ -38,6 +38,7 @@ function LivroModal({
   const [progresso, setProgresso] = useState(initial?.progresso?.toString() ?? "0");
   const [nota, setNota] = useState(initial?.nota?.toString() ?? "0");
   const [cor, setCor] = useState(initial?.cor ?? "#F59E0B");
+  const [capa, setCapa] = useState(initial?.capa ?? "");
 
   const isEdit = !!initial;
 
@@ -86,7 +87,12 @@ function LivroModal({
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-2">Cor da capa</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">URL da Capa (opcional)</label>
+            <input value={capa} onChange={(e) => setCapa(e.target.value)} placeholder="https://images.example.com/book-cover.jpg" className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            {capa && <img src={capa} alt="preview" className="mt-2 h-24 object-cover rounded-xl border border-slate-200" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-2">Cor da capa {capa ? "(usada quando sem imagem)" : ""}</label>
             <div className="flex gap-2 flex-wrap">
               {CORES.map((c) => (
                 <button key={c} onClick={() => setCor(c)} className="w-7 h-7 rounded-full border-2 transition-all" style={{ backgroundColor: c, borderColor: cor === c ? "#1e293b" : "transparent" }} />
@@ -106,6 +112,7 @@ function LivroModal({
               resumo: initial?.resumo ?? null,
               cor,
               totalPaginas: totalPaginas ? parseInt(totalPaginas) : null,
+              capa: capa.trim() || null,
             })}
             disabled={saving || !titulo.trim() || !autor.trim()}
             className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-xl text-sm font-semibold disabled:opacity-50"
@@ -125,13 +132,19 @@ function BookCard({ livro, onEdit, onDelete }: { livro: Livro; onEdit: () => voi
   return (
     <Link href={`/conhecimento/livros/${livro.id}`}>
       <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-4 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer group">
-        <div className="w-12 h-18 rounded-xl flex flex-col items-center justify-center flex-shrink-0 relative" style={{ backgroundColor: livro.cor, minHeight: "72px" }}>
-          <BookOpen className="w-5 h-5 text-white/90" />
-          {livro.nota > 0 && (
-            <div className="flex mt-1.5 gap-0.5">
-              {Array.from({ length: Math.min(livro.nota, 5) }).map((_, i) => (
-                <Star key={i} className="w-2 h-2 text-white fill-white" />
-              ))}
+        <div className="w-12 rounded-xl flex-shrink-0 overflow-hidden relative" style={{ backgroundColor: livro.cor, minHeight: "72px", minWidth: "48px" }}>
+          {livro.capa ? (
+            <img src={livro.capa} alt={livro.titulo} className="w-full h-full object-cover" style={{ minHeight: "72px" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center p-1" style={{ minHeight: "72px" }}>
+              <BookOpen className="w-5 h-5 text-white/90" />
+              {livro.nota > 0 && (
+                <div className="flex mt-1.5 gap-0.5">
+                  {Array.from({ length: Math.min(livro.nota, 5) }).map((_, i) => (
+                    <Star key={i} className="w-2 h-2 text-white fill-white" />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

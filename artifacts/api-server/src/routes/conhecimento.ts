@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { conhecimentoLivros, conhecimentoFrases, conhecimentoInsights, conhecimentoArtigos, conhecimentoArtigoInsights } from "@workspace/db";
+import { conhecimentoLivros, conhecimentoFrases, conhecimentoInsights, conhecimentoArtigos, conhecimentoArtigoInsights, conhecimentoVideos } from "@workspace/db";
 import { eq, desc, asc } from "drizzle-orm";
 
 const router = Router();
@@ -29,11 +29,11 @@ router.get("/conhecimento/livros/:id", async (req, res) => {
 
 router.post("/conhecimento/livros", async (req, res) => {
   try {
-    const { titulo, autor, genero, status, progresso, nota, dataInicio, dataFim, resumo, cor, totalPaginas } = req.body;
+    const { titulo, autor, genero, status, progresso, nota, dataInicio, dataFim, resumo, cor, totalPaginas, capa } = req.body;
     if (!titulo || !autor) return res.status(400).json({ error: "titulo e autor são obrigatórios" });
     const [livro] = await db
       .insert(conhecimentoLivros)
-      .values({ titulo, autor, genero: genero || "geral", status: status || "quero_ler", progresso: progresso ?? 0, nota: nota ?? 0, dataInicio: dataInicio || null, dataFim: dataFim || null, resumo: resumo || null, cor: cor || "#F59E0B", totalPaginas: totalPaginas || null })
+      .values({ titulo, autor, genero: genero || "geral", status: status || "quero_ler", progresso: progresso ?? 0, nota: nota ?? 0, dataInicio: dataInicio || null, dataFim: dataFim || null, resumo: resumo || null, cor: cor || "#F59E0B", totalPaginas: totalPaginas || null, capa: capa || null })
       .returning();
     res.json(livro);
   } catch {
@@ -44,10 +44,10 @@ router.post("/conhecimento/livros", async (req, res) => {
 router.put("/conhecimento/livros/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { titulo, autor, genero, status, progresso, nota, dataInicio, dataFim, resumo, cor, totalPaginas } = req.body;
+    const { titulo, autor, genero, status, progresso, nota, dataInicio, dataFim, resumo, cor, totalPaginas, capa } = req.body;
     const [updated] = await db
       .update(conhecimentoLivros)
-      .set({ titulo, autor, genero, status, progresso, nota, dataInicio, dataFim, resumo, cor, totalPaginas, updatedAt: new Date() })
+      .set({ titulo, autor, genero, status, progresso, nota, dataInicio, dataFim, resumo, cor, totalPaginas, capa: capa !== undefined ? capa : undefined, updatedAt: new Date() })
       .where(eq(conhecimentoLivros.id, id))
       .returning();
     if (!updated) return res.status(404).json({ error: "Livro não encontrado" });
@@ -234,6 +234,82 @@ router.delete("/conhecimento/artigo-insights/:id", async (req, res) => {
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: "Erro ao deletar insight" });
+  }
+});
+
+// ─── VÍDEOS ───────────────────────────────────────────────────────────────────
+
+router.get("/conhecimento/videos", async (_req, res) => {
+  try {
+    const videos = await db.select().from(conhecimentoVideos).orderBy(desc(conhecimentoVideos.createdAt));
+    res.json(videos);
+  } catch {
+    res.status(500).json({ error: "Erro ao buscar vídeos" });
+  }
+});
+
+router.get("/conhecimento/videos/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [video] = await db.select().from(conhecimentoVideos).where(eq(conhecimentoVideos.id, id));
+    if (!video) return res.status(404).json({ error: "Vídeo não encontrado" });
+    res.json(video);
+  } catch {
+    res.status(500).json({ error: "Erro ao buscar vídeo" });
+  }
+});
+
+router.post("/conhecimento/videos", async (req, res) => {
+  try {
+    const { titulo, link, plataforma, categoria, tema, thumbnail, status, dataInicio, dataFim, resumo, insights, pontosImportantes, frasesMarcantes } = req.body;
+    if (!titulo) return res.status(400).json({ error: "titulo é obrigatório" });
+    const [video] = await db
+      .insert(conhecimentoVideos)
+      .values({
+        titulo,
+        link: link || null,
+        plataforma: plataforma || "YouTube",
+        categoria: categoria || "Outros",
+        tema: tema || null,
+        thumbnail: thumbnail || null,
+        status: status || "quero_ver",
+        dataInicio: dataInicio || null,
+        dataFim: dataFim || null,
+        resumo: resumo || null,
+        insights: insights || null,
+        pontosImportantes: pontosImportantes || null,
+        frasesMarcantes: frasesMarcantes || null,
+      })
+      .returning();
+    res.json(video);
+  } catch {
+    res.status(500).json({ error: "Erro ao criar vídeo" });
+  }
+});
+
+router.put("/conhecimento/videos/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { titulo, link, plataforma, categoria, tema, thumbnail, status, dataInicio, dataFim, resumo, insights, pontosImportantes, frasesMarcantes } = req.body;
+    const [updated] = await db
+      .update(conhecimentoVideos)
+      .set({ titulo, link, plataforma, categoria, tema, thumbnail, status, dataInicio, dataFim, resumo, insights, pontosImportantes, frasesMarcantes, updatedAt: new Date() })
+      .where(eq(conhecimentoVideos.id, id))
+      .returning();
+    if (!updated) return res.status(404).json({ error: "Vídeo não encontrado" });
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: "Erro ao atualizar vídeo" });
+  }
+});
+
+router.delete("/conhecimento/videos/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(conhecimentoVideos).where(eq(conhecimentoVideos.id, id));
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: "Erro ao deletar vídeo" });
   }
 });
 

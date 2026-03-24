@@ -13,6 +13,7 @@ export const conhecimentoLivros = pgTable("conhecimento_livros", {
   resumo: text("resumo"),
   cor: text("cor").notNull().default("#F59E0B"),
   totalPaginas: integer("total_paginas"),
+  capa: text("capa"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -64,3 +65,26 @@ export const conhecimentoArtigoInsights = pgTable("conhecimento_artigo_insights"
 });
 
 export type ConhecimentoArtigoInsight = typeof conhecimentoArtigoInsights.$inferSelect;
+
+// ── VÍDEOS ───────────────────────────────────────────────────────────────────
+export const conhecimentoVideos = pgTable("conhecimento_videos", {
+  id: serial("id").primaryKey(),
+  titulo: text("titulo").notNull(),
+  link: text("link"),
+  plataforma: text("plataforma").notNull().default("YouTube"),
+  categoria: text("categoria").notNull().default("Outros"),
+  tema: text("tema"),
+  thumbnail: text("thumbnail"),
+  status: text("status").notNull().default("quero_ver"),
+  dataInicio: date("data_inicio"),
+  dataFim: date("data_fim"),
+  resumo: text("resumo"),
+  insights: text("insights"),
+  pontosImportantes: text("pontos_importantes"),
+  frasesMarcantes: text("frases_marcantes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type ConhecimentoVideo = typeof conhecimentoVideos.$inferSelect;
+export type NewConhecimentoVideo = typeof conhecimentoVideos.$inferInsert;

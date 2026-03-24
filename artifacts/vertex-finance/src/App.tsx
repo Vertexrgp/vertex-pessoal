@@ -48,6 +48,8 @@ import LivrosPage from "./pages/conhecimento/livros";
 import LivroDetailPage from "./pages/conhecimento/livro-detalhe";
 import ArtigosPage from "./pages/conhecimento/artigos";
 import ArtigoDetailPage from "./pages/conhecimento/artigo-detalhe";
+import VideosPage from "./pages/conhecimento/videos";
+import VideoDetailPage from "./pages/conhecimento/video-detalhe";
 
 import InglesPage from "./pages/idiomas/ingles";
 import SugestoesPage from "./pages/sugestoes";
@@ -107,6 +109,10 @@ function Router() {
       <Route path="/conhecimento/artigos" component={ArtigosPage} />
       <Route path="/conhecimento/artigos/:id">
         {(params) => <ArtigoDetailPage id={params.id} />}
+      </Route>
+      <Route path="/conhecimento/videos" component={VideosPage} />
+      <Route path="/conhecimento/videos/:id">
+        {(params) => <VideoDetailPage id={params.id} />}
       </Route>
 
       <Route path="/idiomas/ingles" component={InglesPage} />
