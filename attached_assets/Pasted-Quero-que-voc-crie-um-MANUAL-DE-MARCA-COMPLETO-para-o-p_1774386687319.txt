@@ -1,0 +1,245 @@
+Quero que você crie um MANUAL DE MARCA COMPLETO para o produto:
+
+VERTEX OS
+
+Esse manual deve ser extremamente profissional, no nível de empresas como Apple, Notion, Linear ou Stripe.
+
+Ele deve servir como base oficial para design, desenvolvimento, produto e comunicação.
+
+====================================================
+CONTEXTO
+====================================================
+
+A Vertex OS é um produto da Vertex Company.
+
+A Vertex segue uma arquitetura de marca monolítica, onde a marca principal sustenta todos os produtos  [oai_citation:0‡VERTEX_A4_05_Brand_Architecture.docx](sediment://file_0000000063d0720ea81a6d9308a26016)
+
+O Vertex OS é um sistema operacional da vida, incluindo:
+
+- financeiro
+- performance
+- agenda
+- viagens
+- crescimento
+- conhecimento
+- idiomas
+
+====================================================
+ESSÊNCIA DA MARCA
+====================================================
+
+Basear-se na essência definida:
+
+Missão:
+Transformar ideias em soluções digitais que geram valor real  [oai_citation:1‡VERTEX_A4_02_Brand_Essence.docx](sediment://file_0000000085b0720ea1b7d391b33f9c14)
+
+Visão:
+Ser referência em inovação digital  [oai_citation:2‡VERTEX_A4_02_Brand_Essence.docx](sediment://file_0000000085b0720ea1b7d391b33f9c14)
+
+Valores:
+- inovação
+- excelência
+- transparência
+- impacto  [oai_citation:3‡VERTEX_A4_02_Brand_Essence.docx](sediment://file_0000000085b0720ea1b7d391b33f9c14)
+
+Personalidade:
+- sofisticada
+- confiável
+- inovadora
+- acessível
+- precisa  [oai_citation:4‡VERTEX_A4_02_Brand_Essence.docx](sediment://file_0000000085b0720ea1b7d391b33f9c14)
+
+Tom de voz:
+- claro
+- direto
+- profissional
+- sem complexidade desnecessária  [oai_citation:5‡VERTEX_A4_02_Brand_Essence.docx](sediment://file_0000000085b0720ea1b7d391b33f9c14)
+
+====================================================
+LOGO
+====================================================
+
+Usar como base:
+
+- símbolo V minimalista  [oai_citation:6‡VERTEX_A4_03_Logo.docx](sediment://file_00000000c9fc720e894b1a9a785a01b9)
+- logotipo VERTEX em Inter Bold  [oai_citation:7‡VERTEX_A4_03_Logo.docx](sediment://file_00000000c9fc720e894b1a9a785a01b9)
+
+Definir:
+
+- versões:
+  - completa (V + Vertex OS)
+  - invertida
+  - ícone (V)
+- regras de uso
+- espaço de proteção
+- tamanho mínimo
+- aplicação em UI
+
+Basear nas regras existentes  [oai_citation:8‡VERTEX_A4_04_Logo_System.docx](sediment://file_00000000382471f5b827fb1c83f47a07)  [oai_citation:9‡VERTEX_A4_03_Logo.docx](sediment://file_00000000c9fc720e894b1a9a785a01b9)
+
+====================================================
+ARQUITETURA DE MARCA
+====================================================
+
+Definir:
+
+Vertex Company (marca mãe)
+↓
+Vertex OS (produto)
+
+Explicar como o produto se conecta à marca principal  [oai_citation:10‡VERTEX_A4_05_Brand_Architecture.docx](sediment://file_0000000063d0720ea81a6d9308a26016)
+
+====================================================
+CORES
+====================================================
+
+Usar paleta oficial:
+
+- preto #0A0A0A
+- branco #FFFFFF
+- cinzas
+- azul destaque #1A56DB  [oai_citation:11‡VERTEX_A4_06_Colors.docx](sediment://file_00000000a590720eb3f8efb326907c98)
+
+Definir:
+
+- uso por contexto
+- contraste
+- UI (dark/light)
+- regras de destaque
+
+====================================================
+TIPOGRAFIA
+====================================================
+
+Fonte principal:
+
+Inter  [oai_citation:12‡VERTEX_A4_07_Typography.docx](sediment://file_00000000294871f5a50f956e4c11c11a)
+
+Definir:
+
+- escala tipográfica
+- uso em UI
+- títulos
+- textos
+- labels
+
+====================================================
+ESPAÇAMENTO E GRID
+====================================================
+
+Basear no sistema:
+
+- grid 8px
+- espaçamento consistente  [oai_citation:13‡VERTEX_A4_08_Spacing_Layout.docx](sediment://file_000000003d58720e8c29ee53ece24a2c)
+
+Aplicar para:
+
+- UI
+- dashboards
+- cards
+- layout geral
+
+====================================================
+REGRAS DE USO
+====================================================
+
+Seguir:
+
+- o que pode
+- o que não pode  [oai_citation:14‡VERTEX_A4_09_Rules_of_Use.docx](sediment://file_0000000016fc720eac622c6ed03ae73e)
+
+Aplicar para UI e produto
+
+====================================================
+IDENTIDADE DO PRODUTO (VERTEX OS)
+====================================================
+
+Criar seção específica para o produto:
+
+- conceito: sistema operacional da vida
+- experiência: controle, clareza, decisão
+- posicionamento: premium, simples e poderoso
+
+====================================================
+PADRÃO DE UI / UX
+====================================================
+
+Definir padrões do sistema:
+
+- sidebar
+- dashboard
+- cards
+- tabelas
+- modais
+- interações
+
+Regras:
+
+- minimalismo
+- legibilidade
+- consistência
+- ação clara
+
+====================================================
+COMPONENTES
+====================================================
+
+Definir:
+
+- botões
+- inputs
+- cards
+- listas
+- estados (hover, loading, erro)
+
+====================================================
+ICONS E ELEMENTOS
+====================================================
+
+Definir estilo:
+
+- simples
+- linear
+- minimalista
+
+====================================================
+APLICAÇÕES
+====================================================
+
+Mostrar exemplos:
+
+- dashboard
+- agenda
+- financeiro
+- performance
+
+====================================================
+ASSETS
+====================================================
+
+Organizar assets com base em:
+
+- logos
+- exportações  [oai_citation:15‡VERTEX_A4_17_Assets_Export.docx](sediment://file_0000000029b4720e990e3d600655a7c3)
+
+====================================================
+OBJETIVO FINAL
+====================================================
+
+Quero um manual que:
+
+- sirva para designers e devs
+- padronize todo o sistema
+- evite inconsistência
+- prepare o produto para escalar
+
+====================================================
+ENTREGAR
+====================================================
+
+Gerar:
+
+- documento completo
+- bem estruturado
+- pronto para uso em design e produto
+- com linguagem clara e profissional

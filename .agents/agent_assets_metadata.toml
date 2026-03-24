@@ -6,3 +6,9 @@ id = "0cXBO-rHcjT0nnwg95FyW"
 uri = "file://VERTEX_OS_MASTER_DOC.md"
 type = "text"
 title = "VERTEX_OS_MASTER_DOC.md"
+
+[[outputs]]
+id = "Erc2OYS3Dsmpz-qg73ibE"
+uri = "file://vertex-os-brand-manual.md"
+type = "text"
+title = "Vertex OS — Manual de Marca Completo v1.0"
