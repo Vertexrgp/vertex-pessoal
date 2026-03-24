@@ -1,0 +1,114 @@
+Quero padronizar o Vertex OS para que todas as telas e módulos que representem dados operacionais do usuário sejam editáveis.
+
+OBJETIVO
+Garantir que o sistema não seja apenas visualização, mas uma ferramenta real de uso diário.
+
+REGRA GLOBAL
+Toda tela que represente dados cadastráveis do usuário deve permitir, quando fizer sentido:
+
+- criar
+- editar
+- excluir
+- duplicar
+- reordenar
+- mover entre estados
+
+Exceções:
+- dashboards
+- relatórios
+- painéis consolidados
+- visões calculadas automaticamente
+
+Esses podem continuar como leitura, desde que tenham links claros para edição da origem do dado.
+
+====================================================
+1) APLICAR REGRA A TODOS OS MÓDULOS
+====================================================
+
+Revisar os módulos:
+- Financeiro
+- Performance
+- Agenda
+- Viagens
+- Crescimento
+- Conhecimento
+- Idiomas
+
+Identificar em cada tela:
+- o que é apenas visão
+- o que deveria ser editável e hoje não está
+
+====================================================
+2) PADRÃO DE AÇÃO
+====================================================
+
+Toda tela operacional deve ter ações claras:
+
+- Novo
+- Editar
+- Excluir
+- Duplicar (quando fizer sentido)
+- Salvar
+- Cancelar
+
+====================================================
+3) EXPERIÊNCIA
+====================================================
+
+Quero UX consistente:
+
+- botão de editar visível
+- modais ou drawers elegantes
+- edição inline onde fizer sentido
+- confirmação para exclusão
+- estados de vazio e erro bem resolvidos
+
+====================================================
+4) MODELOS / ENTIDADES
+====================================================
+
+Revisar entidades como:
+- metas
+- checkpoints
+- livros
+- artigos
+- tarefas
+- viagens
+- lugares
+- roteiros
+- cartões
+- recorrências
+- despesas
+- protocolos
+- exames
+- treinos
+- dieta
+
+Tudo isso precisa ter CRUD completo, salvo se houver motivo estrutural para não ter.
+
+====================================================
+5) RELAÇÃO ENTRE VISÃO E DADO
+====================================================
+
+Em telas de leitura, adicionar:
+- link para editar origem
+- botão “ir para cadastro”
+- clareza de onde aquele dado é alterado
+
+====================================================
+6) ENTREGAR
+====================================================
+
+Quero que você:
+
+1. revise o sistema inteiro
+2. liste o que hoje está sem edição e deveria ter
+3. implemente o padrão de editabilidade
+4. padronize UX de CRUD
+5. me mostre por módulo o que foi ajustado
+
+No final, me mostrar:
+- telas revisadas
+- telas ajustadas
+- padrão adotado
+- próximas inconsistências a corrigir

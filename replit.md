@@ -59,6 +59,9 @@ Tables:
 - `performance_workouts` — workout plans with exercises JSON (name, series, reps, load, rest)
 - `performance_nutrition` — nutrition strategy with macros and meals JSON
 - `performance_progress` — weekly progress tracking (weight, BF%, waist, energy, mood, photos)
+- `idioma_config` — per-language config (nivel_atual, nivel_meta in CEFR scale)
+- `idioma_sessoes` — study session records (data, duracao, tipo, concluida, notas)
+- `idioma_vocabulario` — vocabulary words (palavra, traducao, nivel, aprendida, notas)
 
 ## Navigation Structure (Sidebar)
 
