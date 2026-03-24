@@ -100,6 +100,34 @@ export const viagensOrcamentoTable = pgTable("viagens_orcamento", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// ── AI Suggestions ─────────────────────────────────────────────────────────
+export const viagensSugestoesTable = pgTable("viagens_sugestoes", {
+  id: serial("id").primaryKey(),
+  viagemId: integer("viagem_id").references(() => viagensTripsTable.id).notNull(),
+  tipo: text("tipo").notNull(),
+  titulo: text("titulo").notNull(),
+  motivo: text("motivo").notNull(),
+  impacto: text("impacto").notNull(),
+  acao: text("acao"),
+  status: text("status").notNull().default("pendente"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// ── User Preferences (learned from suggestions) ────────────────────────────
+export const viagensPreferenciasTable = pgTable("viagens_preferencias", {
+  id: serial("id").primaryKey(),
+  viagemId: integer("viagem_id").references(() => viagensTripsTable.id).notNull(),
+  ritmo: text("ritmo").default("moderado"),
+  transportePreferido: text("transporte_preferido").default("qualquer"),
+  horarioInicio: text("horario_inicio").default("09:00"),
+  sugestoesAceitas: integer("sugestoes_aceitas").default(0),
+  sugestoesIgnoradas: integer("sugestoes_ignoradas").default(0),
+  tiposIgnorados: text("tipos_ignorados").default(""),
+  tiposAceitos: text("tipos_aceitos").default(""),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export type ViagemTrip = typeof viagensTripsTable.$inferSelect;
 export type ViagemLugar = typeof viagensLugaresTable.$inferSelect;
 export type ViagemExpense = typeof viagensExpensesTable.$inferSelect;
@@ -107,3 +135,5 @@ export type ViagemChecklist = typeof viagensChecklistTable.$inferSelect;
 export type ViagemRoteiro = typeof viagensRoteiroTable.$inferSelect;
 export type ViagemMemoria = typeof viagensMemoriasTable.$inferSelect;
 export type ViagemOrcamento = typeof viagensOrcamentoTable.$inferSelect;
+export type ViagemSugestao = typeof viagensSugestoesTable.$inferSelect;
+export type ViagemPreferencias = typeof viagensPreferenciasTable.$inferSelect;

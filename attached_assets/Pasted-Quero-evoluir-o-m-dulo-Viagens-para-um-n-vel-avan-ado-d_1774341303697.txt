@@ -1,0 +1,120 @@
+Quero evoluir o módulo Viagens para um nível avançado de Roteiro Inteligente com IA, mas sem alterar nada automaticamente sem aprovação do usuário.
+
+OBJETIVO
+Fazer o sistema sugerir um roteiro diário muito mais inteligente com base nos lugares cadastrados, duração da viagem, prioridades e contexto do usuário.
+
+IMPORTANTE
+O sistema pode sugerir, reorganizar e otimizar, mas nunca aplicar mudanças sem confirmação do usuário.
+
+====================================================
+1) ENTRADAS DO SISTEMA
+====================================================
+
+Usar como base:
+
+- destino
+- número de dias da viagem
+- lista de lugares
+- categoria dos lugares
+- prioridade
+- duração estimada em cada lugar
+- horários preferenciais
+- observações do usuário
+- se o lugar é fixo em determinado dia
+- orçamento da viagem (quando relevante)
+
+====================================================
+2) O QUE A IA DEVE SUGERIR
+====================================================
+
+O sistema deve sugerir:
+
+- divisão dos lugares por dia
+- melhor sequência dentro de cada dia
+- equilíbrio entre dias mais leves e mais intensos
+- agrupamento por proximidade e lógica de deslocamento
+- possibilidade de transporte sugerido
+- pontos de atenção no roteiro
+- lacunas ou excesso de atividades em um dia
+
+====================================================
+3) EXEMPLOS DE SUGESTÃO
+====================================================
+
+Exemplos:
+
+- “Sugiro mover o Museu X para o Dia 2 porque ele está mais próximo de Y e Z.”
+- “O Dia 3 está sobrecarregado; melhor mover o restaurante A para o Dia 4.”
+- “Os lugares do Dia 1 favorecem deslocamento a pé.”
+- “O Dia 5 ficou com poucas atividades; sugiro puxar o lugar B para esse dia.”
+
+====================================================
+4) UX
+====================================================
+
+Criar um bloco:
+
+Sugestões de Roteiro
+
+Cada sugestão deve ter:
+- título
+- motivo
+- impacto esperado
+- botão “Aplicar”
+- botão “Ignorar”
+
+Nunca aplicar automaticamente.
+
+====================================================
+5) APRENDIZADO DE PADRÃO
+====================================================
+
+O sistema deve aprender com:
+- sugestões aceitas
+- sugestões ignoradas
+- preferências de ritmo
+- preferência por dias leves ou intensos
+- horários favoritos
+- tipo de transporte preferido
+
+Esse aprendizado serve apenas para melhorar futuras sugestões.
+
+====================================================
+6) NÍVEL AVANÇADO
+====================================================
+
+Preparar arquitetura para futuro uso de:
+- mapas
+- otimização de rota externa
+- APIs de deslocamento
+- clima
+- horário de funcionamento
+
+Mas agora a primeira camada deve funcionar mesmo sem depender disso.
+
+====================================================
+7) REGRAS IMPORTANTES
+====================================================
+
+- nunca alterar o roteiro sem confirmação
+- sempre mostrar o motivo da sugestão
+- permitir reverter alterações
+- manter edição manual total
+
+====================================================
+8) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. sistema de sugestões inteligentes de roteiro
+2. interface aplicar / ignorar
+3. memória de preferência do usuário
+4. reorganização sugerida por dia
+5. proteção para nunca alterar nada sozinho
+
+No final, me mostrar:
+- como o sistema sugere
+- como aprende com meu padrão
+- como garante que nada muda sem minha permissão
+- próximos passos recomendados

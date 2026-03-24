@@ -10,7 +10,8 @@ import {
   Link2, LocateFixed, SortAsc, BrainCircuit, ArrowUp, ArrowDown,
   CalendarDays, Timer, BarChart3, ChevronRight, AlertCircle, RefreshCw,
   CreditCard, Banknote, Smartphone, Send, Edit2, TrendingDown, Target,
-  CalendarCheck2, Wallet,
+  CalendarCheck2, Wallet, Lightbulb, ThumbsUp, ThumbsDown, Info,
+  Footprints, MoveHorizontal, AlertTriangle, Brain, ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -114,12 +115,21 @@ export default function ViagemDetailPage({ id }: Props) {
   const [checkFase, setCheckFase] = useState("antes");
   const [memoriaForm, setMemoriaForm] = useState({ titulo: "", conteudo: "", data: "", dia: "", tipo: "nota" });
   const [showMemForm, setShowMemForm] = useState(false);
+  const [showSugestoesIA, setShowSugestoesIA] = useState(false);
+  const [confirmSugestaoId, setConfirmSugestaoId] = useState<number | null>(null);
+  const [showPrefsPanel, setShowPrefsPanel] = useState(false);
 
   // ── Queries ───────────────────────────────────────────────────────────────
   const { data, isLoading } = useQuery({
     queryKey: ["viagem-detail", tripId],
     queryFn: () => fetch(apiUrl(`/viagens/trips/${tripId}`)).then(r => r.json()),
     enabled: !!tripId,
+  });
+
+  const sugestoesQuery = useQuery({
+    queryKey: ["viagem-sugestoes", tripId],
+    queryFn: () => fetch(apiUrl(`/viagens/trips/${tripId}/sugestoes`)).then(r => r.json()),
+    enabled: !!tripId && showSugestoesIA,
   });
 
   // ── Mutations ─────────────────────────────────────────────────────────────
@@ -169,6 +179,31 @@ export default function ViagemDetailPage({ id }: Props) {
   const limparRoteiro = useMutation({
     mutationFn: () => fetch(apiUrl(`/viagens/trips/${tripId}/limpar-roteiro`), { method: "POST" }).then(r => r.json()),
     onSuccess: () => { inv(); toast({ title: "Roteiro limpo", description: "Os dias foram removidos de todos os lugares" }); },
+  });
+
+  const invSugestoes = () => qc.invalidateQueries({ queryKey: ["viagem-sugestoes", tripId] });
+
+  const gerarSugestoesIA = useMutation({
+    mutationFn: () => fetch(apiUrl(`/viagens/trips/${tripId}/gerar-sugestoes`), { method: "POST", headers: { "Content-Type": "application/json" } }).then(r => r.json()),
+    onSuccess: (result) => {
+      invSugestoes();
+      setShowSugestoesIA(true);
+      const n = result.sugestoes?.length ?? 0;
+      toast({ title: n > 0 ? `${n} sugestão${n > 1 ? "ões" : ""} gerada${n > 1 ? "s" : ""}` : "Nenhuma sugestão", description: n > 0 ? "Revise cada sugestão antes de aplicar" : result.msg ?? "Seu roteiro está bem equilibrado!" });
+    },
+    onError: () => toast({ title: "Erro ao gerar sugestões", variant: "destructive" }),
+  });
+
+  const aplicarSugestao = useMutation({
+    mutationFn: (id: number) => fetch(apiUrl(`/viagens/sugestoes/${id}/aplicar`), { method: "POST", headers: { "Content-Type": "application/json" } }).then(r => r.json()),
+    onSuccess: () => { inv(); invSugestoes(); setConfirmSugestaoId(null); toast({ title: "Sugestão aplicada!", description: "O roteiro foi atualizado conforme sugerido" }); },
+    onError: () => toast({ title: "Erro ao aplicar sugestão", variant: "destructive" }),
+  });
+
+  const ignorarSugestao = useMutation({
+    mutationFn: (id: number) => fetch(apiUrl(`/viagens/sugestoes/${id}/ignorar`), { method: "POST", headers: { "Content-Type": "application/json" } }).then(r => r.json()),
+    onSuccess: () => { invSugestoes(); toast({ title: "Sugestão ignorada", description: "O sistema aprende com sua preferência" }); },
+    onError: () => toast({ title: "Erro ao ignorar", variant: "destructive" }),
   });
   const moverDia = useMutation({
     mutationFn: ({ lugarId, diaViagem }: { lugarId: number; diaViagem: number | null }) =>
@@ -507,6 +542,22 @@ export default function ViagemDetailPage({ id }: Props) {
                         {gerarRoteiro.isPending ? "Gerando..." : temRoteiro ? "Regerar roteiro" : "Gerar roteiro"}
                       </button>
                     </div>
+                    {lugares.length > 0 && (
+                      <button
+                        onClick={() => gerarSugestoesIA.mutate()}
+                        disabled={gerarSugestoesIA.isPending}
+                        className={cn(BTN_GHOST, "text-violet-600 border-violet-200 hover:bg-violet-50 text-xs px-3 py-2 relative")}
+                        title="Analisa seu roteiro e sugere melhorias"
+                      >
+                        {gerarSugestoesIA.isPending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Lightbulb className="w-3.5 h-3.5" />}
+                        {gerarSugestoesIA.isPending ? "Analisando..." : "Sugestões IA"}
+                        {(sugestoesQuery.data?.sugestoes?.length ?? 0) > 0 && (
+                          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-violet-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                            {sugestoesQuery.data.sugestoes.length}
+                          </span>
+                        )}
+                      </button>
+                    )}
                     {temRoteiro && (
                       <>
                         <button
@@ -538,6 +589,153 @@ export default function ViagemDetailPage({ id }: Props) {
                 </div>
               </div>
             </div>
+
+            {/* ── Painel de Sugestões IA ─────────────────────────────────── */}
+            {showSugestoesIA && (
+              <div className="bg-white rounded-2xl border border-violet-200 overflow-hidden shadow-sm">
+                {/* Header */}
+                <div className="px-5 py-4 bg-gradient-to-r from-violet-50 to-transparent border-b border-violet-100 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+                    <Brain className="w-5 h-5 text-violet-600" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-slate-900">Sugestões de Roteiro</h3>
+                      {(sugestoesQuery.data?.sugestoes?.length ?? 0) > 0 && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">
+                          {sugestoesQuery.data.sugestoes.length} sugestão{sugestoesQuery.data.sugestoes.length !== 1 ? "ões" : ""}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                      <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                      O roteiro só muda após sua confirmação explícita
+                    </p>
+                  </div>
+                  <button onClick={() => setShowSugestoesIA(false)} className="p-1.5 text-slate-300 hover:text-slate-500 rounded-lg hover:bg-slate-100 transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Preference bar */}
+                {sugestoesQuery.data?.preferencias && (
+                  <div className="px-5 py-2 bg-violet-50/50 border-b border-violet-100 flex items-center gap-4 text-[10px] text-slate-500 flex-wrap">
+                    <span className="flex items-center gap-1 font-semibold text-violet-600"><Brain className="w-3 h-3" /> Memória ativa</span>
+                    <span>Ritmo: <strong className="text-slate-700 capitalize">{sugestoesQuery.data.preferencias.ritmo}</strong></span>
+                    <span className="text-emerald-600">✓ {sugestoesQuery.data.preferencias.sugestoesAceitas} aceitas</span>
+                    <span className="text-slate-400">✗ {sugestoesQuery.data.preferencias.sugestoesIgnoradas} ignoradas</span>
+                    {sugestoesQuery.data.preferencias.sugestoesIgnoradas > 0 && sugestoesQuery.data.preferencias.tiposIgnorados && (
+                      <span className="text-[9px] text-slate-400 italic">
+                        (tipos ignorados: {[...new Set((sugestoesQuery.data.preferencias.tiposIgnorados as string).split(","))].join(", ")})
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Suggestions list */}
+                {sugestoesQuery.isLoading ? (
+                  <div className="p-8 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
+                    <RefreshCw className="w-4 h-4 animate-spin" /> Analisando roteiro...
+                  </div>
+                ) : (sugestoesQuery.data?.sugestoes?.length ?? 0) === 0 ? (
+                  <div className="p-8 text-center">
+                    <CheckCircle2 className="w-10 h-10 text-emerald-300 mx-auto mb-3" />
+                    <p className="text-sm font-semibold text-slate-700 mb-1">Nenhuma sugestão pendente</p>
+                    <p className="text-xs text-slate-400">Seu roteiro está bem equilibrado! Clique em "Sugestões IA" novamente após adicionar mais lugares.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-50">
+                    {(sugestoesQuery.data?.sugestoes ?? []).map((s: any) => {
+                      type TipoMeta = { icon: React.ElementType; badge: string; label: string };
+                      const tipoMeta: Record<string, TipoMeta> = {
+                        MOVER_LUGAR:        { icon: MoveHorizontal, badge: "bg-blue-50 text-blue-700 border-blue-100",     label: "Mover lugar" },
+                        DIA_SOBRECARREGADO: { icon: AlertTriangle,  badge: "bg-amber-50 text-amber-700 border-amber-100",  label: "Dia intenso" },
+                        DIA_VAZIO:          { icon: AlertCircle,    badge: "bg-slate-100 text-slate-500 border-slate-200", label: "Dia vazio" },
+                        SEM_DIA:            { icon: AlertCircle,    badge: "bg-orange-50 text-orange-600 border-orange-100", label: "Sem dia" },
+                        TRANSPORTE_SUGERIDO:{ icon: Footprints,     badge: "bg-emerald-50 text-emerald-700 border-emerald-100", label: "Transporte" },
+                        REORDENAR_DIA:      { icon: ArrowUpDown,    badge: "bg-violet-50 text-violet-700 border-violet-100", label: "Reordenar" },
+                      };
+                      const meta: TipoMeta = tipoMeta[s.tipo] ?? { icon: Lightbulb, badge: "bg-violet-50 text-violet-700 border-violet-100", label: "Sugestão" };
+                      const SugIcon = meta.icon;
+                      const temAcao = !!s.acao;
+                      const isConfirming = confirmSugestaoId === s.id;
+
+                      return (
+                        <div key={s.id} className={cn("px-5 py-4 transition-colors", isConfirming ? "bg-violet-50/60" : "hover:bg-slate-50/60")}>
+                          <div className="flex items-start gap-3.5">
+                            <div className={cn("w-8 h-8 rounded-xl border flex items-center justify-center flex-shrink-0 mt-0.5", meta.badge)}>
+                              <SugIcon className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              {/* Title + badge */}
+                              <div className="flex items-start justify-between gap-2 mb-1.5">
+                                <p className="text-sm font-semibold text-slate-800 leading-snug">{s.titulo}</p>
+                                <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded border flex-shrink-0", meta.badge)}>
+                                  {meta.label}
+                                </span>
+                              </div>
+
+                              {/* Motivo */}
+                              <p className="text-[11px] text-slate-500 leading-relaxed mb-2">{s.motivo}</p>
+
+                              {/* Impacto esperado */}
+                              <div className="flex items-start gap-1.5 mb-3 bg-violet-50/60 rounded-lg px-2.5 py-1.5 border border-violet-100">
+                                <Sparkles className="w-3 h-3 text-violet-400 flex-shrink-0 mt-0.5" />
+                                <p className="text-[11px] text-violet-700 font-medium leading-relaxed">{s.impacto}</p>
+                              </div>
+
+                              {/* Action buttons / confirm */}
+                              {isConfirming ? (
+                                <div className="bg-violet-100/80 rounded-xl px-4 py-3 flex items-center gap-3 border border-violet-200">
+                                  <ShieldCheck className="w-4 h-4 text-violet-600 flex-shrink-0" />
+                                  <p className="text-xs text-violet-800 font-medium flex-1">Confirma aplicar esta sugestão? O roteiro será alterado.</p>
+                                  <button
+                                    onClick={() => aplicarSugestao.mutate(s.id)}
+                                    disabled={aplicarSugestao.isPending}
+                                    className="text-xs font-bold px-3 py-1.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50 flex-shrink-0"
+                                  >
+                                    {aplicarSugestao.isPending ? "Aplicando..." : "Sim, aplicar"}
+                                  </button>
+                                  <button
+                                    onClick={() => setConfirmSugestaoId(null)}
+                                    className="text-xs font-semibold px-3 py-1.5 bg-white text-slate-500 rounded-lg hover:bg-slate-100 transition-colors border border-slate-200 flex-shrink-0"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  {temAcao ? (
+                                    <button
+                                      onClick={() => setConfirmSugestaoId(s.id)}
+                                      className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+                                    >
+                                      <ThumbsUp className="w-3 h-3" /> Aplicar
+                                    </button>
+                                  ) : (
+                                    <span className="text-[11px] text-slate-400 italic flex items-center gap-1">
+                                      <Info className="w-3 h-3" /> Apenas informativo
+                                    </span>
+                                  )}
+                                  <button
+                                    onClick={() => ignorarSugestao.mutate(s.id)}
+                                    disabled={ignorarSugestao.isPending}
+                                    className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 bg-white text-slate-500 rounded-lg hover:bg-slate-100 transition-colors border border-slate-200"
+                                  >
+                                    <ThumbsDown className="w-3 h-3" /> Ignorar
+                                  </button>
+                                  <span className="text-[10px] text-slate-300 ml-1">O sistema aprende com sua escolha</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* ── Como funciona (quando vazio) ───────────────────────────── */}
             {!temRoteiro && lugares.length === 0 && (

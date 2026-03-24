@@ -8,6 +8,8 @@ import {
   viagensLugaresTable,
   viagensMemoriasTable,
   viagensOrcamentoTable,
+  viagensSugestoesTable,
+  viagensPreferenciasTable,
 } from "@workspace/db";
 import { agendaEventsTable } from "@workspace/db";
 import { transactionsTable, categoriesTable } from "@workspace/db";
@@ -482,6 +484,317 @@ router.put("/viagens/trips/:id/orcamento/:categoria", async (req, res) => {
       .returning();
     res.json(created);
   }
+});
+
+// ── SUGESTÕES INTELIGENTES DE ROTEIRO ─────────────────────────────────────────
+
+function calcularMinDia(lugares: any[]): number {
+  return lugares.reduce((s: number, l: any) => s + (Number(l.duracaoEstimada) || 90), 0);
+}
+
+function gerarSugestoesAlgoritmo(lugares: any[], trip: any, prefs: any): any[] {
+  const sugestoes: any[] = [];
+  const INTENSO_MIN = 420;
+  const LEVE_MAX = 120;
+
+  const porDia: Record<number, any[]> = {};
+  const semDia: any[] = [];
+  for (const lugar of lugares) {
+    if (lugar.diaViagem) {
+      if (!porDia[lugar.diaViagem]) porDia[lugar.diaViagem] = [];
+      porDia[lugar.diaViagem].push(lugar);
+    } else { semDia.push(lugar); }
+  }
+  const diasNums = Object.keys(porDia).map(Number);
+
+  // 1. Lugares sem dia
+  if (semDia.length > 0) {
+    sugestoes.push({
+      tipo: "SEM_DIA",
+      titulo: `${semDia.length} lugar${semDia.length > 1 ? "es" : ""} sem dia definido`,
+      motivo: `Os seguintes lugares ainda não foram alocados no roteiro: ${semDia.map((l: any) => l.nome).join(", ")}`,
+      impacto: "Eles não aparecerão no calendário nem na sincronização com a Agenda",
+      acao: null,
+    });
+  }
+
+  // 2. Dias sobrecarregados → sugerir mover
+  for (const dia of diasNums) {
+    const lugaresNoDia = porDia[dia];
+    const totalMin = calcularMinDia(lugaresNoDia);
+
+    if (totalMin > INTENSO_MIN) {
+      const movable = lugaresNoDia
+        .filter((l: any) => !l.fixo)
+        .sort((a: any, b: any) => {
+          const p: Record<string, number> = { alta: 3, media: 2, baixa: 1 };
+          return (p[a.prioridade] ?? 2) - (p[b.prioridade] ?? 2);
+        });
+
+      if (movable.length > 0) {
+        const toMove = movable[0];
+        const diasMaisLeves = diasNums
+          .filter(d => d !== dia && calcularMinDia(porDia[d]) < INTENSO_MIN)
+          .sort((a, b) => calcularMinDia(porDia[a]) - calcularMinDia(porDia[b]));
+
+        if (diasMaisLeves.length > 0) {
+          const targetDia = diasMaisLeves[0];
+          sugestoes.push({
+            tipo: "MOVER_LUGAR",
+            titulo: `Mover "${toMove.nome}" do Dia ${dia} para o Dia ${targetDia}`,
+            motivo: `O Dia ${dia} tem ${(totalMin / 60).toFixed(1)}h de atividades (acima do ideal de 7h). "${toMove.nome}" é prioridade ${toMove.prioridade} e pode ser realocado.`,
+            impacto: `O Dia ${dia} ficará mais equilibrado (${((totalMin - (toMove.duracaoEstimada || 90)) / 60).toFixed(1)}h) e "${toMove.nome}" terá mais espaço no Dia ${targetDia}`,
+            acao: JSON.stringify({ tipo: "mover", lugarId: toMove.id, diaViagem: targetDia }),
+          });
+        } else {
+          sugestoes.push({
+            tipo: "DIA_SOBRECARREGADO",
+            titulo: `Dia ${dia} está sobrecarregado com ${(totalMin / 60).toFixed(1)}h`,
+            motivo: `Você tem ${lugaresNoDia.length} atividades no Dia ${dia}, totalizando ${(totalMin / 60).toFixed(1)}h — acima do recomendado de 7h`,
+            impacto: "O dia pode se tornar cansativo; considere redistribuir atividades para outros dias",
+            acao: null,
+          });
+        }
+      }
+    }
+
+    // 3. Dia muito vazio → puxar de dia cheio
+    if (totalMin < LEVE_MAX && diasNums.length > 1) {
+      const maisCarregado = diasNums
+        .filter(d => d !== dia)
+        .sort((a, b) => calcularMinDia(porDia[b]) - calcularMinDia(porDia[a]))[0];
+
+      if (maisCarregado && calcularMinDia(porDia[maisCarregado]) > INTENSO_MIN) {
+        const movable = porDia[maisCarregado].filter((l: any) => !l.fixo);
+        if (movable.length > 0) {
+          const toBring = movable[movable.length - 1];
+          sugestoes.push({
+            tipo: "MOVER_LUGAR",
+            titulo: `Puxar "${toBring.nome}" para o Dia ${dia}`,
+            motivo: `O Dia ${dia} tem apenas ${(totalMin / 60).toFixed(1)}h de atividades, enquanto o Dia ${maisCarregado} está sobrecarregado`,
+            impacto: "Melhor aproveitamento e distribuição equilibrada ao longo da viagem",
+            acao: JSON.stringify({ tipo: "mover", lugarId: toBring.id, diaViagem: dia }),
+          });
+        }
+      }
+    }
+
+    // 4. Transporte a pé sugerido (mesmo bairro)
+    const bairros = [...new Set(lugaresNoDia.filter((l: any) => l.bairro).map((l: any) => l.bairro))] as string[];
+    if (bairros.length === 1 && lugaresNoDia.length >= 2) {
+      const jaIgnoradoTransporte = (prefs?.tiposIgnorados || "").includes("TRANSPORTE_SUGERIDO");
+      if (!jaIgnoradoTransporte) {
+        sugestoes.push({
+          tipo: "TRANSPORTE_SUGERIDO",
+          titulo: `Dia ${dia}: todos os locais ficam em ${bairros[0]}`,
+          motivo: `${lugaresNoDia.map((l: any) => l.nome).join(", ")} estão no mesmo bairro (${bairros[0]})`,
+          impacto: "Possível fazer a pé ou com transporte local — sem necessidade de taxi ou carro",
+          acao: null,
+        });
+      }
+    }
+
+    // 5. Restaurante como primeira atividade do dia
+    const ordered = [...lugaresNoDia].sort((a: any, b: any) => (a.ordemRoteiro ?? 99) - (b.ordemRoteiro ?? 99));
+    if (ordered.length >= 2 && ordered[0].categoria === "restaurante") {
+      sugestoes.push({
+        tipo: "REORDENAR_DIA",
+        titulo: `Dia ${dia}: "${ordered[0].nome}" aparece antes de pontos turísticos`,
+        motivo: `"${ordered[0].nome}" é um restaurante mas está no início do dia, antes de atividades turísticas`,
+        impacto: "Roteiro mais natural — pontos turísticos de manhã, refeições no meio/fim do dia",
+        acao: JSON.stringify({ tipo: "reordenar", dia, lugarRestauranteId: ordered[0].id, novaOrdem: ordered.length }),
+      });
+    }
+  }
+
+  // 6. Agrupamento de bairro entre dias diferentes
+  const bairroLugares: Record<string, any[]> = {};
+  for (const lugar of lugares.filter((l: any) => l.bairro && l.diaViagem)) {
+    if (!bairroLugares[lugar.bairro]) bairroLugares[lugar.bairro] = [];
+    bairroLugares[lugar.bairro].push(lugar);
+  }
+  for (const [bairro, ls] of Object.entries(bairroLugares)) {
+    const diasDoBairro = [...new Set(ls.map((l: any) => l.diaViagem))] as number[];
+    if (diasDoBairro.length >= 2 && ls.length >= 2) {
+      const melhorDia = diasDoBairro.sort((a: number, b: number) =>
+        ls.filter((l: any) => l.diaViagem === b).length - ls.filter((l: any) => l.diaViagem === a).length
+      )[0];
+      const paraAgrupar = ls.filter((l: any) => l.diaViagem !== melhorDia && !l.fixo);
+      if (paraAgrupar.length > 0) {
+        const toMove = paraAgrupar[0];
+        sugestoes.push({
+          tipo: "MOVER_LUGAR",
+          titulo: `Agrupar "${toMove.nome}" com outros locais em ${bairro}`,
+          motivo: `"${toMove.nome}" está no bairro ${bairro} (Dia ${toMove.diaViagem}), mas outros locais do mesmo bairro estão no Dia ${melhorDia}`,
+          impacto: `Menos deslocamento e melhor aproveitamento do bairro ${bairro} em um único dia`,
+          acao: JSON.stringify({ tipo: "mover", lugarId: toMove.id, diaViagem: melhorDia }),
+        });
+      }
+    }
+  }
+
+  // 7. Dia sem nenhum lugar (gaps no roteiro)
+  if (trip.dataInicio && trip.dataFim) {
+    const numDias = Math.round((new Date(trip.dataFim).getTime() - new Date(trip.dataInicio).getTime()) / 86400000) + 1;
+    for (let d = 1; d <= numDias; d++) {
+      if (!porDia[d] && lugares.length > 0) {
+        const semDiaLugares = lugares.filter((l: any) => !l.diaViagem);
+        if (semDiaLugares.length > 0) {
+          sugestoes.push({
+            tipo: "DIA_VAZIO",
+            titulo: `Dia ${d} sem atividades planejadas`,
+            motivo: `O Dia ${d} da sua viagem não tem nenhuma atividade alocada. Você tem ${semDiaLugares.length} lugar${semDiaLugares.length > 1 ? "es" : ""} sem dia definido.`,
+            impacto: "Considere alocar um lugar existente ou planejar uma atividade livre",
+            acao: null,
+          });
+          break;
+        }
+      }
+    }
+  }
+
+  return sugestoes;
+}
+
+async function getOrCreatePrefs(viagemId: number) {
+  const existing = await db.select().from(viagensPreferenciasTable)
+    .where(eq(viagensPreferenciasTable.viagemId, viagemId));
+  if (existing.length > 0) return existing[0];
+  const [created] = await db.insert(viagensPreferenciasTable)
+    .values({ viagemId }).returning();
+  return created;
+}
+
+router.post("/viagens/trips/:id/gerar-sugestoes", async (req, res) => {
+  const viagemId = Number(req.params.id);
+  const [trip] = await db.select().from(viagensTripsTable).where(eq(viagensTripsTable.id, viagemId));
+  if (!trip) return res.status(404).json({ error: "Viagem não encontrada" });
+
+  const lugares = await db.select().from(viagensLugaresTable)
+    .where(eq(viagensLugaresTable.viagemId, viagemId))
+    .orderBy(asc(viagensLugaresTable.diaViagem), asc(viagensLugaresTable.ordemRoteiro));
+
+  const prefs = await getOrCreatePrefs(viagemId);
+
+  if (lugares.length === 0) {
+    return res.json({ sugestoes: [], msg: "Adicione lugares à viagem para receber sugestões" });
+  }
+
+  // Delete pending suggestions before generating new ones
+  await db.delete(viagensSugestoesTable)
+    .where(and(eq(viagensSugestoesTable.viagemId, viagemId), eq(viagensSugestoesTable.status, "pendente")));
+
+  const candidatas = gerarSugestoesAlgoritmo(lugares, trip, prefs);
+
+  const salvas: any[] = [];
+  for (const s of candidatas) {
+    const [saved] = await db.insert(viagensSugestoesTable).values({
+      viagemId,
+      tipo: s.tipo,
+      titulo: s.titulo,
+      motivo: s.motivo,
+      impacto: s.impacto,
+      acao: s.acao || null,
+      status: "pendente",
+    }).returning();
+    salvas.push(saved);
+  }
+
+  res.json({ sugestoes: salvas, preferencias: prefs });
+});
+
+router.get("/viagens/trips/:id/sugestoes", async (req, res) => {
+  const viagemId = Number(req.params.id);
+  const sugestoes = await db.select().from(viagensSugestoesTable)
+    .where(and(eq(viagensSugestoesTable.viagemId, viagemId), eq(viagensSugestoesTable.status, "pendente")))
+    .orderBy(asc(viagensSugestoesTable.createdAt));
+  const prefs = await getOrCreatePrefs(viagemId);
+  res.json({ sugestoes, preferencias: prefs });
+});
+
+router.post("/viagens/sugestoes/:id/aplicar", async (req, res) => {
+  const id = Number(req.params.id);
+  const [sug] = await db.select().from(viagensSugestoesTable).where(eq(viagensSugestoesTable.id, id));
+  if (!sug) return res.status(404).json({ error: "Sugestão não encontrada" });
+
+  // Execute the action
+  if (sug.acao) {
+    try {
+      const acao = JSON.parse(sug.acao);
+      if (acao.tipo === "mover" && acao.lugarId && acao.diaViagem !== undefined) {
+        await db.update(viagensLugaresTable)
+          .set({ diaViagem: acao.diaViagem })
+          .where(eq(viagensLugaresTable.id, acao.lugarId));
+      } else if (acao.tipo === "reordenar" && acao.lugarRestauranteId && acao.novaOrdem) {
+        await db.update(viagensLugaresTable)
+          .set({ ordemRoteiro: acao.novaOrdem })
+          .where(eq(viagensLugaresTable.id, acao.lugarRestauranteId));
+      }
+    } catch {}
+  }
+
+  // Mark suggestion as accepted
+  await db.update(viagensSugestoesTable)
+    .set({ status: "aceita", updatedAt: new Date() })
+    .where(eq(viagensSugestoesTable.id, id));
+
+  // Update preferences
+  const prefs = await getOrCreatePrefs(sug.viagemId);
+  const tiposAceitos = prefs.tiposAceitos || "";
+  const novosAceitos = tiposAceitos ? `${tiposAceitos},${sug.tipo}` : sug.tipo;
+  let novoRitmo = prefs.ritmo;
+  if (sug.tipo === "DIA_SOBRECARREGADO" || sug.tipo === "MOVER_LUGAR") novoRitmo = "moderado";
+
+  await db.update(viagensPreferenciasTable).set({
+    sugestoesAceitas: (prefs.sugestoesAceitas || 0) + 1,
+    tiposAceitos: novosAceitos,
+    ritmo: novoRitmo,
+    updatedAt: new Date(),
+  }).where(eq(viagensPreferenciasTable.viagemId, sug.viagemId));
+
+  res.json({ ok: true, sugestao: { ...sug, status: "aceita" } });
+});
+
+router.post("/viagens/sugestoes/:id/ignorar", async (req, res) => {
+  const id = Number(req.params.id);
+  const [sug] = await db.select().from(viagensSugestoesTable).where(eq(viagensSugestoesTable.id, id));
+  if (!sug) return res.status(404).json({ error: "Sugestão não encontrada" });
+
+  await db.update(viagensSugestoesTable)
+    .set({ status: "ignorada", updatedAt: new Date() })
+    .where(eq(viagensSugestoesTable.id, id));
+
+  // Update preferences — learn what user ignores
+  const prefs = await getOrCreatePrefs(sug.viagemId);
+  const tiposIgnorados = prefs.tiposIgnorados || "";
+  const novosIgnorados = tiposIgnorados ? `${tiposIgnorados},${sug.tipo}` : sug.tipo;
+
+  await db.update(viagensPreferenciasTable).set({
+    sugestoesIgnoradas: (prefs.sugestoesIgnoradas || 0) + 1,
+    tiposIgnorados: novosIgnorados,
+    updatedAt: new Date(),
+  }).where(eq(viagensPreferenciasTable.viagemId, sug.viagemId));
+
+  res.json({ ok: true });
+});
+
+router.get("/viagens/trips/:id/preferencias", async (req, res) => {
+  const viagemId = Number(req.params.id);
+  const prefs = await getOrCreatePrefs(viagemId);
+  res.json(prefs);
+});
+
+router.put("/viagens/trips/:id/preferencias", async (req, res) => {
+  const viagemId = Number(req.params.id);
+  const { ritmo, transportePreferido, horarioInicio } = req.body;
+  const prefs = await getOrCreatePrefs(viagemId);
+  const [updated] = await db.update(viagensPreferenciasTable).set({
+    ...(ritmo ? { ritmo } : {}),
+    ...(transportePreferido ? { transportePreferido } : {}),
+    ...(horarioInicio ? { horarioInicio } : {}),
+    updatedAt: new Date(),
+  }).where(eq(viagensPreferenciasTable.viagemId, viagemId)).returning();
+  res.json(updated);
 });
 
 // ── CHECKLIST ─────────────────────────────────────────────────────────────────
