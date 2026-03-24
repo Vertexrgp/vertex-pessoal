@@ -26,6 +26,7 @@ export interface Livro {
   cor: string;
   totalPaginas: number | null;
   capa: string | null;
+  favorito: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,6 +46,7 @@ export interface Video {
   insights: string | null;
   pontosImportantes: string | null;
   frasesMarcantes: string | null;
+  favorito: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -72,6 +74,7 @@ export const livrosApi = {
   create: (data: Omit<Livro, "id" | "createdAt" | "updatedAt">) => req<Livro>("POST", "/api/conhecimento/livros", data),
   update: (id: number, data: Partial<Livro>) => req<Livro>("PUT", `/api/conhecimento/livros/${id}`, data),
   remove: (id: number) => req<{ ok: true }>("DELETE", `/api/conhecimento/livros/${id}`),
+  toggleFavorito: (id: number) => req<Livro>("PATCH", `/api/conhecimento/livros/${id}/favorito`),
 };
 
 export const frasesApi = {
@@ -94,6 +97,7 @@ export interface Artigo {
   dataLeitura: string | null;
   resumo: string | null;
   cor: string;
+  favorito: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -112,6 +116,7 @@ export const artigosApi = {
   create: (data: Omit<Artigo, "id" | "createdAt" | "updatedAt">) => req<Artigo>("POST", "/api/conhecimento/artigos", data),
   update: (id: number, data: Partial<Artigo>) => req<Artigo>("PUT", `/api/conhecimento/artigos/${id}`, data),
   remove: (id: number) => req<{ ok: true }>("DELETE", `/api/conhecimento/artigos/${id}`),
+  toggleFavorito: (id: number) => req<Artigo>("PATCH", `/api/conhecimento/artigos/${id}/favorito`),
 };
 
 export const artigoInsightsApi = {
@@ -126,4 +131,5 @@ export const videosApi = {
   create: (data: Omit<Video, "id" | "createdAt" | "updatedAt">) => req<Video>("POST", "/api/conhecimento/videos", data),
   update: (id: number, data: Partial<Video>) => req<Video>("PUT", `/api/conhecimento/videos/${id}`, data),
   remove: (id: number) => req<{ ok: true }>("DELETE", `/api/conhecimento/videos/${id}`),
+  toggleFavorito: (id: number) => req<Video>("PATCH", `/api/conhecimento/videos/${id}/favorito`),
 };

@@ -185,9 +185,10 @@ const modules: Module[] = [
     color: "text-amber-600",
     prefixes: ["/conhecimento"],
     items: [
-      { name: "Livros",   path: "/conhecimento/livros",   icon: BookOpen },
-      { name: "Artigos",  path: "/conhecimento/artigos",  icon: FileText },
-      { name: "Vídeos",   path: "/conhecimento/videos",   icon: Play },
+      { name: "Biblioteca", path: "/conhecimento",         icon: BookOpen },
+      { name: "Livros",     path: "/conhecimento/livros",  icon: BookOpen },
+      { name: "Artigos",    path: "/conhecimento/artigos", icon: FileText },
+      { name: "Vídeos",     path: "/conhecimento/videos",  icon: Play },
     ],
   },
   {

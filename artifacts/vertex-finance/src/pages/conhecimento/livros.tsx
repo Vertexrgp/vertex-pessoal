@@ -5,7 +5,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { livrosApi, type Livro } from "@/lib/conhecimento-api";
 import {
   BookOpen, Plus, Star, CheckCircle2, Clock, BookMarked,
-  ChevronRight, Loader2, X, Trash2, Edit2,
+  Loader2, X, Trash2, Edit2, Heart, Search,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -43,7 +43,7 @@ function LivroModal({
   const isEdit = !!initial;
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h2 className="font-bold text-slate-900">{isEdit ? "Editar Livro" : "Adicionar Livro"}</h2>
@@ -92,7 +92,7 @@ function LivroModal({
             {capa && <img src={capa} alt="preview" className="mt-2 h-24 object-cover rounded-xl border border-slate-200" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />}
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-2">Cor da capa {capa ? "(usada quando sem imagem)" : ""}</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-2">Cor da capa {capa ? "(fallback)" : ""}</label>
             <div className="flex gap-2 flex-wrap">
               {CORES.map((c) => (
                 <button key={c} onClick={() => setCor(c)} className="w-7 h-7 rounded-full border-2 transition-all" style={{ backgroundColor: c, borderColor: cor === c ? "#1e293b" : "transparent" }} />
@@ -113,6 +113,7 @@ function LivroModal({
               cor,
               totalPaginas: totalPaginas ? parseInt(totalPaginas) : null,
               capa: capa.trim() || null,
+              favorito: initial?.favorito ?? false,
             })}
             disabled={saving || !titulo.trim() || !autor.trim()}
             className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-xl text-sm font-semibold disabled:opacity-50"
@@ -126,63 +127,88 @@ function LivroModal({
   );
 }
 
-function BookCard({ livro, onEdit, onDelete }: { livro: Livro; onEdit: () => void; onDelete: () => void }) {
+function BookCard({
+  livro,
+  onEdit,
+  onDelete,
+  onToggleFavorito,
+}: {
+  livro: Livro;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggleFavorito: () => void;
+}) {
   const st = STATUS_MAP[livro.status] ?? STATUS_MAP.quero_ler;
 
   return (
-    <Link href={`/conhecimento/livros/${livro.id}`}>
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-4 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer group">
-        <div className="w-12 rounded-xl flex-shrink-0 overflow-hidden relative" style={{ backgroundColor: livro.cor, minHeight: "72px", minWidth: "48px" }}>
+    <div className="group relative bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-lg transition-all overflow-hidden flex flex-col">
+      <Link href={`/conhecimento/livros/${livro.id}`}>
+        <div className="aspect-[2/3] relative overflow-hidden flex-shrink-0">
           {livro.capa ? (
-            <img src={livro.capa} alt={livro.titulo} className="w-full h-full object-cover" style={{ minHeight: "72px" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            <img
+              src={livro.capa}
+              alt={livro.titulo}
+              className="w-full h-full object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center p-1" style={{ minHeight: "72px" }}>
-              <BookOpen className="w-5 h-5 text-white/90" />
+            <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-3" style={{ backgroundColor: livro.cor }}>
+              <BookOpen className="w-8 h-8 text-white/80" />
+              <p className="text-white/90 text-[10px] font-bold text-center leading-tight line-clamp-3">{livro.titulo}</p>
               {livro.nota > 0 && (
-                <div className="flex mt-1.5 gap-0.5">
+                <div className="flex gap-0.5">
                   {Array.from({ length: Math.min(livro.nota, 5) }).map((_, i) => (
-                    <Star key={i} className="w-2 h-2 text-white fill-white" />
+                    <Star key={i} className="w-2.5 h-2.5 text-white fill-white" />
                   ))}
                 </div>
               )}
             </div>
           )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
+      </Link>
 
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-slate-900 group-hover:text-primary transition-colors">{livro.titulo}</p>
-          <p className="text-xs text-slate-500 mt-0.5">{livro.autor}</p>
-          <div className="flex items-center gap-2 mt-2">
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${st.cls}`}>{st.label}</span>
-            <span className="text-[11px] text-slate-400">{livro.genero}</span>
+      <button
+        onClick={(e) => { e.preventDefault(); onToggleFavorito(); }}
+        className={`absolute top-2 right-2 p-1.5 rounded-full shadow-sm transition-all ${livro.favorito ? "bg-rose-500 text-white" : "bg-white/90 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100"}`}
+      >
+        <Heart className="w-3.5 h-3.5" fill={livro.favorito ? "currentColor" : "none"} />
+      </button>
+
+      <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+        <button
+          onClick={(e) => { e.preventDefault(); onEdit(); }}
+          className="p-1.5 rounded-full bg-white/90 shadow-sm hover:bg-white"
+        >
+          <Edit2 className="w-3 h-3 text-slate-600" />
+        </button>
+        <button
+          onClick={(e) => { e.preventDefault(); onDelete(); }}
+          className="p-1.5 rounded-full bg-white/90 shadow-sm hover:bg-red-50"
+        >
+          <Trash2 className="w-3 h-3 text-red-400" />
+        </button>
+      </div>
+
+      <Link href={`/conhecimento/livros/${livro.id}`}>
+        <div className="p-3 flex flex-col gap-1 flex-1">
+          <p className="font-semibold text-slate-900 text-xs leading-tight line-clamp-2">{livro.titulo}</p>
+          <p className="text-[11px] text-slate-400 truncate">{livro.autor}</p>
+          <div className="flex items-center justify-between mt-1">
+            <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${st.cls}`}>{st.label}</span>
+            <span className="text-[10px] text-slate-300">{livro.genero}</span>
           </div>
-          {livro.status === "lendo" && (
-            <div className="mt-2">
-              <div className="w-full h-1.5 bg-slate-100 rounded-full">
-                <div className="h-full rounded-full transition-all" style={{ width: `${livro.progresso}%`, backgroundColor: livro.cor }} />
+          {(livro.status === "lendo" || livro.progresso > 0) && (
+            <div className="mt-1">
+              <div className="w-full bg-slate-100 rounded-full h-1">
+                <div className="h-1 rounded-full transition-all" style={{ width: `${livro.progresso}%`, backgroundColor: livro.cor }} />
               </div>
-              <p className="text-[10px] text-slate-400 mt-0.5">{livro.progresso}% lido</p>
+              <p className="text-[9px] text-slate-400 mt-0.5">{livro.progresso}%</p>
             </div>
           )}
         </div>
-
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <button
-            onClick={(e) => { e.preventDefault(); onEdit(); }}
-            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-indigo-50 transition-all"
-          >
-            <Edit2 className="w-3.5 h-3.5 text-slate-300 hover:text-primary" />
-          </button>
-          <button
-            onClick={(e) => { e.preventDefault(); onDelete(); }}
-            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 transition-all"
-          >
-            <Trash2 className="w-3.5 h-3.5 text-slate-300 hover:text-red-400" />
-          </button>
-          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
-        </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }
 
@@ -192,6 +218,7 @@ export default function LivrosPage() {
   const [modal, setModal] = useState<"new" | null>(null);
   const [editing, setEditing] = useState<Livro | null>(null);
   const [filter, setFilter] = useState<string>("todos");
+  const [busca, setBusca] = useState("");
 
   const { data: livros = [], isLoading } = useQuery<Livro[]>({
     queryKey: ["livros"],
@@ -213,10 +240,24 @@ export default function LivrosPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["livros"] }); toast({ title: "Livro removido" }); },
   });
 
+  const toggleFavorito = useMutation({
+    mutationFn: livrosApi.toggleFavorito,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["livros"] }),
+    onError: () => toast({ title: "Erro ao favoritar", variant: "destructive" }),
+  });
+
   const lendo = livros.filter((l) => l.status === "lendo").length;
   const concluidos = livros.filter((l) => l.status === "concluido").length;
   const naFila = livros.filter((l) => l.status === "quero_ler").length;
-  const filtered = filter === "todos" ? livros : livros.filter((l) => l.status === filter);
+  const favoritos = livros.filter((l) => l.favorito).length;
+
+  const filtered = livros
+    .filter((l) => filter === "todos" ? true : filter === "favoritos" ? l.favorito : l.status === filter)
+    .filter((l) => busca.trim() ? (
+      l.titulo.toLowerCase().includes(busca.toLowerCase()) ||
+      l.autor.toLowerCase().includes(busca.toLowerCase()) ||
+      l.genero.toLowerCase().includes(busca.toLowerCase())
+    ) : true);
 
   return (
     <AppLayout>
@@ -227,7 +268,6 @@ export default function LivrosPage() {
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
               <BookOpen className="w-6 h-6 text-amber-500" /> Livros
             </h1>
-            <p className="text-sm text-slate-400 mt-1">Sua biblioteca — cada livro com resumo, frases e insights.</p>
           </div>
           <button onClick={() => setModal("new")} className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 shadow-sm">
             <Plus className="w-4 h-4" /> Adicionar Livro
@@ -235,33 +275,58 @@ export default function LivrosPage() {
         </div>
 
         {livros.length > 0 && (
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center"><Clock className="w-5 h-5 text-indigo-600" /></div>
-              <div><p className="text-xs text-slate-500">Lendo agora</p><p className="text-xl font-bold text-slate-900">{lendo}</p></div>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center"><CheckCircle2 className="w-5 h-5 text-emerald-600" /></div>
-              <div><p className="text-xs text-slate-500">Concluídos</p><p className="text-xl font-bold text-slate-900">{concluidos}</p></div>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center"><BookMarked className="w-5 h-5 text-amber-600" /></div>
-              <div><p className="text-xs text-slate-500">Na fila</p><p className="text-xl font-bold text-slate-900">{naFila}</p></div>
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: "Lendo", value: lendo, icon: <Clock className="w-4 h-4" />, color: "text-indigo-600", bg: "bg-indigo-50" },
+              { label: "Concluídos", value: concluidos, icon: <CheckCircle2 className="w-4 h-4" />, color: "text-emerald-600", bg: "bg-emerald-50" },
+              { label: "Na fila", value: naFila, icon: <BookMarked className="w-4 h-4" />, color: "text-amber-600", bg: "bg-amber-50" },
+              { label: "Favoritos", value: favoritos, icon: <Heart className="w-4 h-4" />, color: "text-rose-600", bg: "bg-rose-50" },
+            ].map((s) => (
+              <div key={s.label} className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-xl ${s.bg} ${s.color} flex items-center justify-center flex-shrink-0`}>{s.icon}</div>
+                <div>
+                  <p className="text-xl font-bold text-slate-900">{s.value}</p>
+                  <p className="text-xs text-slate-400">{s.label}</p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
         {livros.length > 0 && (
-          <div className="flex gap-2 flex-wrap">
-            {[["todos", "Todos"], ["quero_ler", "Na fila"], ["lendo", "Lendo"], ["concluido", "Concluídos"]].map(([v, l]) => (
-              <button key={v} onClick={() => setFilter(v)} className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${filter === v ? "bg-primary text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{l}</button>
-            ))}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Buscar livros..."
+                className="w-full border border-slate-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                ["todos", "Todos"],
+                ["lendo", "Lendo"],
+                ["quero_ler", "Na fila"],
+                ["concluido", "Concluídos"],
+                ["favoritos", "❤ Favoritos"],
+              ].map(([v, l]) => (
+                <button
+                  key={v}
+                  onClick={() => setFilter(v)}
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${filter === v ? "bg-primary text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-slate-300" /></div>
-        ) : filtered.length === 0 && livros.length === 0 ? (
+        ) : livros.length === 0 ? (
           <div className="flex flex-col items-center py-20 text-center">
             <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center mb-4"><BookOpen className="w-8 h-8 text-amber-400" /></div>
             <p className="font-semibold text-slate-700 mb-1">Biblioteca vazia</p>
@@ -270,19 +335,19 @@ export default function LivrosPage() {
               <Plus className="w-4 h-4" /> Adicionar primeiro livro
             </button>
           </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-10 text-sm text-slate-400">Nenhum livro encontrado.</div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
             {filtered.map((livro) => (
               <BookCard
                 key={livro.id}
                 livro={livro}
                 onEdit={() => setEditing(livro)}
                 onDelete={() => remove.mutate(livro.id)}
+                onToggleFavorito={() => toggleFavorito.mutate(livro.id)}
               />
             ))}
-            {filtered.length === 0 && (
-              <div className="text-center py-10 text-sm text-slate-400">Nenhum livro nesta categoria.</div>
-            )}
           </div>
         )}
       </div>

@@ -4,6 +4,15 @@
 
 Full-stack personal OS — 7 modules: Financeiro (incl. Cartões + Patrimônio), Performance, Agenda, Viagens, Crescimento, Conhecimento, Idiomas. Premium SaaS product built with React + Vite frontend, Express backend, and PostgreSQL database. All UI in Brazilian Portuguese. Collapsible sidebar with compact (icon-only) mode and cross-module event bus.
 
+## Conhecimento Module (Premium)
+
+- **Hub page** (`/conhecimento`): Biblioteca Pessoal com busca global, filtros por tipo e status, e smart blocks (Favoritos, Em andamento, Na fila, Concluídos)
+- **Livros** (`/conhecimento/livros`): Grid visual de livros com capa, progresso, favorito toggle, busca + filtros
+- **Artigos** (`/conhecimento/artigos`): Lista com favoritos, busca, filtros por tema
+- **Vídeos** (`/conhecimento/videos`): Grid com thumbnail, plataforma badge, favoritos, busca, filtros
+- **Favoritos**: campo `favorito boolean` em todos os três; PATCH toggle endpoint; coração em cada card
+- **Schema**: `favorito` boolean em `conhecimento_livros`, `conhecimento_artigos`, `conhecimento_videos`
+
 ## Stack
 
 - **Monorepo tool**: pnpm workspaces

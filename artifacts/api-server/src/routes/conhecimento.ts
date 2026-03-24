@@ -29,11 +29,11 @@ router.get("/conhecimento/livros/:id", async (req, res) => {
 
 router.post("/conhecimento/livros", async (req, res) => {
   try {
-    const { titulo, autor, genero, status, progresso, nota, dataInicio, dataFim, resumo, cor, totalPaginas, capa } = req.body;
+    const { titulo, autor, genero, status, progresso, nota, dataInicio, dataFim, resumo, cor, totalPaginas, capa, favorito } = req.body;
     if (!titulo || !autor) return res.status(400).json({ error: "titulo e autor são obrigatórios" });
     const [livro] = await db
       .insert(conhecimentoLivros)
-      .values({ titulo, autor, genero: genero || "geral", status: status || "quero_ler", progresso: progresso ?? 0, nota: nota ?? 0, dataInicio: dataInicio || null, dataFim: dataFim || null, resumo: resumo || null, cor: cor || "#F59E0B", totalPaginas: totalPaginas || null, capa: capa || null })
+      .values({ titulo, autor, genero: genero || "geral", status: status || "quero_ler", progresso: progresso ?? 0, nota: nota ?? 0, dataInicio: dataInicio || null, dataFim: dataFim || null, resumo: resumo || null, cor: cor || "#F59E0B", totalPaginas: totalPaginas || null, capa: capa || null, favorito: favorito ?? false })
       .returning();
     res.json(livro);
   } catch {
@@ -44,10 +44,10 @@ router.post("/conhecimento/livros", async (req, res) => {
 router.put("/conhecimento/livros/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { titulo, autor, genero, status, progresso, nota, dataInicio, dataFim, resumo, cor, totalPaginas, capa } = req.body;
+    const { titulo, autor, genero, status, progresso, nota, dataInicio, dataFim, resumo, cor, totalPaginas, capa, favorito } = req.body;
     const [updated] = await db
       .update(conhecimentoLivros)
-      .set({ titulo, autor, genero, status, progresso, nota, dataInicio, dataFim, resumo, cor, totalPaginas, capa: capa !== undefined ? capa : undefined, updatedAt: new Date() })
+      .set({ titulo, autor, genero, status, progresso, nota, dataInicio, dataFim, resumo, cor, totalPaginas, capa: capa !== undefined ? capa : undefined, favorito: favorito !== undefined ? favorito : undefined, updatedAt: new Date() })
       .where(eq(conhecimentoLivros.id, id))
       .returning();
     if (!updated) return res.status(404).json({ error: "Livro não encontrado" });
@@ -161,11 +161,11 @@ router.get("/conhecimento/artigos/:id", async (req, res) => {
 
 router.post("/conhecimento/artigos", async (req, res) => {
   try {
-    const { titulo, fonte, tema, dataLeitura, resumo, cor } = req.body;
+    const { titulo, fonte, tema, dataLeitura, resumo, cor, favorito } = req.body;
     if (!titulo) return res.status(400).json({ error: "titulo é obrigatório" });
     const [artigo] = await db
       .insert(conhecimentoArtigos)
-      .values({ titulo, fonte: fonte || null, tema: tema || "geral", dataLeitura: dataLeitura || null, resumo: resumo || null, cor: cor || "#6366F1" })
+      .values({ titulo, fonte: fonte || null, tema: tema || "geral", dataLeitura: dataLeitura || null, resumo: resumo || null, cor: cor || "#6366F1", favorito: favorito ?? false })
       .returning();
     res.json(artigo);
   } catch {
@@ -176,10 +176,10 @@ router.post("/conhecimento/artigos", async (req, res) => {
 router.put("/conhecimento/artigos/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { titulo, fonte, tema, dataLeitura, resumo, cor } = req.body;
+    const { titulo, fonte, tema, dataLeitura, resumo, cor, favorito } = req.body;
     const [updated] = await db
       .update(conhecimentoArtigos)
-      .set({ titulo, fonte, tema, dataLeitura, resumo, cor, updatedAt: new Date() })
+      .set({ titulo, fonte, tema, dataLeitura, resumo, cor, favorito: favorito !== undefined ? favorito : undefined, updatedAt: new Date() })
       .where(eq(conhecimentoArtigos.id, id))
       .returning();
     if (!updated) return res.status(404).json({ error: "Artigo não encontrado" });
@@ -261,7 +261,7 @@ router.get("/conhecimento/videos/:id", async (req, res) => {
 
 router.post("/conhecimento/videos", async (req, res) => {
   try {
-    const { titulo, link, plataforma, categoria, tema, thumbnail, status, dataInicio, dataFim, resumo, insights, pontosImportantes, frasesMarcantes } = req.body;
+    const { titulo, link, plataforma, categoria, tema, thumbnail, status, dataInicio, dataFim, resumo, insights, pontosImportantes, frasesMarcantes, favorito } = req.body;
     if (!titulo) return res.status(400).json({ error: "titulo é obrigatório" });
     const [video] = await db
       .insert(conhecimentoVideos)
@@ -279,6 +279,7 @@ router.post("/conhecimento/videos", async (req, res) => {
         insights: insights || null,
         pontosImportantes: pontosImportantes || null,
         frasesMarcantes: frasesMarcantes || null,
+        favorito: favorito ?? false,
       })
       .returning();
     res.json(video);
@@ -290,10 +291,10 @@ router.post("/conhecimento/videos", async (req, res) => {
 router.put("/conhecimento/videos/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { titulo, link, plataforma, categoria, tema, thumbnail, status, dataInicio, dataFim, resumo, insights, pontosImportantes, frasesMarcantes } = req.body;
+    const { titulo, link, plataforma, categoria, tema, thumbnail, status, dataInicio, dataFim, resumo, insights, pontosImportantes, frasesMarcantes, favorito } = req.body;
     const [updated] = await db
       .update(conhecimentoVideos)
-      .set({ titulo, link, plataforma, categoria, tema, thumbnail, status, dataInicio, dataFim, resumo, insights, pontosImportantes, frasesMarcantes, updatedAt: new Date() })
+      .set({ titulo, link, plataforma, categoria, tema, thumbnail, status, dataInicio, dataFim, resumo, insights, pontosImportantes, frasesMarcantes, favorito: favorito !== undefined ? favorito : undefined, updatedAt: new Date() })
       .where(eq(conhecimentoVideos.id, id))
       .returning();
     if (!updated) return res.status(404).json({ error: "Vídeo não encontrado" });
@@ -310,6 +311,44 @@ router.delete("/conhecimento/videos/:id", async (req, res) => {
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: "Erro ao deletar vídeo" });
+  }
+});
+
+// ─── TOGGLE FAVORITO ──────────────────────────────────────────────────────────
+
+router.patch("/conhecimento/livros/:id/favorito", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [current] = await db.select().from(conhecimentoLivros).where(eq(conhecimentoLivros.id, id));
+    if (!current) return res.status(404).json({ error: "Livro não encontrado" });
+    const [updated] = await db.update(conhecimentoLivros).set({ favorito: !current.favorito, updatedAt: new Date() }).where(eq(conhecimentoLivros.id, id)).returning();
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: "Erro ao alternar favorito" });
+  }
+});
+
+router.patch("/conhecimento/artigos/:id/favorito", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [current] = await db.select().from(conhecimentoArtigos).where(eq(conhecimentoArtigos.id, id));
+    if (!current) return res.status(404).json({ error: "Artigo não encontrado" });
+    const [updated] = await db.update(conhecimentoArtigos).set({ favorito: !current.favorito, updatedAt: new Date() }).where(eq(conhecimentoArtigos.id, id)).returning();
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: "Erro ao alternar favorito" });
+  }
+});
+
+router.patch("/conhecimento/videos/:id/favorito", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [current] = await db.select().from(conhecimentoVideos).where(eq(conhecimentoVideos.id, id));
+    if (!current) return res.status(404).json({ error: "Vídeo não encontrado" });
+    const [updated] = await db.update(conhecimentoVideos).set({ favorito: !current.favorito, updatedAt: new Date() }).where(eq(conhecimentoVideos.id, id)).returning();
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: "Erro ao alternar favorito" });
   }
 });
 

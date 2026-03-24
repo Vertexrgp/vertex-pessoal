@@ -1,0 +1,167 @@
+Quero evoluir o módulo Conhecimento para um nível premium, transformando-o em uma biblioteca pessoal inteligente.
+
+OBJETIVO
+Fazer o módulo Conhecimento parecer um acervo pessoal premium, onde eu consigo salvar, organizar, encontrar e revisar livros, artigos e vídeos com facilidade.
+
+====================================================
+1) ESTRUTURA FINAL DO MÓDULO
+====================================================
+
+O módulo Conhecimento deve ficar assim:
+
+- Livros
+- Artigos
+- Vídeos
+
+Cada um como entidade principal, com sua própria página de detalhe.
+
+====================================================
+2) BUSCA GLOBAL
+====================================================
+
+Criar uma busca dentro do módulo Conhecimento que permita encontrar:
+
+- livros
+- artigos
+- vídeos
+
+A busca deve funcionar por:
+- título
+- autor
+- categoria
+- tema
+- status
+- conteúdo resumido (quando possível)
+
+====================================================
+3) FILTROS
+====================================================
+
+Criar filtros para:
+
+- tipo (livro, artigo, vídeo)
+- categoria
+- tema
+- status (quero ver / vendo / concluído / lendo / na fila)
+- favorito
+- com resumo
+- com insights
+- com frases
+
+====================================================
+4) FAVORITOS
+====================================================
+
+Adicionar sistema de favoritos para:
+
+- livros
+- artigos
+- vídeos
+
+Objetivo:
+marcar conteúdos mais importantes, memoráveis ou que quero revisitar.
+
+====================================================
+5) VISUAL DE BIBLIOTECA
+====================================================
+
+Quero que a tela pareça uma biblioteca/acervo premium.
+
+Livros:
+- mostrar capa
+- layout mais visual
+- cards bonitos
+
+Artigos:
+- layout limpo
+- título, fonte, tema, status
+
+Vídeos:
+- thumbnail/imagem
+- título, categoria, plataforma, status
+
+====================================================
+6) PÁGINAS DE DETALHE
+====================================================
+
+Cada item deve ter uma página ou drawer de detalhe.
+
+Livros:
+- capa
+- dados
+- progresso
+- resumo
+- frases
+- insights
+
+Artigos:
+- título
+- fonte/link
+- resumo
+- insights
+
+Vídeos:
+- thumbnail
+- link
+- categoria
+- resumo
+- insights
+- frases/pontos-chave
+
+====================================================
+7) ORGANIZAÇÃO INTELIGENTE
+====================================================
+
+Criar blocos e visões como:
+
+- Continue lendo
+- Continue vendo
+- Favoritos
+- Concluídos recentemente
+- Em andamento
+- Na fila
+
+====================================================
+8) EXPERIÊNCIA PREMIUM
+====================================================
+
+Quero que o módulo passe a sensação de:
+
+- biblioteca pessoal
+- sistema de estudo
+- acervo inteligente
+
+Nada com cara de lista seca ou tabela simples.
+
+====================================================
+9) CRUD COMPLETO
+====================================================
+
+Todos os itens precisam seguir o padrão de CRUD:
+
+- criar
+- editar
+- excluir
+- duplicar (quando fizer sentido)
+- atualizar status
+- favoritar
+
+====================================================
+10) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. busca global no módulo Conhecimento
+2. filtros por tipo, categoria, status e favorito
+3. favoritos
+4. visão mais visual da biblioteca
+5. melhor estrutura de livros, artigos e vídeos
+6. páginas de detalhe premium
+7. blocos “Continue”, “Favoritos”, “Em andamento”
+
+No final, me mostrar:
+- como ficou a nova estrutura
+- como funciona a busca
+- como funcionam os filtros
+- como ficou o visual da biblioteca

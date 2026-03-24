@@ -5,7 +5,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { artigosApi, type Artigo } from "@/lib/conhecimento-api";
 import {
   FileText, Plus, ExternalLink, Calendar, ChevronRight,
-  Loader2, X, Trash2, Tag, Edit2,
+  Loader2, X, Trash2, Tag, Edit2, Heart, Search,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -90,7 +90,7 @@ function ArtigoModal({
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100">
           <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancelar</button>
           <button
-            onClick={() => titulo.trim() && onSave({ titulo, fonte: fonte || null, tema, dataLeitura: dataLeitura || null, resumo: resumo || null, cor })}
+            onClick={() => titulo.trim() && onSave({ titulo, fonte: fonte || null, tema, dataLeitura: dataLeitura || null, resumo: resumo || null, cor, favorito: initial?.favorito ?? false })}
             disabled={saving || !titulo.trim()}
             className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-xl text-sm font-semibold disabled:opacity-50"
           >
@@ -103,49 +103,70 @@ function ArtigoModal({
   );
 }
 
-function ArtigoCard({ artigo, onEdit, onDelete }: { artigo: Artigo; onEdit: () => void; onDelete: () => void }) {
+function ArtigoCard({
+  artigo,
+  onEdit,
+  onDelete,
+  onToggleFavorito,
+}: {
+  artigo: Artigo;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggleFavorito: () => void;
+}) {
   const dt = formatDate(artigo.dataLeitura);
   return (
-    <Link href={`/conhecimento/artigos/${artigo.id}`}>
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-4 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer group">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${artigo.cor}18` }}>
-          <FileText className="w-5 h-5" style={{ color: artigo.cor }} />
-        </div>
+    <div className="relative group">
+      <Link href={`/conhecimento/artigos/${artigo.id}`}>
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-4 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${artigo.cor}18` }}>
+            <FileText className="w-5 h-5" style={{ color: artigo.cor }} />
+          </div>
 
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-slate-900 group-hover:text-primary transition-colors truncate">{artigo.titulo}</p>
-          <div className="flex items-center gap-3 mt-1 flex-wrap">
-            <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${artigo.cor}18`, color: artigo.cor }}>
-              <Tag className="w-2.5 h-2.5" /> {artigo.tema}
-            </span>
-            {dt && (
-              <span className="flex items-center gap-1 text-[11px] text-slate-400">
-                <Calendar className="w-2.5 h-2.5" /> {dt}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="font-bold text-slate-900 group-hover:text-primary transition-colors truncate">{artigo.titulo}</p>
+              {artigo.favorito && <Heart className="w-3.5 h-3.5 text-rose-500 flex-shrink-0" fill="currentColor" />}
+            </div>
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${artigo.cor}18`, color: artigo.cor }}>
+                <Tag className="w-2.5 h-2.5" /> {artigo.tema}
               </span>
+              {dt && (
+                <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                  <Calendar className="w-2.5 h-2.5" /> {dt}
+                </span>
+              )}
+            </div>
+            {artigo.fonte && (
+              <p className="text-[11px] text-slate-400 mt-1 truncate">{artigo.fonte}</p>
             )}
           </div>
-          {artigo.fonte && (
-            <p className="text-[11px] text-slate-400 mt-1 truncate">{artigo.fonte}</p>
-          )}
-        </div>
 
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <button
-            onClick={(e) => { e.preventDefault(); onEdit(); }}
-            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-indigo-50 transition-all"
-          >
-            <Edit2 className="w-3.5 h-3.5 text-slate-300 hover:text-primary" />
-          </button>
-          <button
-            onClick={(e) => { e.preventDefault(); onDelete(); }}
-            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 transition-all"
-          >
-            <Trash2 className="w-3.5 h-3.5 text-slate-300 hover:text-red-400" />
-          </button>
-          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              onClick={(e) => { e.preventDefault(); onToggleFavorito(); }}
+              className={`p-1.5 rounded-lg transition-all ${artigo.favorito ? "text-rose-500" : "opacity-0 group-hover:opacity-100 hover:bg-rose-50 text-slate-300"}`}
+            >
+              <Heart className="w-3.5 h-3.5" fill={artigo.favorito ? "currentColor" : "none"} />
+            </button>
+            <button
+              onClick={(e) => { e.preventDefault(); onEdit(); }}
+              className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-indigo-50 transition-all"
+            >
+              <Edit2 className="w-3.5 h-3.5 text-slate-300 hover:text-primary" />
+            </button>
+            <button
+              onClick={(e) => { e.preventDefault(); onDelete(); }}
+              className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 transition-all"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-slate-300 hover:text-red-400" />
+            </button>
+            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
+          </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }
 
@@ -155,6 +176,7 @@ export default function ArtigosPage() {
   const [modal, setModal] = useState<"new" | null>(null);
   const [editing, setEditing] = useState<Artigo | null>(null);
   const [filter, setFilter] = useState("todos");
+  const [busca, setBusca] = useState("");
 
   const { data: artigos = [], isLoading } = useQuery<Artigo[]>({
     queryKey: ["artigos"],
@@ -176,8 +198,22 @@ export default function ArtigosPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["artigos"] }); toast({ title: "Artigo removido" }); },
   });
 
+  const toggleFavorito = useMutation({
+    mutationFn: artigosApi.toggleFavorito,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["artigos"] }),
+    onError: () => toast({ title: "Erro ao favoritar", variant: "destructive" }),
+  });
+
   const temas = [...new Set(artigos.map((a) => a.tema))].sort();
-  const filtered = filter === "todos" ? artigos : artigos.filter((a) => a.tema === filter);
+  const favoritos = artigos.filter((a) => a.favorito).length;
+
+  const filtered = artigos
+    .filter((a) => filter === "todos" ? true : filter === "favoritos" ? a.favorito : a.tema === filter)
+    .filter((a) => busca.trim() ? (
+      a.titulo.toLowerCase().includes(busca.toLowerCase()) ||
+      a.tema.toLowerCase().includes(busca.toLowerCase()) ||
+      (a.fonte?.toLowerCase().includes(busca.toLowerCase()) ?? false)
+    ) : true);
 
   return (
     <AppLayout>
@@ -196,28 +232,44 @@ export default function ArtigosPage() {
         </div>
 
         {artigos.length > 0 && (
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center"><FileText className="w-5 h-5 text-indigo-600" /></div>
-              <div><p className="text-xs text-slate-500">Total</p><p className="text-xl font-bold text-slate-900">{artigos.length}</p></div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center"><FileText className="w-4 h-4 text-indigo-600" /></div>
+              <div><p className="text-xl font-bold text-slate-900">{artigos.length}</p><p className="text-xs text-slate-400">Total</p></div>
             </div>
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center"><Tag className="w-5 h-5 text-amber-600" /></div>
-              <div><p className="text-xs text-slate-500">Temas</p><p className="text-xl font-bold text-slate-900">{temas.length}</p></div>
+            <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center"><Tag className="w-4 h-4 text-amber-600" /></div>
+              <div><p className="text-xl font-bold text-slate-900">{temas.length}</p><p className="text-xs text-slate-400">Temas</p></div>
             </div>
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center"><ExternalLink className="w-5 h-5 text-emerald-600" /></div>
-              <div><p className="text-xs text-slate-500">Com fonte</p><p className="text-xl font-bold text-slate-900">{artigos.filter((a) => a.fonte).length}</p></div>
+            <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center"><ExternalLink className="w-4 h-4 text-emerald-600" /></div>
+              <div><p className="text-xl font-bold text-slate-900">{artigos.filter((a) => a.fonte).length}</p><p className="text-xs text-slate-400">Com fonte</p></div>
+            </div>
+            <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center"><Heart className="w-4 h-4 text-rose-600" /></div>
+              <div><p className="text-xl font-bold text-slate-900">{favoritos}</p><p className="text-xs text-slate-400">Favoritos</p></div>
             </div>
           </div>
         )}
 
-        {temas.length > 1 && (
-          <div className="flex gap-2 flex-wrap">
-            <button onClick={() => setFilter("todos")} className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${filter === "todos" ? "bg-primary text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Todos</button>
-            {temas.map((t) => (
-              <button key={t} onClick={() => setFilter(t)} className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${filter === t ? "bg-primary text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{t}</button>
-            ))}
+        {artigos.length > 0 && (
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Buscar artigos..."
+                className="w-full border border-slate-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <button onClick={() => setFilter("todos")} className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${filter === "todos" ? "bg-primary text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>Todos</button>
+              <button onClick={() => setFilter("favoritos")} className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${filter === "favoritos" ? "bg-rose-500 text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>❤ Favoritos</button>
+              {temas.map((t) => (
+                <button key={t} onClick={() => setFilter(t)} className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${filter === t ? "bg-primary text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>{t}</button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -240,10 +292,11 @@ export default function ArtigosPage() {
                 artigo={artigo}
                 onEdit={() => setEditing(artigo)}
                 onDelete={() => remove.mutate(artigo.id)}
+                onToggleFavorito={() => toggleFavorito.mutate(artigo.id)}
               />
             ))}
             {filtered.length === 0 && (
-              <div className="text-center py-10 text-sm text-slate-400">Nenhum artigo neste tema.</div>
+              <div className="text-center py-10 text-sm text-slate-400">Nenhum artigo encontrado.</div>
             )}
           </div>
         )}

@@ -44,6 +44,7 @@ import MetaDetailPage from "./pages/crescimento/meta-detalhe";
 import CheckpointsPage from "./pages/crescimento/checkpoints";
 import VisionBoardPage from "./pages/crescimento/vision-board";
 
+import ConhecimentoHubPage from "./pages/conhecimento/index";
 import LivrosPage from "./pages/conhecimento/livros";
 import LivroDetailPage from "./pages/conhecimento/livro-detalhe";
 import ArtigosPage from "./pages/conhecimento/artigos";
@@ -102,6 +103,7 @@ function Router() {
       <Route path="/crescimento/checkpoints" component={CheckpointsPage} />
       <Route path="/crescimento/vision-board" component={VisionBoardPage} />
 
+      <Route path="/conhecimento" component={ConhecimentoHubPage} />
       <Route path="/conhecimento/livros" component={LivrosPage} />
       <Route path="/conhecimento/livros/:id">
         {(params) => <LivroDetailPage id={params.id} />}

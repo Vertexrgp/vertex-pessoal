@@ -1,4 +1,4 @@
-import { pgTable, serial, text, date, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, date, integer, timestamp, boolean } from "drizzle-orm/pg-core";
 
 export const conhecimentoLivros = pgTable("conhecimento_livros", {
   id: serial("id").primaryKey(),
@@ -14,6 +14,7 @@ export const conhecimentoLivros = pgTable("conhecimento_livros", {
   cor: text("cor").notNull().default("#F59E0B"),
   totalPaginas: integer("total_paginas"),
   capa: text("capa"),
+  favorito: boolean("favorito").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -50,6 +51,7 @@ export const conhecimentoArtigos = pgTable("conhecimento_artigos", {
   dataLeitura: date("data_leitura"),
   resumo: text("resumo"),
   cor: text("cor").notNull().default("#6366F1"),
+  favorito: boolean("favorito").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -82,6 +84,7 @@ export const conhecimentoVideos = pgTable("conhecimento_videos", {
   insights: text("insights"),
   pontosImportantes: text("pontos_importantes"),
   frasesMarcantes: text("frases_marcantes"),
+  favorito: boolean("favorito").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
