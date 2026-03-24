@@ -1,0 +1,98 @@
+Quero atualizar a identidade visual do sistema Vertex OS substituindo a logo atual pela nova logo enviada.
+
+OBJETIVO
+Atualizar a logo em todo o sistema e padronizar seu uso, garantindo consistência visual premium.
+
+====================================================
+1) NOVA LOGO
+====================================================
+
+Substituir a logo atual pela nova logo fornecida (arquivo enviado).
+
+A nova logo deve ser usada como referência oficial da marca.
+
+====================================================
+2) LOCAIS DE ATUALIZAÇÃO
+====================================================
+
+Atualizar a logo nos seguintes pontos:
+
+- Sidebar (topo esquerdo)
+- Header global
+- Tela de login (se existir)
+- Loading screen (se existir)
+- Páginas principais (quando aplicável)
+- Favicon (versão simplificada do "V")
+
+====================================================
+3) VERSÕES DA LOGO
+====================================================
+
+Preparar:
+
+- versão completa (V + Vertex OS)
+- versão reduzida (apenas "V")
+
+Uso:
+
+- Sidebar expandida → versão completa
+- Sidebar colapsada → apenas "V"
+- Favicon → apenas "V"
+
+====================================================
+4) AJUSTES VISUAIS
+====================================================
+
+Garantir:
+
+- espaçamento correto ao redor da logo
+- alinhamento com o layout
+- não deformar a imagem
+- manter proporção original
+
+====================================================
+5) CORES E FUNDO
+====================================================
+
+Como a logo é branca:
+
+- usar fundo escuro onde necessário
+ou
+- adaptar versão da logo para fundo claro (se necessário no futuro)
+
+====================================================
+6) PADRÃO DE MARCA
+====================================================
+
+Criar padrão:
+
+- sempre usar a mesma logo
+- não misturar versões antigas
+- manter consistência em todo sistema
+
+====================================================
+7) EXPERIÊNCIA PREMIUM
+====================================================
+
+Quero que a logo:
+
+- reforce a identidade do produto
+- transmita sistema premium
+- combine com o design minimalista atual
+
+====================================================
+8) ENTREGAR
+====================================================
+
+Implementar:
+
+1. substituição da logo em todo o sistema
+2. versão reduzida para sidebar colapsada
+3. favicon com base na logo
+4. ajustes visuais necessários
+
+No final, me mostrar:
+- onde a logo foi aplicada
+- como ficou no sidebar
+- como ficou no header
+- sugestão de melhorias visuais se necessário

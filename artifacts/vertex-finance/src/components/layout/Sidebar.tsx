@@ -472,16 +472,23 @@ export function Sidebar() {
       )}
     >
       {/* Logo */}
-      <div className={cn("flex items-center border-b border-slate-100 h-14 flex-shrink-0", compact ? "justify-center px-0" : "px-4 gap-3")}>
-        <img
-          src={`${import.meta.env.BASE_URL}images/logo-icon.png`}
-          alt="Vertex OS"
-          className="w-7 h-7 rounded-lg shadow-sm flex-shrink-0"
-        />
-        {!compact && (
-          <h1 className="font-display font-bold text-base text-slate-900 tracking-tight whitespace-nowrap">
-            Vertex <span className="text-primary">OS</span>
-          </h1>
+      <div className={cn(
+        "flex items-center flex-shrink-0 bg-slate-900 border-b border-slate-800 h-14",
+        compact ? "justify-center px-0" : "px-5"
+      )}>
+        {compact ? (
+          <div className="w-8 h-8 flex items-center justify-center">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="1,2 11,20 21,2 18.5,2 11,16 3.5,2" fill="white"/>
+            </svg>
+          </div>
+        ) : (
+          <img
+            src={`${import.meta.env.BASE_URL}images/vertex-logo-full.png`}
+            alt="Vertex OS"
+            className="h-7 object-contain object-left w-full"
+            style={{ maxWidth: "170px" }}
+          />
         )}
       </div>
 
