@@ -473,7 +473,7 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div className={cn(
-        "flex items-center flex-shrink-0 bg-slate-900 border-b border-slate-800 h-14",
+        "flex items-center flex-shrink-0 bg-black border-b border-neutral-800 h-14",
         compact ? "justify-center px-0" : "px-4"
       )}>
         {compact ? (

@@ -34,7 +34,7 @@ export function AppLayout({ children, noPadding }: { children: ReactNode; noPadd
       
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
         {/* Mobile Header */}
-        <header className="md:hidden flex items-center justify-between px-4 bg-slate-900 border-b border-slate-800 sticky top-0 z-30 h-14">
+        <header className="md:hidden flex items-center justify-between px-4 bg-black border-b border-neutral-800 sticky top-0 z-30 h-14">
           <div className="flex items-center gap-3">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
               <polygon points="1,2 12,22 23,2 20,2 12,18 4,2" fill="white"/>
