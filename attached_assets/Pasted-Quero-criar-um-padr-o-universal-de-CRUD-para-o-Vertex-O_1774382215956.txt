@@ -1,0 +1,159 @@
+Quero criar um padrão universal de CRUD para o Vertex OS e aplicar esse padrão em todos os módulos onde houver dados operacionais do usuário.
+
+OBJETIVO
+Padronizar a experiência de criar, visualizar, editar, excluir, duplicar e atualizar dados em todo o sistema, deixando o produto mais consistente, profissional e realmente usável no dia a dia.
+
+====================================================
+1) REGRA GLOBAL
+====================================================
+
+Toda entidade do sistema que represente dado vivo do usuário deve seguir um padrão único de CRUD.
+
+Isso inclui, quando fizer sentido:
+
+- Criar
+- Visualizar
+- Editar
+- Excluir
+- Duplicar
+- Atualizar status
+- Reordenar / mover
+
+Exceções:
+- Dashboard
+- Relatórios
+- Visões consolidadas
+- Indicadores derivados
+
+Esses podem continuar como leitura, mas devem ter acesso claro à origem editável dos dados.
+
+====================================================
+2) PADRÃO DE UX
+====================================================
+
+Toda tela operacional deve seguir o mesmo padrão:
+
+A) TOPO DA PÁGINA
+- título
+- descrição curta
+- botão principal de criar/adicionar
+
+B) LISTA / TABELA / CARDS
+- clique na linha/card abre detalhe
+- ações rápidas visíveis:
+  - editar
+  - excluir
+  - duplicar (quando fizer sentido)
+  - atualizar status/valor
+
+C) DETALHE
+- abrir em modal, drawer ou página lateral
+- permitir edição completa
+- salvar / cancelar
+- confirmação para exclusão
+
+====================================================
+3) AÇÕES PADRÃO
+====================================================
+
+Aplicar o mesmo comportamento em todas as entidades:
+
+- Novo / Adicionar
+- Editar
+- Excluir
+- Duplicar
+- Arquivar / inativar (quando fizer sentido)
+- Alterar status
+- Histórico (quando fizer sentido)
+
+====================================================
+4) MÓDULOS A REVISAR
+====================================================
+
+Revisar e aplicar o padrão em:
+
+Financeiro:
+- lançamentos
+- recorrências
+- cartões
+- faturas
+- ativos
+- dívidas
+- recebíveis
+- rendas
+
+Performance:
+- exames
+- protocolos
+- treinos
+- dieta
+- progresso
+
+Agenda:
+- tarefas
+- eventos
+- lembretes
+
+Viagens:
+- viagens
+- lugares
+- roteiro
+- checklist
+- despesas
+- fotos/memórias
+
+Crescimento:
+- metas
+- checkpoints
+- vision board items
+
+Conhecimento:
+- livros
+- artigos
+- frases
+- resumos
+- vídeos
+
+Idiomas:
+- planos de estudo
+- sessões
+- progresso
+
+====================================================
+5) ESTADOS DE INTERFACE
+====================================================
+
+Padronizar também:
+
+- empty state
+- loading state
+- erro
+- confirmação de exclusão
+- sucesso ao salvar
+
+====================================================
+6) EXPERIÊNCIA PREMIUM
+====================================================
+
+Quero que o sistema pareça um SaaS premium e consistente.
+
+Objetivo:
+o usuário deve aprender uma vez como editar algo, e usar esse mesmo padrão em todo o sistema.
+
+====================================================
+7) ENTREGAR
+====================================================
+
+Quero que você:
+
+1. defina o padrão universal de CRUD
+2. aplique esse padrão aos módulos existentes
+3. me mostre quais telas hoje estão apenas leitura
+4. corrija as principais inconsistências
+5. padronize visual e interação
+
+No final, me mostrar:
+- o padrão adotado
+- exemplos por módulo
+- quais telas passaram a ser realmente editáveis
+- o que ainda falta revisar
