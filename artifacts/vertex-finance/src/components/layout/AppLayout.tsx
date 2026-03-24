@@ -43,9 +43,10 @@ export function AppLayout({ children, noPadding }: { children: ReactNode; noPadd
             <div className="flex flex-col leading-none">
               <div className="flex items-baseline gap-1">
                 <span className="text-white font-bold text-sm tracking-tight">Vertex</span>
-                <span className="text-slate-400 font-light text-sm tracking-tight">OS</span>
+                <span className="text-white/50 font-light text-sm">|</span>
+                <span className="text-white font-light text-sm tracking-tight">OS</span>
               </div>
-              <span className="text-slate-500 text-[8px] tracking-[0.18em] uppercase mt-0.5">Operating System</span>
+              <span className="text-white text-[8px] tracking-[0.18em] uppercase mt-0.5">Operating System</span>
             </div>
           </div>
           
