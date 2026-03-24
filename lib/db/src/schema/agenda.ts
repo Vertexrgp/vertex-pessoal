@@ -11,6 +11,7 @@ export const agendaEventsTable = pgTable("agenda_events", {
   alerta: boolean("alerta").notNull().default(false),
   lembrete: boolean("lembrete").notNull().default(false),
   cor: text("cor").default("#6366F1"),
+  viagemId: integer("viagem_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

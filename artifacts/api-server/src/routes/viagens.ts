@@ -7,10 +7,69 @@ import {
   viagensRoteiroTable,
   viagensLugaresTable,
   viagensMemoriasTable,
+  viagensOrcamentoTable,
 } from "@workspace/db";
-import { eq, asc, desc } from "drizzle-orm";
+import { agendaEventsTable } from "@workspace/db";
+import { transactionsTable, categoriesTable } from "@workspace/db";
+import { eq, asc, desc, and } from "drizzle-orm";
 
 const router = Router();
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+
+async function upsertTripAgendaEvents(trip: any) {
+  if (!trip.dataInicio) return;
+  const cor = "#F97316"; // orange for trips
+  const existing = await db.select().from(agendaEventsTable)
+    .where(eq(agendaEventsTable.viagemId, trip.id));
+
+  // Delete existing trip events before recreating
+  if (existing.length > 0) {
+    for (const ev of existing) {
+      if (ev.categoria === "viagem") {
+        await db.delete(agendaEventsTable).where(eq(agendaEventsTable.id, ev.id));
+      }
+    }
+  }
+
+  // Create start event
+  await db.insert(agendaEventsTable).values({
+    titulo: `✈️ ${trip.destino} — partida`,
+    data: trip.dataInicio,
+    horaInicio: null,
+    horaFim: null,
+    descricao: trip.descricao || `Início da viagem para ${trip.destino}`,
+    categoria: "viagem",
+    cor,
+    alerta: true,
+    lembrete: true,
+    viagemId: trip.id,
+    updatedAt: new Date(),
+  });
+
+  // Create end event if different from start
+  if (trip.dataFim && trip.dataFim !== trip.dataInicio) {
+    await db.insert(agendaEventsTable).values({
+      titulo: `🏠 ${trip.destino} — retorno`,
+      data: trip.dataFim,
+      horaInicio: null,
+      horaFim: null,
+      descricao: `Fim da viagem: ${trip.destino}`,
+      categoria: "viagem",
+      cor,
+      alerta: false,
+      lembrete: false,
+      viagemId: trip.id,
+      updatedAt: new Date(),
+    });
+  }
+}
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0];
+}
 
 // ── TRIPS ─────────────────────────────────────────────────────────────────────
 
@@ -24,15 +83,17 @@ router.get("/viagens/trips/:id", async (req, res) => {
   const [trip] = await db.select().from(viagensTripsTable).where(eq(viagensTripsTable.id, id));
   if (!trip) return res.status(404).json({ error: "Not found" });
 
-  const [expenses, checklist, roteiro, lugares, memorias] = await Promise.all([
+  const [expenses, checklist, roteiro, lugares, memorias, orcamento, agendaEvents] = await Promise.all([
     db.select().from(viagensExpensesTable).where(eq(viagensExpensesTable.viagemId, id)).orderBy(desc(viagensExpensesTable.createdAt)),
     db.select().from(viagensChecklistTable).where(eq(viagensChecklistTable.viagemId, id)).orderBy(asc(viagensChecklistTable.createdAt)),
     db.select().from(viagensRoteiroTable).where(eq(viagensRoteiroTable.viagemId, id)).orderBy(asc(viagensRoteiroTable.dia), asc(viagensRoteiroTable.ordem)),
     db.select().from(viagensLugaresTable).where(eq(viagensLugaresTable.viagemId, id)).orderBy(asc(viagensLugaresTable.ordemRoteiro), asc(viagensLugaresTable.createdAt)),
     db.select().from(viagensMemoriasTable).where(eq(viagensMemoriasTable.viagemId, id)).orderBy(desc(viagensMemoriasTable.createdAt)),
+    db.select().from(viagensOrcamentoTable).where(eq(viagensOrcamentoTable.viagemId, id)).orderBy(asc(viagensOrcamentoTable.categoria)),
+    db.select().from(agendaEventsTable).where(eq(agendaEventsTable.viagemId, id)).orderBy(asc(agendaEventsTable.data)),
   ]);
 
-  res.json({ trip, expenses, checklist, roteiro, lugares, memorias });
+  res.json({ trip, expenses, checklist, roteiro, lugares, memorias, orcamento, agendaEvents });
 });
 
 router.post("/viagens/trips", async (req, res) => {
@@ -44,6 +105,12 @@ router.post("/viagens/trips", async (req, res) => {
     status: status || "planejando", descricao: descricao || null,
     pais: pais || null, cidade: cidade || null, moeda: moeda || "BRL",
   }).returning();
+
+  // Auto-create agenda events if dates provided
+  if (trip.dataInicio) {
+    await upsertTripAgendaEvents(trip);
+  }
+
   res.json(trip);
 });
 
@@ -57,18 +124,79 @@ router.put("/viagens/trips/:id", async (req, res) => {
     pais: pais || null, cidade: cidade || null, moeda: moeda || "BRL",
     updatedAt: new Date(),
   }).where(eq(viagensTripsTable.id, id)).returning();
+
+  // Update agenda events
+  if (trip && trip.dataInicio) {
+    await upsertTripAgendaEvents(trip);
+  }
+
   res.json(trip);
 });
 
 router.delete("/viagens/trips/:id", async (req, res) => {
   const id = Number(req.params.id);
+  // Remove linked agenda events
+  await db.delete(agendaEventsTable).where(eq(agendaEventsTable.viagemId, id));
   await db.delete(viagensMemoriasTable).where(eq(viagensMemoriasTable.viagemId, id));
   await db.delete(viagensRoteiroTable).where(eq(viagensRoteiroTable.viagemId, id));
   await db.delete(viagensLugaresTable).where(eq(viagensLugaresTable.viagemId, id));
   await db.delete(viagensExpensesTable).where(eq(viagensExpensesTable.viagemId, id));
   await db.delete(viagensChecklistTable).where(eq(viagensChecklistTable.viagemId, id));
+  await db.delete(viagensOrcamentoTable).where(eq(viagensOrcamentoTable.viagemId, id));
   await db.delete(viagensTripsTable).where(eq(viagensTripsTable.id, id));
   res.json({ ok: true });
+});
+
+// ── SYNC ROTEIRO → AGENDA ─────────────────────────────────────────────────────
+
+router.post("/viagens/trips/:id/sync-agenda", async (req, res) => {
+  const viagemId = Number(req.params.id);
+  const [trip] = await db.select().from(viagensTripsTable).where(eq(viagensTripsTable.id, viagemId));
+  if (!trip) return res.status(404).json({ error: "Viagem não encontrada" });
+
+  const lugares = await db.select().from(viagensLugaresTable)
+    .where(and(eq(viagensLugaresTable.viagemId, viagemId)));
+
+  const withDay = lugares.filter(l => l.diaViagem !== null);
+  if (withDay.length === 0) return res.status(400).json({ error: "Nenhum lugar com dia definido no roteiro" });
+
+  const cor = "#F97316";
+  let created = 0;
+
+  for (const lugar of withDay) {
+    const dia = lugar.diaViagem! - 1;
+    const data = trip.dataInicio ? addDays(trip.dataInicio, dia) : null;
+    if (!data) continue;
+
+    // Check if already exists
+    const alreadyExists = await db.select().from(agendaEventsTable)
+      .where(and(eq(agendaEventsTable.viagemId, viagemId), eq(agendaEventsTable.data, data)));
+    const titleExists = alreadyExists.find(e => e.titulo.includes(lugar.nome));
+    if (titleExists) continue;
+
+    const catEmoji: Record<string, string> = {
+      ponto_turistico: "🏛️", restaurante: "🍽️", hotel: "🏨", bar: "☕",
+      museu: "🎨", parque: "🌿", compras: "🛍️", transporte: "🚗", praia: "🏖️", outro: "📍",
+    };
+    const emoji = catEmoji[lugar.categoria] ?? "📍";
+
+    await db.insert(agendaEventsTable).values({
+      titulo: `${emoji} ${lugar.nome}`,
+      data,
+      horaInicio: lugar.horario || null,
+      horaFim: null,
+      descricao: lugar.descricao || lugar.endereco || null,
+      categoria: "viagem",
+      cor,
+      alerta: false,
+      lembrete: false,
+      viagemId,
+      updatedAt: new Date(),
+    });
+    created++;
+  }
+
+  res.json({ ok: true, created, message: `${created} eventos criados na agenda` });
 });
 
 // ── LUGARES ───────────────────────────────────────────────────────────────────
@@ -243,17 +371,117 @@ router.post("/viagens/trips/:id/limpar-roteiro", async (req, res) => {
 
 router.post("/viagens/trips/:id/expenses", async (req, res) => {
   const viagemId = Number(req.params.id);
-  const { descricao, valor, categoria, data } = req.body;
+  const { descricao, valor, categoria, data, formaPagamento, pago, previsto, cartaoId } = req.body;
   if (!descricao || !valor) return res.status(400).json({ error: "descricao e valor obrigatórios" });
   const [exp] = await db.insert(viagensExpensesTable).values({
-    viagemId, descricao, valor: String(valor), categoria: categoria || "outros", data: data || null,
+    viagemId, descricao, valor: String(valor),
+    categoria: categoria || "outros",
+    data: data || null,
+    formaPagamento: formaPagamento || "dinheiro",
+    pago: pago !== undefined ? Boolean(pago) : true,
+    previsto: previsto !== undefined ? Boolean(previsto) : false,
+    cartaoId: cartaoId ? Number(cartaoId) : null,
+    updatedAt: new Date(),
   }).returning();
+  res.json(exp);
+});
+
+router.put("/viagens/expenses/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const { descricao, valor, categoria, data, formaPagamento, pago, previsto, cartaoId } = req.body;
+  const [exp] = await db.update(viagensExpensesTable).set({
+    descricao, valor: String(valor),
+    categoria: categoria || "outros",
+    data: data || null,
+    formaPagamento: formaPagamento || "dinheiro",
+    pago: pago !== undefined ? Boolean(pago) : true,
+    previsto: previsto !== undefined ? Boolean(previsto) : false,
+    cartaoId: cartaoId ? Number(cartaoId) : null,
+    updatedAt: new Date(),
+  }).where(eq(viagensExpensesTable.id, id)).returning();
   res.json(exp);
 });
 
 router.delete("/viagens/expenses/:id", async (req, res) => {
   await db.delete(viagensExpensesTable).where(eq(viagensExpensesTable.id, Number(req.params.id)));
   res.json({ ok: true });
+});
+
+// ── VINCULAR DESPESA AO FINANCEIRO ────────────────────────────────────────────
+
+router.post("/viagens/expenses/:id/vincular-financeiro", async (req, res) => {
+  const expId = Number(req.params.id);
+  const [expense] = await db.select().from(viagensExpensesTable).where(eq(viagensExpensesTable.id, expId));
+  if (!expense) return res.status(404).json({ error: "Despesa não encontrada" });
+
+  if (expense.transactionId) {
+    return res.status(400).json({ error: "Despesa já vinculada ao financeiro" });
+  }
+
+  const [trip] = await db.select().from(viagensTripsTable).where(eq(viagensTripsTable.id, expense.viagemId!));
+
+  // Find or use travel category
+  const categories = await db.select().from(categoriesTable);
+  const catMap: Record<string, string> = {
+    hospedagem: "Moradia", voos: "Transporte", alimentação: "Alimentação",
+    transporte: "Transporte", passeios: "Lazer", compras: "Outros", outros: "Outros",
+  };
+  const targetCatName = catMap[expense.categoria] ?? "Outros";
+  const category = categories.find(c => c.name === targetCatName || c.name?.toLowerCase().includes(targetCatName.toLowerCase()));
+
+  const paymentMethod = expense.formaPagamento === "cartao" ? "credit_card" : expense.formaPagamento === "pix" ? "pix" : "debit_card";
+  const transDate = expense.data || new Date().toISOString().split("T")[0];
+
+  const [tx] = await db.insert(transactionsTable).values({
+    competenceDate: transDate,
+    movementDate: transDate,
+    type: "expense",
+    description: `[Viagem: ${trip?.destino ?? "—"}] ${expense.descricao}`,
+    amount: expense.valor,
+    paymentMethod,
+    creditCardId: expense.cartaoId || null,
+    categoryId: category?.id || null,
+    status: expense.pago ? "completed" : "planned",
+    notes: `Despesa importada da viagem ${trip?.destino ?? ""}`,
+  }).returning();
+
+  // Update expense with transaction link
+  await db.update(viagensExpensesTable).set({ transactionId: tx.id, updatedAt: new Date() })
+    .where(eq(viagensExpensesTable.id, expId));
+
+  res.json({ ok: true, transaction: tx });
+});
+
+// ── ORÇAMENTO POR CATEGORIA ───────────────────────────────────────────────────
+
+router.get("/viagens/trips/:id/orcamento", async (req, res) => {
+  const viagemId = Number(req.params.id);
+  const items = await db.select().from(viagensOrcamentoTable)
+    .where(eq(viagensOrcamentoTable.viagemId, viagemId))
+    .orderBy(asc(viagensOrcamentoTable.categoria));
+  res.json(items);
+});
+
+router.put("/viagens/trips/:id/orcamento/:categoria", async (req, res) => {
+  const viagemId = Number(req.params.id);
+  const { categoria } = req.params;
+  const { valorPrevisto } = req.body;
+
+  const existing = await db.select().from(viagensOrcamentoTable)
+    .where(and(eq(viagensOrcamentoTable.viagemId, viagemId), eq(viagensOrcamentoTable.categoria, categoria)));
+
+  if (existing.length > 0) {
+    const [updated] = await db.update(viagensOrcamentoTable)
+      .set({ valorPrevisto: String(valorPrevisto), updatedAt: new Date() })
+      .where(and(eq(viagensOrcamentoTable.viagemId, viagemId), eq(viagensOrcamentoTable.categoria, categoria)))
+      .returning();
+    res.json(updated);
+  } else {
+    const [created] = await db.insert(viagensOrcamentoTable)
+      .values({ viagemId, categoria, valorPrevisto: String(valorPrevisto) })
+      .returning();
+    res.json(created);
+  }
 });
 
 // ── CHECKLIST ─────────────────────────────────────────────────────────────────

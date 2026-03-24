@@ -9,6 +9,8 @@ import {
   BookOpen, Flag, CheckCircle2, Circle, ExternalLink, Zap, ArrowUpDown,
   Link2, LocateFixed, SortAsc, BrainCircuit, ArrowUp, ArrowDown,
   CalendarDays, Timer, BarChart3, ChevronRight, AlertCircle, RefreshCw,
+  CreditCard, Banknote, Smartphone, Send, Edit2, TrendingDown, Target,
+  CalendarCheck2, Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -105,7 +107,9 @@ export default function ViagemDetailPage({ id }: Props) {
   const [showRoteiroManual, setShowRoteiroManual] = useState(false);
 
   const [roteiroForm, setRoteiroForm] = useState({ dia: "1", titulo: "", hora: "", descricao: "", tipo: "atividade", lugarId: "" });
-  const [expenseForm, setExpenseForm] = useState({ descricao: "", valor: "", categoria: "outros", data: "" });
+  const [expenseForm, setExpenseForm] = useState({ descricao: "", valor: "", categoria: "outros", data: "", formaPagamento: "dinheiro", pago: true, previsto: false, cartaoId: "" });
+  const [editExpenseId, setEditExpenseId] = useState<number | null>(null);
+  const [orcamentoEdit, setOrcamentoEdit] = useState<Record<string, string>>({});
   const [checkItem, setCheckItem] = useState("");
   const [checkFase, setCheckFase] = useState("antes");
   const [memoriaForm, setMemoriaForm] = useState({ titulo: "", conteudo: "", data: "", dia: "", tipo: "nota" });
@@ -126,8 +130,26 @@ export default function ViagemDetailPage({ id }: Props) {
   const deleteLugar  = useMutation({ mutationFn: (id: number) => fetch(apiUrl(`/viagens/lugares/${id}`), { method: "DELETE" }).then(r => r.json()), onSuccess: inv });
   const addRoteiro   = useMutation({ mutationFn: (b: any) => fetch(apiUrl(`/viagens/trips/${tripId}/roteiro`), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }).then(r => r.json()), onSuccess: () => { inv(); setRoteiroForm({ dia: "1", titulo: "", hora: "", descricao: "", tipo: "atividade", lugarId: "" }); toast({ title: "Adicionado ao roteiro" }); } });
   const delRoteiro   = useMutation({ mutationFn: (id: number) => fetch(apiUrl(`/viagens/roteiro/${id}`), { method: "DELETE" }).then(r => r.json()), onSuccess: inv });
-  const addExpense   = useMutation({ mutationFn: (b: any) => fetch(apiUrl(`/viagens/trips/${tripId}/expenses`), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }).then(r => r.json()), onSuccess: () => { inv(); setExpenseForm({ descricao:"", valor:"", categoria:"outros", data:"" }); toast({ title: "Despesa registrada" }); } });
+  const BLANK_EXPENSE = { descricao: "", valor: "", categoria: "outros", data: "", formaPagamento: "dinheiro", pago: true, previsto: false, cartaoId: "" };
+  const addExpense   = useMutation({ mutationFn: (b: any) => fetch(apiUrl(`/viagens/trips/${tripId}/expenses`), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }).then(r => r.json()), onSuccess: () => { inv(); setExpenseForm(BLANK_EXPENSE); toast({ title: "Despesa registrada" }); } });
+  const updateExpense = useMutation({ mutationFn: ({ id, ...b }: any) => fetch(apiUrl(`/viagens/expenses/${id}`), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }).then(r => r.json()), onSuccess: () => { inv(); setEditExpenseId(null); setExpenseForm(BLANK_EXPENSE); toast({ title: "Despesa atualizada" }); } });
   const delExpense   = useMutation({ mutationFn: (id: number) => fetch(apiUrl(`/viagens/expenses/${id}`), { method: "DELETE" }).then(r => r.json()), onSuccess: inv });
+  const vincularFinanceiro = useMutation({
+    mutationFn: (id: number) => fetch(apiUrl(`/viagens/expenses/${id}/vincular-financeiro`), { method: "POST", headers: { "Content-Type": "application/json" } }).then(r => r.json()),
+    onSuccess: () => { inv(); toast({ title: "Vinculado ao Financeiro!", description: "A despesa foi adicionada como lançamento" }); },
+    onError: (err: any) => toast({ title: "Erro ao vincular", description: err?.message ?? "Tente novamente", variant: "destructive" }),
+  });
+  const syncAgenda = useMutation({
+    mutationFn: () => fetch(apiUrl(`/viagens/trips/${tripId}/sync-agenda`), { method: "POST", headers: { "Content-Type": "application/json" } }).then(r => r.json()),
+    onSuccess: (result) => { inv(); toast({ title: "Sincronizado com Agenda!", description: result.message }); },
+    onError: () => toast({ title: "Erro ao sincronizar", variant: "destructive" }),
+  });
+  const saveOrcamentoCategoria = (categoria: string, valor: string) => {
+    fetch(apiUrl(`/viagens/trips/${tripId}/orcamento/${categoria}`), {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ valorPrevisto: parseFloat(valor) || 0 }),
+    }).then(() => { inv(); toast({ title: "Orçamento salvo" }); });
+  };
   const addCheck     = useMutation({ mutationFn: ({ item, fase }: any) => fetch(apiUrl(`/viagens/trips/${tripId}/checklist`), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ item, fase }) }).then(r => r.json()), onSuccess: () => { inv(); setCheckItem(""); } });
   const toggleCheck  = useMutation({ mutationFn: ({ cid, concluido }: any) => fetch(apiUrl(`/viagens/checklist/${cid}`), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ concluido }) }).then(r => r.json()), onSuccess: inv });
   const delCheck     = useMutation({ mutationFn: (id: number) => fetch(apiUrl(`/viagens/checklist/${id}`), { method: "DELETE" }).then(r => r.json()), onSuccess: inv });
@@ -168,11 +190,12 @@ export default function ViagemDetailPage({ id }: Props) {
   if (isLoading) return <AppLayout><div className="flex items-center justify-center py-32 text-slate-400">Carregando...</div></AppLayout>;
   if (!data?.trip) return <AppLayout><div className="text-center py-24 text-slate-500">Viagem não encontrada.</div></AppLayout>;
 
-  const { trip, expenses = [], checklist = [], roteiro = [], lugares = [], memorias = [] } = data;
+  const { trip, expenses = [], checklist = [], roteiro = [], lugares = [], memorias = [], orcamento: orcamentoCats = [], agendaEvents = [] } = data;
   const st = getStatus(trip.status);
   const totalGasto = expenses.reduce((s: number, e: any) => s + Number(e.valor), 0);
-  const orcamento = trip.orcamento ? Number(trip.orcamento) : null;
-  const progresso = orcamento ? Math.min(100, (totalGasto / orcamento) * 100) : null;
+  const totalVinculado = expenses.filter((e: any) => e.transactionId).reduce((s: number, e: any) => s + Number(e.valor), 0);
+  const orcamentoTotal = trip.orcamento ? Number(trip.orcamento) : null;
+  const progresso = orcamentoTotal ? Math.min(100, (totalGasto / orcamentoTotal) * 100) : null;
   const concluidos = checklist.filter((c: any) => c.concluido).length;
   const dias = daysBetween(trip.dataInicio, trip.dataFim);
   const lugaresVisitados = lugares.filter((l: any) => l.status === "visitado").length;
@@ -216,15 +239,15 @@ export default function ViagemDetailPage({ id }: Props) {
 
           {/* KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-5 pt-5 border-t border-slate-100">
-            <KpiMini label="Orçamento"    value={orcamento ? fmtBRL(orcamento) : "—"} />
-            <KpiMini label="Gasto"        value={fmtBRL(totalGasto)}  color={orcamento && totalGasto > orcamento ? "text-rose-600" : "text-slate-900"} />
-            <KpiMini label="Saldo"        value={orcamento ? fmtBRL(orcamento - totalGasto) : "—"} color={orcamento ? (orcamento - totalGasto >= 0 ? "text-emerald-600" : "text-rose-600") : ""} />
+            <KpiMini label="Orçamento"    value={orcamentoTotal ? fmtBRL(orcamentoTotal) : "—"} />
+            <KpiMini label="Gasto"        value={fmtBRL(totalGasto)}  color={orcamentoTotal && totalGasto > orcamentoTotal ? "text-rose-600" : "text-slate-900"} />
+            <KpiMini label="Saldo"        value={orcamentoTotal ? fmtBRL(orcamentoTotal - totalGasto) : "—"} color={orcamentoTotal ? (orcamentoTotal - totalGasto >= 0 ? "text-emerald-600" : "text-rose-600") : ""} />
             <KpiMini label="Lugares"      value={`${lugaresVisitados}/${lugares.length}`} />
             <KpiMini label="Checklist"    value={`${concluidos}/${checklist.length}`} />
           </div>
 
           {/* Budget bar */}
-          {orcamento && progresso !== null && (
+          {orcamentoTotal && progresso !== null && (
             <div className="mt-4">
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-slate-500 font-medium">Uso do orçamento</span>
@@ -277,7 +300,7 @@ export default function ViagemDetailPage({ id }: Props) {
             <div className="space-y-3 text-sm">
               <Row icon={Calendar} label="Período" value={`${fmtDate(trip.dataInicio) || "—"} → ${fmtDate(trip.dataFim) || "—"}${dias ? ` (${dias} dias)` : ""}`} />
               <Row icon={Globe} label="Destino" value={`${trip.cidade ? trip.cidade + ", " : ""}${trip.pais || trip.destino}`} />
-              <Row icon={DollarSign} label="Orçamento" value={orcamento ? fmtBRL(orcamento) : "Não definido"} />
+              <Row icon={DollarSign} label="Orçamento" value={orcamentoTotal ? fmtBRL(orcamentoTotal) : "Não definido"} />
               <Row icon={ReceiptText} label="Total gasto" value={fmtBRL(totalGasto)} />
               <Row icon={MapPin} label="Lugares salvos" value={`${lugares.length} (${lugaresVisitados} visitados)`} />
               <Row icon={ListChecks} label="Checklist" value={`${concluidos} de ${checklist.length} concluídos`} />
@@ -310,20 +333,96 @@ export default function ViagemDetailPage({ id }: Props) {
             )}
           </div>
 
-          {/* Despesas por categoria */}
-          {expenses.length > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 md:col-span-2">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Despesas por categoria</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {Object.entries(expenses.reduce((acc: any, e: any) => { acc[e.categoria] = (acc[e.categoria] || 0) + Number(e.valor); return acc; }, {})).map(([cat, val]) => (
-                  <div key={cat} className="bg-slate-50 rounded-xl p-3">
-                    <p className="text-xs text-slate-500 capitalize mb-1">{cat}</p>
-                    <p className="text-sm font-bold text-slate-900">{fmtBRL(val as number)}</p>
+          {/* Agenda da viagem */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 md:col-span-2">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Agenda da viagem</h3>
+              {agendaEvents.length > 0 && (
+                <a href="/agenda" className="text-[10px] font-semibold text-primary hover:underline flex items-center gap-1">
+                  <CalendarCheck2 className="w-3 h-3" /> Ver na Agenda
+                </a>
+              )}
+            </div>
+            {agendaEvents.length === 0 ? (
+              <div className="text-center py-4">
+                <Calendar className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                <p className="text-xs text-slate-400">Nenhum evento na agenda.</p>
+                <p className="text-[10px] text-slate-300 mt-1">Crie a viagem com datas para gerar eventos automaticamente.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {agendaEvents.map((ev: any) => (
+                  <div key={ev.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: (ev.cor || "#F97316") + "20" }}>
+                      <CalendarCheck2 className="w-4 h-4" style={{ color: ev.cor || "#F97316" }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-900 truncate">{ev.titulo}</p>
+                      <p className="text-xs text-slate-400">{fmtDate(ev.data)}{ev.horaInicio ? ` · ${ev.horaInicio}` : ""}</p>
+                    </div>
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+
+          {/* Financeiro: orçamento vs gasto por categoria */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 md:col-span-2">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Financeiro da viagem</h3>
+              <button onClick={() => setTab("despesas")} className="text-[10px] font-semibold text-primary hover:underline flex items-center gap-1">
+                <ReceiptText className="w-3 h-3" /> Ver despesas
+              </button>
             </div>
-          )}
+            {/* Summary bar */}
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="bg-slate-50 rounded-xl p-3 text-center">
+                <p className="text-[10px] text-slate-400 mb-0.5 uppercase font-semibold">Gasto real</p>
+                <p className={cn("text-sm font-bold", orcamentoTotal && totalGasto > orcamentoTotal ? "text-rose-600" : "text-slate-900")}>{fmtBRL(totalGasto)}</p>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-3 text-center">
+                <p className="text-[10px] text-slate-400 mb-0.5 uppercase font-semibold">Vinculado</p>
+                <p className={cn("text-sm font-bold", totalVinculado > 0 ? "text-emerald-600" : "text-slate-400")}>{fmtBRL(totalVinculado)}</p>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-3 text-center">
+                <p className="text-[10px] text-slate-400 mb-0.5 uppercase font-semibold">Saldo</p>
+                <p className={cn("text-sm font-bold", orcamentoTotal ? (orcamentoTotal - totalGasto >= 0 ? "text-emerald-600" : "text-rose-600") : "text-slate-400")}>
+                  {orcamentoTotal ? fmtBRL(orcamentoTotal - totalGasto) : "—"}
+                </p>
+              </div>
+            </div>
+
+            {/* Per category breakdown */}
+            {expenses.length > 0 && (
+              <div className="space-y-2">
+                {Object.entries(
+                  expenses.reduce((acc: any, e: any) => { acc[e.categoria] = (acc[e.categoria] || 0) + Number(e.valor); return acc; }, {})
+                ).sort(([, a], [, b]) => (b as number) - (a as number)).map(([cat, val]) => {
+                  const previsto = orcamentoCats.find((o: any) => o.categoria === cat);
+                  const previstaVal = previsto ? Number(previsto.valorPrevisto) : 0;
+                  const pct = previstaVal > 0 ? Math.min(100, ((val as number) / previstaVal) * 100) : 0;
+                  return (
+                    <div key={cat} className="flex items-center gap-3">
+                      <p className="text-xs text-slate-600 capitalize w-24 flex-shrink-0">{cat}</p>
+                      <div className="flex-1">
+                        {previstaVal > 0 && (
+                          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden mb-0.5">
+                            <div className={cn("h-full rounded-full", pct >= 100 ? "bg-rose-500" : pct >= 80 ? "bg-amber-400" : "bg-emerald-400")} style={{ width: `${pct}%` }} />
+                          </div>
+                        )}
+                        <p className="text-[10px] text-slate-400">
+                          {fmtBRL(val as number)}{previstaVal > 0 ? ` / ${fmtBRL(previstaVal)}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {expenses.length === 0 && (
+              <p className="text-xs text-slate-400 text-center py-3">Nenhuma despesa ainda. Registre na aba Despesas.</p>
+            )}
+          </div>
         </div>
       )}
 
@@ -409,13 +508,24 @@ export default function ViagemDetailPage({ id }: Props) {
                       </button>
                     </div>
                     {temRoteiro && (
-                      <button
-                        onClick={() => limparRoteiro.mutate()}
-                        disabled={limparRoteiro.isPending}
-                        className={cn(BTN_GHOST, "text-rose-500 border-rose-200 hover:bg-rose-50 text-xs px-3 py-2")}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" /> Limpar dias
-                      </button>
+                      <>
+                        <button
+                          onClick={() => syncAgenda.mutate()}
+                          disabled={syncAgenda.isPending}
+                          className={cn(BTN_GHOST, "text-orange-500 border-orange-200 hover:bg-orange-50 text-xs px-3 py-2")}
+                          title="Cria eventos na Agenda para cada lugar do roteiro"
+                        >
+                          {syncAgenda.isPending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CalendarCheck2 className="w-3.5 h-3.5" />}
+                          Sincronizar com Agenda
+                        </button>
+                        <button
+                          onClick={() => limparRoteiro.mutate()}
+                          disabled={limparRoteiro.isPending}
+                          className={cn(BTN_GHOST, "text-rose-500 border-rose-200 hover:bg-rose-50 text-xs px-3 py-2")}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Limpar dias
+                        </button>
+                      </>
                     )}
                   </div>
 
@@ -1104,10 +1214,56 @@ export default function ViagemDetailPage({ id }: Props) {
       {/* ── DESPESAS ───────────────────────────────────────────────────────────── */}
       {tab === "despesas" && (
         <div className="space-y-4">
+
+          {/* Orçamento por categoria */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
-            <h3 className="text-sm font-semibold text-slate-700 mb-4">Registrar despesa</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Orçamento por categoria</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="md:col-span-1">
+              {EXPENSE_CATS.map(cat => {
+                const gastoNaCat = expenses.filter((e: any) => e.categoria === cat).reduce((s: number, e: any) => s + Number(e.valor), 0);
+                const previsto = orcamentoCats.find((o: any) => o.categoria === cat);
+                const previstaVal = previsto ? Number(previsto.valorPrevisto) : 0;
+                const isEditing = orcamentoEdit[cat] !== undefined;
+                const pct = previstaVal > 0 ? Math.min(100, (gastoNaCat / previstaVal) * 100) : 0;
+                return (
+                  <div key={cat} className="bg-slate-50 rounded-xl p-3">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 capitalize">{cat}</p>
+                    <p className={cn("text-sm font-bold mb-1", previstaVal > 0 && gastoNaCat > previstaVal ? "text-rose-600" : "text-slate-900")}>{fmtBRL(gastoNaCat)}</p>
+                    {previstaVal > 0 && (
+                      <div className="h-1 bg-slate-200 rounded-full overflow-hidden mb-1.5">
+                        <div className={cn("h-full rounded-full", pct >= 100 ? "bg-rose-500" : pct >= 75 ? "bg-amber-400" : "bg-emerald-400")} style={{ width: `${pct}%` }} />
+                      </div>
+                    )}
+                    {isEditing ? (
+                      <div className="flex gap-1">
+                        <input
+                          type="number" min="0" step="0.01"
+                          value={orcamentoEdit[cat]}
+                          onChange={e => setOrcamentoEdit(f => ({ ...f, [cat]: e.target.value }))}
+                          className="w-full border border-primary/40 rounded-lg px-2 py-1 text-xs"
+                          autoFocus
+                          onKeyDown={e => { if (e.key === "Enter") { saveOrcamentoCategoria(cat, orcamentoEdit[cat]); setOrcamentoEdit(f => { const n = {...f}; delete n[cat]; return n; }); } }}
+                        />
+                        <button onClick={() => { saveOrcamentoCategoria(cat, orcamentoEdit[cat]); setOrcamentoEdit(f => { const n = {...f}; delete n[cat]; return n; }); }} className="text-emerald-600 hover:text-emerald-700"><Check className="w-3.5 h-3.5" /></button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setOrcamentoEdit(f => ({ ...f, [cat]: String(previstaVal || "") }))} className="text-[10px] text-slate-400 hover:text-primary transition-colors flex items-center gap-1">
+                        <Target className="w-3 h-3" /> {previstaVal > 0 ? `Meta: ${fmtBRL(previstaVal)}` : "Definir meta"}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Formulário de despesa */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <h3 className="text-sm font-semibold text-slate-700 mb-4">
+              {editExpenseId ? "✏️ Editar despesa" : "Registrar despesa"}
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+              <div className="md:col-span-2">
                 <label className={LABEL}>Descrição *</label>
                 <input value={expenseForm.descricao} onChange={e => setExpenseForm(f => ({ ...f, descricao: e.target.value }))} placeholder="Ex: Jantar no restaurante" className={cn(INPUT, "w-full")} />
               </div>
@@ -1122,45 +1278,128 @@ export default function ViagemDetailPage({ id }: Props) {
                 </select>
               </div>
               <div>
+                <label className={LABEL}>Forma de pagamento</label>
+                <select value={expenseForm.formaPagamento} onChange={e => setExpenseForm(f => ({ ...f, formaPagamento: e.target.value }))} className={cn(INPUT, "w-full")}>
+                  <option value="dinheiro">💵 Dinheiro</option>
+                  <option value="cartao">💳 Cartão de crédito</option>
+                  <option value="debito">🏦 Cartão de débito</option>
+                  <option value="pix">⚡ Pix</option>
+                </select>
+              </div>
+              <div>
                 <label className={LABEL}>Data</label>
                 <input type="date" value={expenseForm.data} onChange={e => setExpenseForm(f => ({ ...f, data: e.target.value }))} className={cn(INPUT, "w-full")} />
               </div>
             </div>
-            <button
-              onClick={() => {
-                if (!expenseForm.descricao || !expenseForm.valor) { toast({ title: "Preencha descrição e valor", variant: "destructive" }); return; }
-                addExpense.mutate({ ...expenseForm, valor: parseFloat(expenseForm.valor) });
-              }}
-              disabled={addExpense.isPending}
-              className={cn(BTN_PRIMARY, "mt-3")}
-            >
-              <Plus className="w-4 h-4" /> Adicionar
-            </button>
+            <div className="flex items-center gap-4 mb-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={expenseForm.pago} onChange={e => setExpenseForm(f => ({ ...f, pago: e.target.checked }))} className="w-4 h-4 rounded accent-primary" />
+                <span className="text-xs font-medium text-slate-600">Já pago</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={expenseForm.previsto} onChange={e => setExpenseForm(f => ({ ...f, previsto: e.target.checked }))} className="w-4 h-4 rounded accent-primary" />
+                <span className="text-xs font-medium text-slate-600">Gasto previsto</span>
+              </label>
+            </div>
+            <div className="flex gap-3">
+              {editExpenseId && (
+                <button onClick={() => { setEditExpenseId(null); setExpenseForm(BLANK_EXPENSE); }} className={BTN_GHOST}>Cancelar</button>
+              )}
+              <button
+                onClick={() => {
+                  if (!expenseForm.descricao || !expenseForm.valor) { toast({ title: "Preencha descrição e valor", variant: "destructive" }); return; }
+                  const payload = { ...expenseForm, valor: parseFloat(expenseForm.valor), cartaoId: expenseForm.cartaoId ? parseInt(expenseForm.cartaoId) : null };
+                  if (editExpenseId) {
+                    updateExpense.mutate({ id: editExpenseId, ...payload });
+                  } else {
+                    addExpense.mutate(payload);
+                  }
+                }}
+                disabled={addExpense.isPending || updateExpense.isPending}
+                className={BTN_PRIMARY}
+              >
+                <Plus className="w-4 h-4" /> {editExpenseId ? "Salvar alterações" : "Adicionar despesa"}
+              </button>
+            </div>
           </div>
 
           {expenses.length === 0 ? (
-            <EmptyState icon={ReceiptText} msg="Nenhuma despesa registrada" action="Registre os gastos da viagem" />
+            <EmptyState icon={ReceiptText} msg="Nenhuma despesa registrada" action="Registre os gastos da viagem acima" />
           ) : (
-            <>
-              <div className="space-y-2">
-                {expenses.map((e: any) => (
-                  <div key={e.id} className="flex items-center gap-4 p-4 bg-white rounded-xl border border-slate-200 group hover:border-slate-300 transition-all">
+            <div className="space-y-2">
+              {expenses.map((e: any) => {
+                const paymIco = { dinheiro: Banknote, cartao: CreditCard, debito: Wallet, pix: Smartphone }[e.formaPagamento as string] ?? Banknote;
+                const PayIcon = paymIco;
+                return (
+                  <div key={e.id} className={cn("flex items-center gap-4 p-4 bg-white rounded-xl border transition-all group", editExpenseId === e.id ? "border-primary/40 shadow-sm" : "border-slate-200 hover:border-slate-300")}>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900">{e.descricao}</p>
-                      <p className="text-xs text-slate-500 mt-0.5 capitalize">{e.categoria}{e.data ? ` · ${fmtDate(e.data)}` : ""}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium text-slate-900">{e.descricao}</p>
+                        {e.transactionId && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 flex items-center gap-0.5">
+                            <Check className="w-2.5 h-2.5" /> Vinculado
+                          </span>
+                        )}
+                        {!e.pago && !e.previsto && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Pendente</span>
+                        )}
+                        {e.previsto && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-sky-100 text-sky-700">Previsto</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <p className="text-xs text-slate-500 capitalize">{e.categoria}{e.data ? ` · ${fmtDate(e.data)}` : ""}</p>
+                        <PayIcon className="w-3 h-3 text-slate-400" />
+                        <span className="text-xs text-slate-400 capitalize">{e.formaPagamento || "dinheiro"}</span>
+                      </div>
                     </div>
                     <p className="text-sm font-bold text-slate-900">{fmtBRL(e.valor)}</p>
-                    <button onClick={() => delExpense.mutate(e.id)} className="text-slate-200 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all p-1">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {/* Actions */}
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                      {!e.transactionId && (
+                        <button
+                          onClick={() => vincularFinanceiro.mutate(e.id)}
+                          disabled={vincularFinanceiro.isPending}
+                          title="Vincular ao Financeiro"
+                          className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+                        >
+                          <Send className="w-3 h-3" /> Vincular
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          setEditExpenseId(e.id);
+                          setExpenseForm({ descricao: e.descricao, valor: String(e.valor), categoria: e.categoria, data: e.data || "", formaPagamento: e.formaPagamento || "dinheiro", pago: Boolean(e.pago), previsto: Boolean(e.previsto), cartaoId: String(e.cartaoId || "") });
+                        }}
+                        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => delExpense.mutate(e.id)} className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-300 hover:text-rose-500 transition-colors">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                ))}
-                <div className="flex items-center justify-between px-4 py-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <span className="text-sm font-bold text-slate-700">Total</span>
+                );
+              })}
+              {/* Totals */}
+              <div className="grid grid-cols-3 gap-3 mt-2">
+                <div className="flex items-center justify-between px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 md:col-span-1">
+                  <span className="text-xs text-slate-500">Total gasto</span>
                   <span className="text-sm font-bold text-slate-900">{fmtBRL(totalGasto)}</span>
                 </div>
+                <div className="flex items-center justify-between px-4 py-3 bg-emerald-50 rounded-xl border border-emerald-100 md:col-span-1">
+                  <span className="text-xs text-emerald-600">Vinculado ao financeiro</span>
+                  <span className="text-sm font-bold text-emerald-700">{fmtBRL(totalVinculado)}</span>
+                </div>
+                {orcamentoTotal && (
+                  <div className="flex items-center justify-between px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 md:col-span-1">
+                    <span className="text-xs text-slate-500">Saldo restante</span>
+                    <span className={cn("text-sm font-bold", orcamentoTotal - totalGasto >= 0 ? "text-emerald-600" : "text-rose-600")}>{fmtBRL(orcamentoTotal - totalGasto)}</span>
+                  </div>
+                )}
               </div>
-            </>
+            </div>
           )}
         </div>
       )}

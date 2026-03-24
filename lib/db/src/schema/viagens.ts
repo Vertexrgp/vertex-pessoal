@@ -47,7 +47,13 @@ export const viagensExpensesTable = pgTable("viagens_expenses", {
   valor: numeric("valor", { precision: 12, scale: 2 }).notNull(),
   categoria: text("categoria").notNull().default("outros"),
   data: date("data"),
+  formaPagamento: text("forma_pagamento").default("dinheiro"),
+  pago: boolean("pago").notNull().default(true),
+  previsto: boolean("previsto").notNull().default(false),
+  cartaoId: integer("cartao_id"),
+  transactionId: integer("transaction_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const viagensChecklistTable = pgTable("viagens_checklist", {
@@ -85,9 +91,19 @@ export const viagensMemoriasTable = pgTable("viagens_memorias", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const viagensOrcamentoTable = pgTable("viagens_orcamento", {
+  id: serial("id").primaryKey(),
+  viagemId: integer("viagem_id").references(() => viagensTripsTable.id).notNull(),
+  categoria: text("categoria").notNull(),
+  valorPrevisto: numeric("valor_previsto", { precision: 12, scale: 2 }).notNull().default("0"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export type ViagemTrip = typeof viagensTripsTable.$inferSelect;
 export type ViagemLugar = typeof viagensLugaresTable.$inferSelect;
 export type ViagemExpense = typeof viagensExpensesTable.$inferSelect;
 export type ViagemChecklist = typeof viagensChecklistTable.$inferSelect;
 export type ViagemRoteiro = typeof viagensRoteiroTable.$inferSelect;
 export type ViagemMemoria = typeof viagensMemoriasTable.$inferSelect;
+export type ViagemOrcamento = typeof viagensOrcamentoTable.$inferSelect;

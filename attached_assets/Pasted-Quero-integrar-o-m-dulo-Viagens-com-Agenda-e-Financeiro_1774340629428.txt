@@ -1,0 +1,95 @@
+Quero integrar o módulo Viagens com Agenda e Financeiro no Vertex OS.
+
+OBJETIVO
+Fazer com que viagens deixem de ser um módulo isolado e passem a impactar automaticamente calendário, orçamento e despesas.
+
+====================================================
+1) VIAGENS → AGENDA
+====================================================
+
+Ao criar uma viagem, o sistema deve:
+
+- criar evento da viagem no calendário
+- bloquear o período da viagem
+- permitir adicionar compromissos do roteiro dentro dos dias da viagem
+
+Exemplos:
+- voo
+- check-in
+- passeio
+- jantar reservado
+- deslocamento importante
+
+Quero que o roteiro diário possa aparecer também na Agenda.
+
+====================================================
+2) VIAGENS → FINANCEIRO
+====================================================
+
+Ao criar uma viagem, o sistema deve permitir:
+
+- definir orçamento total
+- definir orçamento por categoria
+- registrar gastos da viagem
+- acompanhar gasto real vs orçamento
+- vincular despesas ao módulo financeiro
+
+Categorias exemplo:
+- passagem
+- hospedagem
+- alimentação
+- transporte
+- passeios
+- compras
+- emergências
+
+====================================================
+3) DESPESAS DE VIAGEM
+====================================================
+
+Cada gasto da viagem deve poder:
+
+- entrar no financeiro
+- ser marcado como pago / previsto
+- ter forma de pagamento
+- entrar no cartão/fatura quando for crédito
+- impactar planejamento e simulador
+
+====================================================
+4) ROTEIRO → AGENDA
+====================================================
+
+Os itens do roteiro por dia devem poder:
+
+- virar tarefas ou eventos
+- aparecer nos dias corretos
+- ser marcados como concluídos/visitados
+
+====================================================
+5) VISÃO CONSOLIDADA
+====================================================
+
+Dentro da viagem, mostrar:
+
+- orçamento da viagem
+- gasto atual
+- saldo restante
+- próximos eventos da viagem
+- dias planejados
+
+====================================================
+6) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. integração da viagem com calendário
+2. integração da viagem com financeiro
+3. vínculo de despesas da viagem com lançamentos
+4. vínculo do roteiro com agenda
+5. visão consolidada da viagem
+
+No final, me mostrar:
+- como a viagem entra na agenda
+- como a viagem entra no financeiro
+- como os gastos impactam o restante do sistema
