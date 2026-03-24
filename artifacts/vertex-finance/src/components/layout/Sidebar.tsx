@@ -66,6 +66,7 @@ type Module = {
   label: string;
   icon: React.ElementType;
   color: string;
+  accentClass: string;
   prefixes?: string[];
   items?: NavItem[];
   groups?: NavGroup[];
@@ -76,7 +77,8 @@ const modules: Module[] = [
     id: "financeiro",
     label: "Financeiro",
     icon: DollarSign,
-    color: "text-emerald-600",
+    color: "text-emerald-400",
+    accentClass: "text-emerald-400",
     prefixes: ["/transactions", "/monthly-planning", "/recorrencias", "/custo-de-vida", "/simulador-financeiro", "/budget", "/reports", "/patrimonio", "/receivables", "/debts", "/incomes", "/faturas", "/cartoes", "/assets"],
     groups: [
       {
@@ -129,7 +131,8 @@ const modules: Module[] = [
     id: "performance",
     label: "Performance",
     icon: Activity,
-    color: "text-rose-600",
+    color: "text-violet-400",
+    accentClass: "text-violet-400",
     prefixes: ["/performance"],
     items: [
       { name: "Objetivo",         path: "/performance/objetivo",        icon: Target },
@@ -147,7 +150,8 @@ const modules: Module[] = [
     id: "agenda",
     label: "Agenda",
     icon: CalendarCheck,
-    color: "text-sky-600",
+    color: "text-sky-400",
+    accentClass: "text-sky-400",
     prefixes: ["/agenda"],
     items: [
       { name: "Planejamento Semanal", path: "/agenda/planejamento-semanal", icon: CalendarDays },
@@ -160,7 +164,8 @@ const modules: Module[] = [
     id: "viagens",
     label: "Viagens",
     icon: Plane,
-    color: "text-orange-500",
+    color: "text-cyan-400",
+    accentClass: "text-cyan-400",
     prefixes: ["/viagens"],
     items: [
       { name: "Minhas Viagens", path: "/viagens", icon: MapPin },
@@ -170,7 +175,8 @@ const modules: Module[] = [
     id: "crescimento",
     label: "Crescimento",
     icon: Rocket,
-    color: "text-indigo-600",
+    color: "text-orange-400",
+    accentClass: "text-orange-400",
     prefixes: ["/crescimento"],
     items: [
       { name: "Metas",        path: "/crescimento/metas",        icon: Flag },
@@ -182,7 +188,8 @@ const modules: Module[] = [
     id: "conhecimento",
     label: "Conhecimento",
     icon: BookOpen,
-    color: "text-amber-600",
+    color: "text-amber-400",
+    accentClass: "text-amber-400",
     prefixes: ["/conhecimento"],
     items: [
       { name: "Biblioteca", path: "/conhecimento",         icon: BookOpen },
@@ -195,7 +202,8 @@ const modules: Module[] = [
     id: "idiomas",
     label: "Idiomas",
     icon: Languages,
-    color: "text-sky-600",
+    color: "text-pink-400",
+    accentClass: "text-pink-400",
     prefixes: ["/idiomas"],
     items: [
       { name: "Inglês", path: "/idiomas/ingles", icon: Globe },
@@ -226,20 +234,20 @@ function NavItem({ item, compact, indent = false }: { item: NavItem; compact: bo
         "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg transition-all duration-150 text-sm font-medium group relative",
         indent && !compact && "pl-4",
         isActive
-          ? "bg-primary/10 text-primary"
-          : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+          ? "bg-white/10 text-white"
+          : "text-white/40 hover:bg-white/5 hover:text-white/75"
       )}
     >
       <Icon
         className={cn(
           "flex-shrink-0 transition-colors",
           compact ? "w-5 h-5" : "w-3.5 h-3.5",
-          isActive ? "text-primary" : "text-slate-400 group-hover:text-slate-600"
+          isActive ? "text-white" : "text-white/35 group-hover:text-white/60"
         )}
       />
       {!compact && <span className="truncate leading-none text-xs">{item.name}</span>}
       {compact && (
-        <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+        <div className="absolute left-full ml-2 px-2 py-1 bg-neutral-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity border border-neutral-700">
           {item.name}
         </div>
       )}
@@ -269,11 +277,11 @@ function GroupSection({
         className={cn(
           "flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 group",
           active
-            ? "bg-emerald-50 text-emerald-700"
-            : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+            ? "bg-white/10 text-white"
+            : "text-white/40 hover:bg-white/5 hover:text-white/70"
         )}
       >
-        <Icon className={cn("w-3.5 h-3.5 flex-shrink-0", active ? "text-emerald-600" : "text-slate-400 group-hover:text-slate-500")} />
+        <Icon className={cn("w-3.5 h-3.5 flex-shrink-0", active ? "text-white" : "text-white/30 group-hover:text-white/50")} />
         <span>{group.label}</span>
       </Link>
     );
@@ -290,19 +298,19 @@ function GroupSection({
         className={cn(
           "w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 group",
           hasActiveChild
-            ? "text-emerald-700 bg-emerald-50/60"
-            : "text-slate-400 hover:text-slate-600 hover:bg-slate-50/80"
+            ? "text-white/80 bg-white/5"
+            : "text-white/35 hover:text-white/60 hover:bg-white/5"
         )}
       >
         <div className="flex items-center gap-2">
-          <Icon className={cn("w-3.5 h-3.5 flex-shrink-0", hasActiveChild ? "text-emerald-600" : "text-slate-400 group-hover:text-slate-500")} />
+          <Icon className={cn("w-3.5 h-3.5 flex-shrink-0", hasActiveChild ? "text-white/70" : "text-white/30 group-hover:text-white/50")} />
           <span>{group.label}</span>
         </div>
         <ChevronDown
           className={cn(
             "w-3 h-3 transition-transform duration-200",
             isOpen ? "rotate-0" : "-rotate-90",
-            hasActiveChild ? "text-emerald-500" : "text-slate-300"
+            hasActiveChild ? "text-white/50" : "text-white/20"
           )}
         />
       </button>
@@ -311,7 +319,7 @@ function GroupSection({
         "overflow-hidden transition-all duration-200",
         isOpen ? "max-h-[200px] opacity-100 mt-0.5" : "max-h-0 opacity-0"
       )}>
-        <nav className="flex flex-col gap-0.5 pl-1 border-l border-slate-100 ml-3">
+        <nav className="flex flex-col gap-0.5 pl-1 border-l border-white/8 ml-3">
           {group.items?.map(item => (
             <NavItem key={item.path + item.name} item={item} compact={false} indent />
           ))}
@@ -363,19 +371,22 @@ function ModuleSection({
         className={cn(
           "w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-150 group",
           isActive
-            ? cn("text-slate-700", "bg-slate-50")
-            : "text-slate-400 hover:text-slate-600 hover:bg-slate-50/80"
+            ? "text-white/90 bg-white/5"
+            : "text-white/35 hover:text-white/60 hover:bg-white/5"
         )}
       >
         <div className="flex items-center gap-2">
-          <Icon className={cn("w-3.5 h-3.5", isActive ? mod.color : "text-slate-400 group-hover:text-slate-500")} />
+          <Icon className={cn(
+            "w-3.5 h-3.5",
+            isActive ? mod.accentClass : "text-white/30 group-hover:text-white/50"
+          )} />
           <span>{mod.label}</span>
         </div>
         <ChevronDown
           className={cn(
             "w-3.5 h-3.5 transition-transform duration-200",
             isOpen ? "rotate-0" : "-rotate-90",
-            isActive ? "text-slate-500" : "text-slate-300"
+            isActive ? "text-white/40" : "text-white/20"
           )}
         />
       </button>
@@ -385,7 +396,7 @@ function ModuleSection({
         isOpen ? "max-h-[600px] opacity-100 mt-0.5" : "max-h-0 opacity-0"
       )}>
         {mod.groups ? (
-          <nav className="flex flex-col gap-0.5 pl-1.5 border-l border-slate-100 ml-2.5">
+          <nav className="flex flex-col gap-0.5 pl-1.5 border-l border-white/8 ml-2.5">
             {mod.groups.map(group => (
               <GroupSection
                 key={group.label}
@@ -396,7 +407,7 @@ function ModuleSection({
             ))}
           </nav>
         ) : (
-          <nav className="flex flex-col gap-0.5 pl-1.5 border-l border-slate-100 ml-2.5">
+          <nav className="flex flex-col gap-0.5 pl-1.5 border-l border-white/8 ml-2.5">
             {(mod.items ?? []).map(item => (
               <NavItem key={item.path} item={item} compact={false} />
             ))}
@@ -468,37 +479,32 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "hidden md:flex flex-col border-r border-slate-200 bg-white h-screen sticky top-0 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-all duration-200",
+        "hidden md:flex flex-col bg-[#0A0A0A] border-r border-neutral-800 h-screen sticky top-0 z-20 transition-all duration-200",
         compact ? "w-[60px]" : "w-[220px]"
       )}
     >
       {/* Logo */}
       <div className={cn(
-        "flex items-center flex-shrink-0 bg-black border-b border-neutral-800 h-14",
+        "flex items-center flex-shrink-0 border-b border-neutral-800 h-14",
         compact ? "justify-center px-0" : "px-4"
       )}>
         {compact ? (
-          /* Versão colapsada — apenas o "V" */
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <polygon points="1,2 12,22 23,2 20,2 12,18 4,2" fill="white"/>
           </svg>
         ) : (
-          /* Versão completa — V | Vertex OS */
           <div className="flex items-center gap-3 w-full">
-            {/* Ícone V */}
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
               <polygon points="1,2 12,22 23,2 20,2 12,18 4,2" fill="white"/>
             </svg>
-            {/* Separador vertical */}
-            <div className="w-px h-7 bg-slate-600 flex-shrink-0" />
-            {/* Texto */}
+            <div className="w-px h-7 bg-neutral-700 flex-shrink-0" />
             <div className="flex flex-col leading-none">
               <div className="flex items-baseline gap-1">
                 <span className="text-white font-bold text-sm tracking-tight">Vertex</span>
-                <span className="text-white/50 font-light text-sm">|</span>
+                <span className="text-white/30 font-light text-sm">|</span>
                 <span className="text-white font-light text-sm tracking-tight">OS</span>
               </div>
-              <span className="text-white text-[9px] tracking-[0.18em] uppercase mt-0.5">Operating System</span>
+              <span className="text-white/40 text-[9px] tracking-[0.18em] uppercase mt-0.5">Operating System</span>
             </div>
           </div>
         )}
@@ -506,21 +512,17 @@ export function Sidebar() {
 
       {/* Nav */}
       <div className={cn("flex-1 overflow-y-auto py-3 space-y-1", compact ? "px-1.5" : "px-3")}>
-        {/* Dashboard global */}
         <NavItem
           item={{ name: "Dashboard", path: "/", icon: LayoutDashboard }}
           compact={compact}
         />
-
-        {/* Sugestões */}
         <NavItem
           item={{ name: "Sugestões", path: "/sugestoes", icon: Sparkles }}
           compact={compact}
         />
 
-        <div className="my-2 border-t border-slate-100" />
+        <div className="my-2 border-t border-neutral-800" />
 
-        {/* Modules */}
         <div className="space-y-1">
           {modules.map(mod => (
             <ModuleSection
@@ -536,33 +538,31 @@ export function Sidebar() {
           ))}
         </div>
 
-        <div className="my-2 border-t border-slate-100" />
+        <div className="my-2 border-t border-neutral-800" />
 
-        {/* Settings */}
         <NavItem
           item={{ name: "Configurações", path: "/settings", icon: Settings }}
           compact={compact}
         />
       </div>
 
-      {/* Bottom: Premium badge + activity + collapse toggle */}
-      <div className={cn("border-t border-slate-100 p-3 flex-shrink-0", compact ? "flex flex-col items-center gap-2" : "")}>
+      {/* Bottom */}
+      <div className={cn("border-t border-neutral-800 p-3 flex-shrink-0", compact ? "flex flex-col items-center gap-2" : "")}>
         {!compact && (
-          <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-3 border border-primary/10 mb-2">
-            <p className="text-[10px] text-slate-500 font-medium">Conta Premium</p>
-            <p className="text-xs font-semibold text-slate-900 mt-0.5">Plano Ativo</p>
+          <div className="rounded-xl p-3 border border-neutral-800 bg-neutral-900 mb-2">
+            <p className="text-[10px] text-white/35 font-medium">Conta Premium</p>
+            <p className="text-xs font-semibold text-white/80 mt-0.5">Plano Ativo</p>
           </div>
         )}
 
-        {/* Activity bell */}
         <button
           onClick={() => setShowActivity((s) => !s)}
           title="Atividade entre módulos"
           className={cn(
             "relative flex items-center gap-2 rounded-lg p-2 transition-colors w-full",
             showActivity
-              ? "bg-indigo-50 text-indigo-600"
-              : "text-slate-400 hover:text-slate-700 hover:bg-slate-50",
+              ? "bg-indigo-500/15 text-indigo-400"
+              : "text-white/35 hover:text-white/70 hover:bg-white/5",
             compact ? "justify-center" : ""
           )}
         >
@@ -581,7 +581,7 @@ export function Sidebar() {
           onClick={toggleCompact}
           title={compact ? "Expandir menu" : "Recolher menu"}
           className={cn(
-            "flex items-center gap-2 text-slate-400 hover:text-slate-700 transition-colors rounded-lg p-2 hover:bg-slate-50 w-full",
+            "flex items-center gap-2 text-white/35 hover:text-white/70 transition-colors rounded-lg p-2 hover:bg-white/5 w-full",
             compact ? "justify-center" : "justify-end"
           )}
         >
@@ -590,7 +590,6 @@ export function Sidebar() {
         </button>
       </div>
 
-      {/* Activity feed panel */}
       {showActivity && (
         <ActivityFeed
           onClose={() => setShowActivity(false)}

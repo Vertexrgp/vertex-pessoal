@@ -1,0 +1,138 @@
+Quero aplicar o manual de marca do Vertex OS em todo o sistema.
+
+OBJETIVO
+Adaptar o sistema inteiro para seguir exatamente o padrão definido no manual de marca.
+
+IMPORTANTE
+Não quero apenas documentar.
+Quero aplicar visual e estruturalmente no produto.
+
+====================================================
+1) APLICAR IDENTIDADE VISUAL
+====================================================
+
+Atualizar todo o sistema para usar:
+
+- paleta de cores oficial
+- tipografia Inter
+- hierarquia tipográfica
+- espaçamento baseado em 8px
+
+====================================================
+2) LOGO
+====================================================
+
+Aplicar corretamente:
+
+- logo principal
+- versão reduzida (V)
+- favicon
+
+Seguir regras de:
+- espaço de proteção
+- tamanho mínimo
+- contraste
+
+====================================================
+3) SIDEBAR
+====================================================
+
+Padronizar:
+
+- espaçamento
+- tipografia
+- ícones
+- estados (ativo, hover)
+- estrutura limpa
+
+====================================================
+4) COMPONENTES
+====================================================
+
+Padronizar todos os componentes:
+
+- cards
+- botões
+- inputs
+- tabelas
+- modais
+
+Seguir:
+
+- bordas
+- sombras
+- cores
+- estados
+
+====================================================
+5) DASHBOARD
+====================================================
+
+Aplicar padrão visual:
+
+- hierarquia clara
+- espaçamento correto
+- consistência de cores
+- leitura rápida
+
+====================================================
+6) TELAS DOS MÓDULOS
+====================================================
+
+Aplicar padrão em:
+
+- Financeiro
+- Agenda
+- Performance
+- Viagens
+- Crescimento
+- Conhecimento
+- Idiomas
+
+====================================================
+7) ESTADOS
+====================================================
+
+Padronizar:
+
+- loading
+- empty state
+- erro
+- sucesso
+
+====================================================
+8) CONSISTÊNCIA
+====================================================
+
+Garantir:
+
+- mesma linguagem visual em todo sistema
+- nenhuma variação inconsistente
+- padrão único de design
+
+====================================================
+9) EXPERIÊNCIA PREMIUM
+====================================================
+
+Quero que o sistema pareça:
+
+- produto SaaS de alto nível
+- consistente
+- limpo
+- sofisticado
+
+====================================================
+10) ENTREGAR
+====================================================
+
+Quero que você:
+
+1. analise o sistema atual
+2. compare com o manual
+3. aplique ajustes visuais
+4. padronize componentes
+5. me mostre:
+
+- o que foi alterado
+- o que ainda precisa ajustar
+- pontos de inconsistência restantes
