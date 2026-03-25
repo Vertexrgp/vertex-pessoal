@@ -202,7 +202,12 @@ Navigation via `PerformanceLayout.tsx` sub-tabs:
 
 ### Deploy Guide
 
-See `DEPLOY.md` for Vercel + Railway/Render deployment instructions.
+See `DEPLOY.md` for complete step-by-step deployment instructions.
+
+### Deploy Configs
+
+- `vercel.json` — Vercel build config (output dir, SPA rewrites, BASE_PATH)
+- `railway.json` — Railway build + start commands + healthcheck
 
 ## Future Roadmap (not yet built)
 
