@@ -18,3 +18,9 @@ id = "s4XYTMAkiO0tjOzHscwTJ"
 uri = "file://vertex-os.tar.gz"
 type = "unspecified"
 title = "Vertex OS — Projeto Completo"
+
+[[outputs]]
+id = "fu13srSkO0ePIaWFjdk6p"
+uri = "file://vertex-os.zip"
+type = "unspecified"
+title = "Vertex OS — Código-fonte (.zip)"
