@@ -8,14 +8,13 @@ import {
   Star, AlertTriangle, BarChart3, Target, Pencil, Check, X, Zap,
   AlertCircle, ThumbsUp, Calendar, CreditCard,
 } from "lucide-react";
+import { getApiBase } from "@/lib/api-base";
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const MONTH_NAMES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ];
-
-const BASE = import.meta.env.BASE_URL ?? "/";
 
 interface MonthData {
   month: number;
@@ -47,7 +46,7 @@ interface MonthForecast {
 }
 
 async function fetchAnnualPlan(year: number): Promise<MonthData[]> {
-  const res = await fetch(`${BASE}api/annual-plans?year=${year}`);
+  const res = await fetch(`${getApiBase()}/api/annual-plans?year=${year}`);
   if (!res.ok) throw new Error("Erro ao carregar planejamento");
   return res.json();
 }
@@ -57,7 +56,7 @@ async function upsertMonthPlan(year: number, month: number, body: {
   plannedDespesas: number;
   plannedInvestimentos: number;
 }) {
-  const res = await fetch(`${BASE}api/annual-plans/${year}/${month}`, {
+  const res = await fetch(`${getApiBase()}/api/annual-plans/${year}/${month}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

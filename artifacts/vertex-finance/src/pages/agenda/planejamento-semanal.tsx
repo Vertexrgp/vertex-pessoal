@@ -33,11 +33,10 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { emitEvent } from "@/lib/emit-event";
 import { EVENT_TYPES } from "@/lib/event-bus";
+import { getApiBase } from "@/lib/api-base";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const getApiBase = () =>
-  import.meta.env.BASE_URL.replace(/\/$/, "").replace(/\/[^/]*$/, "");
 const apiUrl = (path: string) => `${getApiBase()}/api${path}`;
 
 function getMondayOfWeek(date: Date): Date {

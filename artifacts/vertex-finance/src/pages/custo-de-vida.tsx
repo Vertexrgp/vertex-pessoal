@@ -10,8 +10,7 @@ import {
   Zap, ArrowRight, ChevronDown, ChevronUp,
   Target, BarChart2, Lightbulb, ArrowUpRight, ArrowDownRight, MinusCircle,
 } from "lucide-react";
-
-const BASE = import.meta.env.BASE_URL ?? "/";
+import { getApiBase } from "@/lib/api-base";
 
 interface CustoItem {
   id: number;
@@ -41,7 +40,7 @@ interface CustoData {
 }
 
 async function fetchCustoDeVida(): Promise<CustoData> {
-  const res = await fetch(`${BASE}api/custo-de-vida`);
+  const res = await fetch(`${getApiBase()}/api/custo-de-vida`);
   if (!res.ok) throw new Error("Erro ao carregar");
   return res.json();
 }

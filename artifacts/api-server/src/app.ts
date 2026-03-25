@@ -25,9 +25,24 @@ app.use(
     },
   }),
 );
-app.use(cors());
+
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim())
+  : true;
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  }),
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok", ts: new Date().toISOString() });
+});
 
 app.use("/api", router);
 

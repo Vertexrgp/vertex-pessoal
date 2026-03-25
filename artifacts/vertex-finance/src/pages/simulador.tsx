@@ -9,8 +9,7 @@ import {
   CheckCircle, ArrowUp, ArrowDown, ChevronRight, Lightbulb,
   DollarSign, Scissors, Target, BarChart2, Star,
 } from "lucide-react";
-
-const BASE = import.meta.env.BASE_URL ?? "/";
+import { getApiBase } from "@/lib/api-base";
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 
@@ -523,7 +522,7 @@ export default function SimuladorPage() {
   const { data, isLoading } = useQuery<CustoData>({
     queryKey: ["custo-de-vida"],
     queryFn: async () => {
-      const res = await fetch(`${BASE}api/custo-de-vida`);
+      const res = await fetch(`${getApiBase()}/api/custo-de-vida`);
       if (!res.ok) throw new Error("Erro");
       return res.json();
     },

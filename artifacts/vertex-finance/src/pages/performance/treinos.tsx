@@ -4,8 +4,7 @@ import { PerformanceLayout } from "@/components/layout/PerformanceLayout";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Dumbbell, Plus, Pencil, Trash2, Check, X, GripVertical, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const BASE = import.meta.env.BASE_URL;
+import { getApiBase } from "@/lib/api-base";
 
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 const GRUPOS = ["Peito", "Costas", "Ombro", "Bíceps", "Tríceps", "Pernas", "Glúteos", "Abdômen", "Full Body", "HIIT", "Cardio"];
@@ -219,21 +218,21 @@ export default function TreinosPage() {
 
   const { data: workouts = [], isLoading } = useQuery<any[]>({
     queryKey: ["perf-workouts"],
-    queryFn: () => fetch(`${BASE}api/performance/workouts`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/workouts`).then(r => r.json()),
   });
 
   const create = useMutation({
-    mutationFn: (d: any) => fetch(`${BASE}api/performance/workouts`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
+    mutationFn: (d: any) => fetch(`${getApiBase()}/api/performance/workouts`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["perf-workouts"] }); setShowForm(false); },
   });
 
   const update = useMutation({
-    mutationFn: ({ id, d }: any) => fetch(`${BASE}api/performance/workouts/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
+    mutationFn: ({ id, d }: any) => fetch(`${getApiBase()}/api/performance/workouts/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["perf-workouts"] }); setEditing(null); },
   });
 
   const remove = useMutation({
-    mutationFn: (id: number) => fetch(`${BASE}api/performance/workouts/${id}`, { method: "DELETE" }),
+    mutationFn: (id: number) => fetch(`${getApiBase()}/api/performance/workouts/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["perf-workouts"] }),
   });
 

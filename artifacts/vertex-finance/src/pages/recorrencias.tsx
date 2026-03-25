@@ -7,8 +7,7 @@ import {
   TrendingUp, TrendingDown, Calendar, Wallet, AlertCircle, Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const BASE = import.meta.env.BASE_URL ?? "/";
+import { getApiBase } from "@/lib/api-base";
 
 interface Recorrencia {
   id: number;
@@ -69,7 +68,7 @@ const emptyForm = {
 };
 
 async function fetchRecorrencias(): Promise<Recorrencia[]> {
-  const res = await fetch(`${BASE}api/recurring`);
+  const res = await fetch(`${getApiBase()}/api/recurring`);
   if (!res.ok) throw new Error("Erro ao carregar");
   return res.json();
 }
@@ -90,7 +89,7 @@ export default function RecorrenciasPage() {
 
   const createMutation = useMutation({
     mutationFn: async (body: typeof emptyForm) => {
-      const res = await fetch(`${BASE}api/recurring`, {
+      const res = await fetch(`${getApiBase()}/api/recurring`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...body, valor: Number(body.valor), diaVencimento: Number(body.diaVencimento) }),
@@ -107,7 +106,7 @@ export default function RecorrenciasPage() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, body }: { id: number; body: typeof emptyForm }) => {
-      const res = await fetch(`${BASE}api/recurring/${id}`, {
+      const res = await fetch(`${getApiBase()}/api/recurring/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...body, valor: Number(body.valor), diaVencimento: Number(body.diaVencimento) }),
@@ -124,7 +123,7 @@ export default function RecorrenciasPage() {
 
   const toggleMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`${BASE}api/recurring/${id}/toggle`, { method: "PATCH" });
+      const res = await fetch(`${getApiBase()}/api/recurring/${id}/toggle`, { method: "PATCH" });
       if (!res.ok) throw new Error("Erro ao alternar");
       return res.json();
     },
@@ -136,7 +135,7 @@ export default function RecorrenciasPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`${BASE}api/recurring/${id}`, { method: "DELETE" });
+      const res = await fetch(`${getApiBase()}/api/recurring/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Erro ao excluir");
     },
     onSuccess: () => {

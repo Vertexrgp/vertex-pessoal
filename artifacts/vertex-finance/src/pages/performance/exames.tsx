@@ -7,8 +7,7 @@ import {
   ChevronDown, ChevronRight, TestTube, ExternalLink, AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const BASE = import.meta.env.BASE_URL;
+import { getApiBase } from "@/lib/api-base";
 
 /* ─── Reference Ranges ───────────────────────────────────────────────── */
 const MARCADORES_REF: Record<string, { min?: number; max?: number; unit: string; lowerBetter?: boolean }> = {
@@ -311,16 +310,16 @@ function ExamDetailPanel({ exam, plans, onDelete }: any) {
 
   const { data: markers = [] } = useQuery<any[]>({
     queryKey: ["exam-markers", exam.id],
-    queryFn: () => fetch(`${BASE}api/performance/exam-markers?examId=${exam.id}`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/exam-markers?examId=${exam.id}`).then(r => r.json()),
   });
 
   const addMarker = useMutation({
-    mutationFn: (d: any) => fetch(`${BASE}api/performance/exam-markers`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
+    mutationFn: (d: any) => fetch(`${getApiBase()}/api/performance/exam-markers`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["exam-markers", exam.id] }),
   });
 
   const removeMarker = useMutation({
-    mutationFn: (id: number) => fetch(`${BASE}api/performance/exam-markers/${id}`, { method: "DELETE" }),
+    mutationFn: (id: number) => fetch(`${getApiBase()}/api/performance/exam-markers/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["exam-markers", exam.id] }),
   });
 
@@ -391,7 +390,7 @@ function ExamDetailPanel({ exam, plans, onDelete }: any) {
 function EvolutionView({ onBack }: { onBack: () => void }) {
   const { data: evolution = {}, isLoading } = useQuery<Record<string, any[]>>({
     queryKey: ["perf-evolution"],
-    queryFn: () => fetch(`${BASE}api/performance/exam-markers/evolution`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/exam-markers/evolution`).then(r => r.json()),
   });
 
   const marcadores = Object.entries(evolution).filter(([, vals]) => vals.length > 0);
@@ -515,21 +514,21 @@ export default function ExamesPage() {
 
   const { data: exams = [], isLoading } = useQuery<any[]>({
     queryKey: ["perf-exams"],
-    queryFn: () => fetch(`${BASE}api/performance/exams`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/exams`).then(r => r.json()),
   });
 
   const { data: plans = [] } = useQuery<any[]>({
     queryKey: ["perf-meal-plans"],
-    queryFn: () => fetch(`${BASE}api/performance/meal-plans`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/meal-plans`).then(r => r.json()),
   });
 
   const createExam = useMutation({
-    mutationFn: (d: any) => fetch(`${BASE}api/performance/exams`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
+    mutationFn: (d: any) => fetch(`${getApiBase()}/api/performance/exams`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
     onSuccess: (row) => { qc.invalidateQueries({ queryKey: ["perf-exams"] }); setShowAddExam(false); setSelectedId(row.id); },
   });
 
   const removeExam = useMutation({
-    mutationFn: (id: number) => fetch(`${BASE}api/performance/exams/${id}`, { method: "DELETE" }),
+    mutationFn: (id: number) => fetch(`${getApiBase()}/api/performance/exams/${id}`, { method: "DELETE" }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["perf-exams"] }); setSelectedId(null); },
   });
 

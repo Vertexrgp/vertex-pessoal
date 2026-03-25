@@ -177,6 +177,33 @@ Navigation via `PerformanceLayout.tsx` sub-tabs:
 - **Meal Plan**: Plano Fev/Mar 2026, Dra. Roberta Carbonari — 5 refeições, 1669kcal/dia
 - User: Rafael Gomes Perez, DOB 06/05/1991, on TRT protocol
 
+## Production Setup
+
+### Centralized API URL
+
+- `artifacts/vertex-finance/src/lib/api-base.ts` — single source of truth for API base URL
+- Priority: `VITE_API_URL` env var (production) → fallback to BASE_URL derivation (Replit dev)
+- All 30 page/lib files import from this utility — no more inline function duplication
+
+### Environment Variables
+
+**Frontend** (`artifacts/vertex-finance/.env.example`):
+- `VITE_API_URL` — API server URL in production (e.g., `https://api.vertexos.com`)
+
+**Backend** (`artifacts/api-server/.env.example`):
+- `DATABASE_URL` — PostgreSQL connection string (required)
+- `PORT` — server port (default: 8080)
+- `CORS_ORIGINS` — comma-separated allowed origins for CORS (production security)
+- `NODE_ENV` — set to `production` for production
+
+### Health Check
+
+`GET /health` → `{ status: "ok", ts: "ISO-timestamp" }`
+
+### Deploy Guide
+
+See `DEPLOY.md` for Vercel + Railway/Render deployment instructions.
+
 ## Future Roadmap (not yet built)
 
 - Financial goals module

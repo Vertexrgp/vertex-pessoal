@@ -1,6 +1,4 @@
-function getBase() {
-  return import.meta.env.BASE_URL.replace(/\/$/, "").replace(/\/[^/]*$/, "");
-}
+import { getApiBase as getBase } from "@/lib/api-base";
 
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${getBase()}${path}`, {

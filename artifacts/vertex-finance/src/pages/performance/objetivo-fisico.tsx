@@ -8,8 +8,7 @@ import {
   ChevronRight, Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const BASE = import.meta.env.BASE_URL;
+import { getApiBase } from "@/lib/api-base";
 
 type BodyGoal = {
   id: number;
@@ -255,12 +254,12 @@ export default function ObjetivoFisicoPage() {
 
   const { data: goal } = useQuery<BodyGoal | null>({
     queryKey: ["body-goal"],
-    queryFn: () => fetch(`${BASE}api/performance/body-goal`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/body-goal`).then(r => r.json()),
   });
 
   const { data: photos = [] } = useQuery<BodyPhoto[]>({
     queryKey: ["body-photos"],
-    queryFn: () => fetch(`${BASE}api/performance/body-photos`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/body-photos`).then(r => r.json()),
   });
 
   useEffect(() => {
@@ -278,21 +277,21 @@ export default function ObjetivoFisicoPage() {
   const saveGoal = useMutation({
     mutationFn: async (data: typeof form) => {
       const body = { pesoAtual: data.pesoAtual || null, bfAtual: data.bfAtual || null, pesoAlvo: data.pesoAlvo || null, bfAlvo: data.bfAlvo || null, prazo: data.prazo || null };
-      if (goal?.id) return fetch(`${BASE}api/performance/body-goal/${goal.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
-      return fetch(`${BASE}api/performance/body-goal`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
+      if (goal?.id) return fetch(`${getApiBase()}/api/performance/body-goal/${goal.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
+      return fetch(`${getApiBase()}/api/performance/body-goal`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["body-goal"] }); setDirty(false); },
   });
 
   const addPhoto = useMutation({
     mutationFn: (data: { tipo: string; imageData: string; goalId?: number }) =>
-      fetch(`${BASE}api/performance/body-photos`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then(r => r.json()),
+      fetch(`${getApiBase()}/api/performance/body-photos`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["body-photos"] }); setUploadingTipo(null); },
     onError: () => setUploadingTipo(null),
   });
 
   const removePhoto = useMutation({
-    mutationFn: (id: number) => fetch(`${BASE}api/performance/body-photos/${id}`, { method: "DELETE" }),
+    mutationFn: (id: number) => fetch(`${getApiBase()}/api/performance/body-photos/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["body-photos"] }),
   });
 

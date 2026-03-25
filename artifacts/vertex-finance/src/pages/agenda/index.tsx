@@ -4,12 +4,8 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { CalendarCheck, Plus, Trash2, Clock, Tag, ChevronLeft, ChevronRight, Bell, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { getApiBase } from "@/lib/api-base";
 
-const API = import.meta.env.BASE_URL.replace(/\/$/, "").replace(/\/[^/]*$/, "");
-const getApiBase = () => {
-  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-  return base.replace(/\/[^/]*$/, "");
-};
 const apiUrl = (path: string) => `${getApiBase()}/api${path}`;
 
 const CATEGORIAS = [

@@ -4,8 +4,7 @@ import { PerformanceLayout } from "@/components/layout/PerformanceLayout";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Target, Plus, Pencil, Trash2, CalendarDays, Flame, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const BASE = import.meta.env.BASE_URL;
+import { getApiBase } from "@/lib/api-base";
 
 const ESTETICA_OPTIONS = [
   "Definição muscular", "Ganho de massa", "Recomposição corporal",
@@ -142,21 +141,21 @@ export default function ObjetivoPage() {
 
   const { data: goals = [], isLoading } = useQuery<any[]>({
     queryKey: ["perf-goals"],
-    queryFn: () => fetch(`${BASE}api/performance/goals`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/goals`).then(r => r.json()),
   });
 
   const create = useMutation({
-    mutationFn: (d: any) => fetch(`${BASE}api/performance/goals`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
+    mutationFn: (d: any) => fetch(`${getApiBase()}/api/performance/goals`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["perf-goals"] }); setShowForm(false); },
   });
 
   const update = useMutation({
-    mutationFn: ({ id, d }: any) => fetch(`${BASE}api/performance/goals/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
+    mutationFn: ({ id, d }: any) => fetch(`${getApiBase()}/api/performance/goals/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["perf-goals"] }); setEditing(null); },
   });
 
   const remove = useMutation({
-    mutationFn: (id: number) => fetch(`${BASE}api/performance/goals/${id}`, { method: "DELETE" }),
+    mutationFn: (id: number) => fetch(`${getApiBase()}/api/performance/goals/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["perf-goals"] }),
   });
 

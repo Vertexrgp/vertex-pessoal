@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Bell, Plus, Trash2, Check, X, Edit2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getApiBase } from "@/lib/api-base";
 
-const getApiBase = () => import.meta.env.BASE_URL.replace(/\/$/, "").replace(/\/[^/]*$/, "");
 const apiUrl = (path: string) => `${getApiBase()}/api${path}`;
 
 function formatDate(d: string) { if (!d) return ""; const [y, m, day] = d.split("-"); return `${day}/${m}/${y}`; }

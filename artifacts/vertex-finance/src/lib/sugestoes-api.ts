@@ -1,6 +1,4 @@
-function getApiBase(): string {
-  return import.meta.env.BASE_URL.replace(/\/$/, "").replace(/\/[^/]*$/, "");
-}
+import { getApiBase } from "@/lib/api-base";
 
 export type Sugestao = {
   id: number;

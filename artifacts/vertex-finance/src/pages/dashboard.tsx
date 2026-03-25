@@ -23,10 +23,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-
-function getApiBase() {
-  return import.meta.env.BASE_URL.replace(/\/$/, "").replace(/\/[^/]*$/, "");
-}
+import { getApiBase } from "@/lib/api-base";
 
 async function fetchGlobal() {
   const res = await fetch(`${getApiBase()}/api/dashboard/global`);

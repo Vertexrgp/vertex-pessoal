@@ -7,8 +7,7 @@ import {
   Clock, Flame, ToggleRight, ToggleLeft, BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const BASE = import.meta.env.BASE_URL;
+import { getApiBase } from "@/lib/api-base";
 
 type Alimento = { nome: string; quantidade: string; unidade: string; calorias?: number; observacao?: string };
 
@@ -253,7 +252,7 @@ export default function NutricaoPage() {
 
   const { data: plans = [], isLoading: plansLoading } = useQuery<any[]>({
     queryKey: ["perf-meal-plans"],
-    queryFn: () => fetch(`${BASE}api/performance/meal-plans`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/meal-plans`).then(r => r.json()),
   });
 
   useEffect(() => {
@@ -265,37 +264,37 @@ export default function NutricaoPage() {
 
   const { data: meals = [], isLoading: mealsLoading } = useQuery<any[]>({
     queryKey: ["perf-meals", selectedPlanId],
-    queryFn: () => fetch(`${BASE}api/performance/meals?planoId=${selectedPlanId}`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/meals?planoId=${selectedPlanId}`).then(r => r.json()),
     enabled: !!selectedPlanId,
   });
 
   const createPlan = useMutation({
-    mutationFn: (d: any) => fetch(`${BASE}api/performance/meal-plans`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
+    mutationFn: (d: any) => fetch(`${getApiBase()}/api/performance/meal-plans`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
     onSuccess: (row) => { qc.invalidateQueries({ queryKey: ["perf-meal-plans"] }); setShowPlanForm(false); setSelectedPlanId(row.id); },
   });
 
   const togglePlan = useMutation({
-    mutationFn: (id: number) => fetch(`${BASE}api/performance/meal-plans/${id}/toggle`, { method: "PATCH" }),
+    mutationFn: (id: number) => fetch(`${getApiBase()}/api/performance/meal-plans/${id}/toggle`, { method: "PATCH" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["perf-meal-plans"] }),
   });
 
   const deletePlan = useMutation({
-    mutationFn: (id: number) => fetch(`${BASE}api/performance/meal-plans/${id}`, { method: "DELETE" }),
+    mutationFn: (id: number) => fetch(`${getApiBase()}/api/performance/meal-plans/${id}`, { method: "DELETE" }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["perf-meal-plans"] }); setSelectedPlanId(null); },
   });
 
   const createMeal = useMutation({
-    mutationFn: (d: any) => fetch(`${BASE}api/performance/meals`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
+    mutationFn: (d: any) => fetch(`${getApiBase()}/api/performance/meals`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["perf-meals", selectedPlanId] }); setShowMealForm(false); },
   });
 
   const updateMeal = useMutation({
-    mutationFn: ({ id, d }: any) => fetch(`${BASE}api/performance/meals/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
+    mutationFn: ({ id, d }: any) => fetch(`${getApiBase()}/api/performance/meals/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["perf-meals", selectedPlanId] }); setEditingMeal(null); },
   });
 
   const deleteMeal = useMutation({
-    mutationFn: (id: number) => fetch(`${BASE}api/performance/meals/${id}`, { method: "DELETE" }),
+    mutationFn: (id: number) => fetch(`${getApiBase()}/api/performance/meals/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["perf-meals", selectedPlanId] }),
   });
 

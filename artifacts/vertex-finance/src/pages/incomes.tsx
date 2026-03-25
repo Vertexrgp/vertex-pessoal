@@ -7,9 +7,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { getApiBase } from "@/lib/api-base";
 
-const getApiBase = () =>
-  import.meta.env.BASE_URL.replace(/\/$/, "").replace(/\/[^/]*$/, "");
 const apiUrl = (p: string) => `${getApiBase()}/api${p}`;
 
 function fmtBRL(v: number | null | undefined) {

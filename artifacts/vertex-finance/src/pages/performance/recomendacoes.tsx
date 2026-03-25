@@ -6,8 +6,7 @@ import {
   ArrowRight, Zap, TrendingDown, TrendingUp, Minus, FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const BASE = import.meta.env.BASE_URL;
+import { getApiBase } from "@/lib/api-base";
 
 /* ─── Reference Ranges ───────────────────────────────────────────────── */
 const MARCADORES_REF: Record<string, { min?: number; max?: number; unit: string; lowerBetter?: boolean; label?: string }> = {
@@ -211,22 +210,22 @@ function MarkerAnalysis({ evolution }: { evolution: Record<string, any[]> }) {
 export default function RecomendacoesPage() {
   const { data: goals = [] } = useQuery<any[]>({
     queryKey: ["perf-goals"],
-    queryFn: () => fetch(`${BASE}api/performance/goals`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/goals`).then(r => r.json()),
   });
 
   const { data: states = [] } = useQuery<any[]>({
     queryKey: ["perf-state"],
-    queryFn: () => fetch(`${BASE}api/performance/current-state`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/current-state`).then(r => r.json()),
   });
 
   const { data: progress = [] } = useQuery<any[]>({
     queryKey: ["perf-progress"],
-    queryFn: () => fetch(`${BASE}api/performance/progress`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/progress`).then(r => r.json()),
   });
 
   const { data: evolution = {} } = useQuery<Record<string, any[]>>({
     queryKey: ["perf-evolution"],
-    queryFn: () => fetch(`${BASE}api/performance/exam-markers/evolution`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/exam-markers/evolution`).then(r => r.json()),
   });
 
   const latestGoal = goals[0] ?? null;

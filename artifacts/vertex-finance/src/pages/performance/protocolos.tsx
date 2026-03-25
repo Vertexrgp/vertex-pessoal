@@ -4,8 +4,7 @@ import { PerformanceLayout } from "@/components/layout/PerformanceLayout";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { FlaskConical, Plus, Pencil, Trash2, Check, X, ToggleLeft, ToggleRight, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const BASE = import.meta.env.BASE_URL;
+import { getApiBase } from "@/lib/api-base";
 
 const TIPOS = ["manipulado", "medicamento", "hormônio", "suplemento", "vitamina"];
 const FREQUENCIAS = ["diário", "semanal", "quinzenal", "mensal", "ciclo"];
@@ -188,26 +187,26 @@ export default function ProtocolosPage() {
 
   const { data: protocols = [], isLoading } = useQuery<any[]>({
     queryKey: ["perf-protocols"],
-    queryFn: () => fetch(`${BASE}api/performance/protocols`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/protocols`).then(r => r.json()),
   });
 
   const create = useMutation({
-    mutationFn: (d: any) => fetch(`${BASE}api/performance/protocols`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
+    mutationFn: (d: any) => fetch(`${getApiBase()}/api/performance/protocols`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["perf-protocols"] }); setShowForm(false); },
   });
 
   const update = useMutation({
-    mutationFn: ({ id, d }: any) => fetch(`${BASE}api/performance/protocols/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
+    mutationFn: ({ id, d }: any) => fetch(`${getApiBase()}/api/performance/protocols/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["perf-protocols"] }); setEditing(null); },
   });
 
   const toggle = useMutation({
-    mutationFn: (id: number) => fetch(`${BASE}api/performance/protocols/${id}/toggle`, { method: "PATCH" }),
+    mutationFn: (id: number) => fetch(`${getApiBase()}/api/performance/protocols/${id}/toggle`, { method: "PATCH" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["perf-protocols"] }),
   });
 
   const remove = useMutation({
-    mutationFn: (id: number) => fetch(`${BASE}api/performance/protocols/${id}`, { method: "DELETE" }),
+    mutationFn: (id: number) => fetch(`${getApiBase()}/api/performance/protocols/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["perf-protocols"] }),
   });
 

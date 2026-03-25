@@ -4,8 +4,7 @@ import { PerformanceLayout } from "@/components/layout/PerformanceLayout";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Activity, Plus, Pencil, ChevronDown, ChevronUp, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const BASE = import.meta.env.BASE_URL;
+import { getApiBase } from "@/lib/api-base";
 
 function fmtDate(d?: string | null) {
   if (!d) return "—";
@@ -171,16 +170,16 @@ export default function AvaliacaoPage() {
 
   const { data: states = [], isLoading } = useQuery<any[]>({
     queryKey: ["perf-state"],
-    queryFn: () => fetch(`${BASE}api/performance/current-state`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/current-state`).then(r => r.json()),
   });
 
   const create = useMutation({
-    mutationFn: (d: any) => fetch(`${BASE}api/performance/current-state`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
+    mutationFn: (d: any) => fetch(`${getApiBase()}/api/performance/current-state`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["perf-state"] }); setShowForm(false); },
   });
 
   const update = useMutation({
-    mutationFn: ({ id, d }: any) => fetch(`${BASE}api/performance/current-state/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
+    mutationFn: ({ id, d }: any) => fetch(`${getApiBase()}/api/performance/current-state/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["perf-state"] }); setEditing(null); },
   });
 

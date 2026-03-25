@@ -1,7 +1,6 @@
 import { eventBus, type EventType } from "./event-bus";
 
-const getApiBase = () =>
-  import.meta.env.BASE_URL.replace(/\/$/, "").replace(/\/[^/]*$/, "");
+import { getApiBase } from "@/lib/api-base";
 
 export async function emitEvent(
   tipo: EventType,

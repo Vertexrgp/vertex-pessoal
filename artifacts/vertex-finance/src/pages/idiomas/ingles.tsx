@@ -7,8 +7,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { getApiBase } from "@/lib/api-base";
 
-const getApiBase = () => import.meta.env.BASE_URL.replace(/\/$/, "").replace(/\/[^/]*$/, "");
 const api = (path: string) => `${getApiBase()}/api/idiomas${path}`;
 
 const NIVEIS = ["A1", "A2", "B1", "B2", "C1", "C2"];

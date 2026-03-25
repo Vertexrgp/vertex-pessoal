@@ -4,8 +4,7 @@ import { PerformanceLayout } from "@/components/layout/PerformanceLayout";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { TrendingUp, Plus, Trash2, Check, X, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const BASE = import.meta.env.BASE_URL;
+import { getApiBase } from "@/lib/api-base";
 
 const HUMORES = ["Ótimo", "Bom", "Regular", "Cansado", "Ruim"];
 const HUMOR_COLORS: Record<string, string> = {
@@ -113,16 +112,16 @@ export default function ProgressoPage() {
 
   const { data: progress = [], isLoading } = useQuery<any[]>({
     queryKey: ["perf-progress"],
-    queryFn: () => fetch(`${BASE}api/performance/progress`).then(r => r.json()),
+    queryFn: () => fetch(`${getApiBase()}/api/performance/progress`).then(r => r.json()),
   });
 
   const create = useMutation({
-    mutationFn: (d: any) => fetch(`${BASE}api/performance/progress`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
+    mutationFn: (d: any) => fetch(`${getApiBase()}/api/performance/progress`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["perf-progress"] }); setShowForm(false); },
   });
 
   const remove = useMutation({
-    mutationFn: (id: number) => fetch(`${BASE}api/performance/progress/${id}`, { method: "DELETE" }),
+    mutationFn: (id: number) => fetch(`${getApiBase()}/api/performance/progress/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["perf-progress"] }),
   });
 

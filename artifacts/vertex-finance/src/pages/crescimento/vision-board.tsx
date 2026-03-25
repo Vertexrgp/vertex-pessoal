@@ -5,13 +5,10 @@ import {
   Star, Plus, Trash2, Loader2, Type, ImageIcon, X,
   BringToFront, SendToBack, RotateCcw, ZoomIn, ZoomOut,
 } from "lucide-react";
-
-function getBase() {
-  return import.meta.env.BASE_URL.replace(/\/$/, "").replace(/\/[^/]*$/, "");
-}
+import { getApiBase } from "@/lib/api-base";
 
 async function apiReq<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${getBase()}${path}`, {
+  const res = await fetch(`${getApiBase()}${path}`, {
     method,
     headers: body ? { "Content-Type": "application/json" } : {},
     body: body ? JSON.stringify(body) : undefined,
