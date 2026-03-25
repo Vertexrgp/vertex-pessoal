@@ -12,3 +12,9 @@ id = "Erc2OYS3Dsmpz-qg73ibE"
 uri = "file://vertex-os-brand-manual.md"
 type = "text"
 title = "Vertex OS — Manual de Marca Completo v1.0"
+
+[[outputs]]
+id = "s4XYTMAkiO0tjOzHscwTJ"
+uri = "file://vertex-os.tar.gz"
+type = "unspecified"
+title = "Vertex OS — Projeto Completo"
