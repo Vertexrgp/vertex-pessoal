@@ -1,0 +1,174 @@
+Quero evoluir o módulo Agenda para suportar melhor tarefas reais do dia a dia.
+
+OBJETIVO
+Melhorar a criação e edição de tarefas para permitir:
+1. escolher data real no calendário
+2. definir hora opcional
+3. criar tarefas recorrentes, especialmente tarefas diárias
+
+====================================================
+1) DATA REAL
+====================================================
+
+O campo "Alocar para o dia" não deve mais trabalhar apenas com dia da semana.
+
+Quero que ele permita escolher:
+
+- dia
+- mês
+- ano
+
+Usar um calendário / date picker visual.
+
+Também manter a opção:
+- Não alocada
+
+Se a tarefa tiver data, ela deve aparecer exatamente no dia correto da agenda semanal.
+
+====================================================
+2) HORA OPCIONAL
+====================================================
+
+Adicionar campos opcionais para:
+
+- hora de início
+- hora de término (opcional)
+
+Se a tarefa não tiver horário, ela continua como tarefa livre do dia.
+
+Se tiver horário, deve aparecer com essa informação no card/lista da agenda.
+
+====================================================
+3) TAREFAS RECORRENTES
+====================================================
+
+Adicionar uma opção no modal de criação/edição:
+
+Recorrência
+
+Opções:
+- Não repetir
+- Todos os dias
+- Dias úteis
+- Semanalmente
+- Mensalmente
+- Personalizado
+
+====================================================
+4) TAREFA DIÁRIA
+====================================================
+
+Quero principalmente a opção:
+
+Todos os dias
+
+Exemplos:
+- Academia
+- Leitura 1 hora
+- Estudo de inglês
+- Revisão financeira
+
+Ao marcar como diária, o sistema deve gerar automaticamente a tarefa nos dias seguintes, sem eu precisar criar uma por uma.
+
+====================================================
+5) CONFIGURAÇÃO DA RECORRÊNCIA
+====================================================
+
+Quando uma tarefa for recorrente, permitir definir:
+
+- data de início
+- data final da recorrência (opcional)
+- repetir para sempre (opcional)
+- dias específicos da semana (no personalizado)
+- intervalo (ex: a cada 2 dias, a cada 2 semanas, etc.)
+
+====================================================
+6) EDIÇÃO DA RECORRÊNCIA
+====================================================
+
+Ao editar uma tarefa recorrente, quero opções como:
+
+- editar só esta ocorrência
+- editar esta e as próximas
+- editar toda a série
+
+Ao excluir:
+- excluir só esta
+- excluir toda a recorrência
+
+====================================================
+7) ESTRUTURA DE DADOS
+====================================================
+
+Garantir que as tarefas passem a ter estrutura adequada para recorrência, com campos como:
+
+- scheduledDate
+- startTime
+- endTime
+- recurrenceType
+- recurrenceInterval
+- recurrenceDays
+- recurrenceEndDate
+- recurringSeriesId
+
+Ou estrutura equivalente bem organizada.
+
+====================================================
+8) AGENDA SEMANAL
+====================================================
+
+A agenda semanal deve continuar funcionando normalmente, mas agora:
+
+- mostrar tarefas pela data real
+- incluir tarefas recorrentes geradas automaticamente
+- distinguir tarefas avulsas de tarefas recorrentes
+
+Se fizer sentido, usar um pequeno indicador visual:
+- recorrente
+- diária
+- semanal
+
+====================================================
+9) UX / VISUAL
+====================================================
+
+Quero visual premium e simples.
+
+No modal de tarefa:
+- date picker elegante
+- seleção de recorrência clara
+- campos organizados
+- sem poluição visual
+
+A experiência deve parecer de um sistema executivo moderno.
+
+====================================================
+10) CASOS IMPORTANTES
+====================================================
+
+Exemplos que o sistema deve suportar:
+
+1. Academia todos os dias
+2. Leitura diária de 1 hora
+3. Reunião toda segunda
+4. Revisão financeira todo domingo
+5. Estudo de inglês em dias úteis
+
+====================================================
+11) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. seleção de data real no calendário
+2. hora de início/fim opcional
+3. tarefas recorrentes
+4. tarefa diária
+5. edição correta de recorrência
+6. exibição correta na agenda semanal
+
+No final, me mostrar:
+- como a data está sendo salva
+- como a recorrência foi modelada
+- como criar uma tarefa diária
+- como editar uma série recorrente

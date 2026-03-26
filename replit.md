@@ -4,6 +4,16 @@
 
 Full-stack personal OS — 7 modules: Financeiro (incl. Cartões + Patrimônio), Performance, Agenda, Viagens, Crescimento, Conhecimento, Idiomas. Premium SaaS product built with React + Vite frontend, Express backend, and PostgreSQL database. All UI in Brazilian Portuguese. Collapsible sidebar with compact (icon-only) mode and cross-module event bus.
 
+## Agenda — Planejamento Semanal (recent additions)
+
+- **scheduledDate date picker**: `MiniCalendar` component (above trigger, PT locale, "Remover data" button)
+- **Time fields**: `startTime`/`endTime` per task (displayed as chip on TaskRow)
+- **Recurrence system**: `agenda_recurring_series` table + lazy 26-week generation; types: daily, weekdays, weekly (interval), monthly, custom (DOW pills) + end date
+- **RecurringActionDialog**: single / future / all edit & delete modes
+- **Recurrence badge** (↻) on recurring TaskRows; `isRecurringException` for single edits
+- **editMode**: `single` marks `isRecurringException=true`; `future` bulk-updates from date forward; `all` updates all + series record
+- **deleteMode**: `single` removes one instance; `all` deletes entire series + all instances
+
 ## Conhecimento Module (Premium)
 
 - **Hub page** (`/conhecimento`): Biblioteca Pessoal com busca global, filtros por tipo e status, e smart blocks (Favoritos, Em andamento, Na fila, Concluídos)
