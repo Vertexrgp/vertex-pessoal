@@ -102,10 +102,132 @@ interface Task {
   estimativaTempo: string | null;
   status: string;
   diaSemana: string | null;
+  scheduledDate: string | null;
   ordem: number;
   observacao: string | null;
   postergadaCount: number;
   isFoco: boolean;
+}
+
+// ─── Helper: determine which day column a task belongs to ────────────────────
+function getTaskDayId(task: Task, weekDates: Date[]): string | null {
+  if (task.scheduledDate) {
+    const idx = weekDates.findIndex((d) => toDateStr(d) === task.scheduledDate);
+    if (idx >= 0) return DIAS[idx].id;
+    return null;
+  }
+  return task.diaSemana;
+}
+
+// ─── MiniCalendar ─────────────────────────────────────────────────────────────
+
+function MiniCalendar({
+  selected,
+  onSelect,
+  onClear,
+}: {
+  selected: string | null;
+  onSelect: (date: string) => void;
+  onClear: () => void;
+}) {
+  const today = new Date();
+  const todayStr = toDateStr(today);
+  const [viewDate, setViewDate] = useState(() => {
+    if (selected) return new Date(selected + "T12:00:00");
+    return today;
+  });
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+
+  const firstDow = new Date(year, month, 1).getDay();
+  const startOffset = firstDow === 0 ? 6 : firstDow - 1;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const days: Date[] = [];
+  for (let i = startOffset; i > 0; i--) {
+    days.push(new Date(year, month, 1 - i));
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(new Date(year, month, i));
+  }
+  while (days.length % 7 !== 0) {
+    days.push(new Date(year, month + 1, days.length - startOffset - daysInMonth + 1));
+  }
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 w-[272px]">
+      <div className="flex items-center justify-between mb-3">
+        <button
+          onClick={() => setViewDate(new Date(year, month - 1, 1))}
+          className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4 text-slate-500" />
+        </button>
+        <span className="text-sm font-semibold text-slate-800">
+          {MESES_FULL[month]} {year}
+        </span>
+        <button
+          onClick={() => setViewDate(new Date(year, month + 1, 1))}
+          className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
+        >
+          <ChevronRight className="w-4 h-4 text-slate-500" />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 mb-1">
+        {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map((d) => (
+          <div key={d} className="text-[10px] font-bold text-slate-400 text-center py-1">
+            {d}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-0.5">
+        {days.map((d, i) => {
+          const str = toDateStr(d);
+          const isCurrentMonth = d.getMonth() === month;
+          const isToday = str === todayStr;
+          const isSelected = str === selected;
+          return (
+            <button
+              key={i}
+              onClick={() => onSelect(str)}
+              className={cn(
+                "w-8 h-8 text-xs rounded-lg mx-auto flex items-center justify-center transition-colors font-medium",
+                isSelected
+                  ? "bg-primary text-white font-bold shadow-sm"
+                  : isToday
+                  ? "bg-primary/10 text-primary font-semibold"
+                  : isCurrentMonth
+                  ? "text-slate-700 hover:bg-slate-100"
+                  : "text-slate-300 hover:bg-slate-50"
+              )}
+            >
+              {d.getDate()}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 flex justify-between items-center border-t border-slate-100 pt-3">
+        <button
+          onClick={() => onSelect(todayStr)}
+          className="text-xs text-primary font-semibold hover:underline"
+        >
+          Hoje
+        </button>
+        {selected && (
+          <button
+            onClick={onClear}
+            className="text-xs text-slate-400 hover:text-rose-500 transition-colors"
+          >
+            Remover data
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ─── TaskRow ─────────────────────────────────────────────────────────────────
@@ -482,7 +604,7 @@ function FocoDoDia({ tasks, todayId, onComplete, onToggleFoco }: {
   const calcScore = (t: Task): number => {
     let s = 0;
     if (t.isFoco) s += 1000;
-    if (t.diaSemana === todayId) s += 100;
+    if (t.scheduledDate === toDateStr(new Date()) || t.diaSemana === todayId) s += 100;
     if (t.status === "postergada") s += 50;
     if (t.prioridade === "alta") s += 30;
     else if (t.prioridade === "media") s += 15;
@@ -617,7 +739,7 @@ function FocoDoDia({ tasks, todayId, onComplete, onToggleFoco }: {
                         <Star className="w-2.5 h-2.5 fill-indigo-500" /> Fixado
                       </span>
                     )}
-                    {!task.isFoco && task.diaSemana === todayId && (
+                    {!task.isFoco && (task.scheduledDate === toDateStr(new Date()) || task.diaSemana === todayId) && (
                       <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-semibold rounded-full">
                         Hoje
                       </span>
@@ -657,7 +779,7 @@ function SidePanel({
   const [tab, setTab] = useState<SideTab>("pool");
   const { setNodeRef, isOver } = useDroppable({ id: "pool" });
 
-  const poolTasks = tasks.filter((t) => !t.diaSemana && t.status !== "proxima_semana" && t.status !== "postergada" && t.status !== "concluida");
+  const poolTasks = tasks.filter((t) => !t.diaSemana && !t.scheduledDate && t.status !== "proxima_semana" && t.status !== "postergada" && t.status !== "concluida");
   const postponed = tasks.filter((t) => t.status === "postergada");
   const done = tasks.filter((t) => t.status === "concluida");
 
@@ -795,7 +917,7 @@ function SidePanel({
       {/* Footer stats */}
       <div className="px-4 py-3 border-t border-slate-100 bg-white">
         <div className="flex items-center justify-between text-[11px] text-slate-400">
-          <span>{poolTasks.length + tasks.filter((t) => !!t.diaSemana && t.status === "pendente").length} pendentes</span>
+          <span>{poolTasks.length + tasks.filter((t) => (!!t.diaSemana || !!t.scheduledDate) && t.status === "pendente").length} pendentes</span>
           <span className="text-emerald-600 font-semibold">{done.length} concluídas</span>
           {postponed.length > 0 && <span className="text-amber-600 font-semibold">{postponed.length} postergadas</span>}
         </div>
@@ -806,11 +928,18 @@ function SidePanel({
 
 // ─── TaskModal ─────────────────────────────────────────────────────────────────
 
+const PT_DIAS_SHORT = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+
+function formatDatePT(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00");
+  return `${PT_DIAS_SHORT[d.getDay()]}, ${d.getDate()} de ${MESES_FULL[d.getMonth()]} de ${d.getFullYear()}`;
+}
+
 function TaskModal({
-  initial, defaultDia, onClose, onSave,
+  initial, defaultDate, onClose, onSave,
 }: {
   initial?: Task | null;
-  defaultDia?: string | null;
+  defaultDate?: string | null;
   onClose: () => void;
   onSave: (data: Partial<Task>) => void;
 }) {
@@ -820,9 +949,23 @@ function TaskModal({
     prioridade: initial?.prioridade || "media",
     categoria: initial?.categoria || "",
     estimativaTempo: initial?.estimativaTempo || "",
-    diaSemana: initial?.diaSemana || defaultDia || "",
+    scheduledDate: initial?.scheduledDate || defaultDate || null as string | null,
     observacao: initial?.observacao || "",
   });
+  const [showCal, setShowCal] = useState(false);
+
+  const handleSaveClick = () => {
+    if (!form.titulo.trim()) return;
+    onSave({
+      titulo: form.titulo,
+      descricao: form.descricao || null,
+      prioridade: form.prioridade,
+      categoria: form.categoria || null,
+      estimativaTempo: form.estimativaTempo || null,
+      scheduledDate: form.scheduledDate || null,
+      observacao: form.observacao || null,
+    } as Partial<Task>);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -843,7 +986,7 @@ function TaskModal({
               onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
               placeholder="O que precisa ser feito?"
               className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-              onKeyDown={(e) => { if (e.key === "Enter" && form.titulo.trim()) onSave({ ...form, diaSemana: form.diaSemana || null } as Partial<Task>); }}
+              onKeyDown={(e) => { if (e.key === "Enter" && form.titulo.trim()) handleSaveClick(); }}
             />
           </div>
           <div>
@@ -875,12 +1018,48 @@ function TaskModal({
               <input value={form.estimativaTempo} onChange={(e) => setForm((f) => ({ ...f, estimativaTempo: e.target.value }))} placeholder="30min" className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
           </div>
+
+          {/* ── Date picker ── */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">Alocar para o dia</label>
-            <select value={form.diaSemana} onChange={(e) => setForm((f) => ({ ...f, diaSemana: e.target.value }))} className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-              <option value="">Não alocada</option>
-              {DIAS.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
-            </select>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowCal((v) => !v)}
+                className={cn(
+                  "w-full flex items-center gap-2.5 border rounded-xl px-3.5 py-2.5 text-sm transition-all text-left",
+                  showCal
+                    ? "border-primary ring-2 ring-primary/20"
+                    : "border-slate-200 hover:border-slate-300",
+                  form.scheduledDate ? "text-slate-800" : "text-slate-400"
+                )}
+              >
+                <CalendarClock className={cn("w-4 h-4 flex-shrink-0", form.scheduledDate ? "text-primary" : "text-slate-300")} />
+                <span className="flex-1">
+                  {form.scheduledDate ? formatDatePT(form.scheduledDate) : "Não alocada"}
+                </span>
+                <ChevronDown className={cn("w-3.5 h-3.5 text-slate-400 transition-transform", showCal && "rotate-180")} />
+              </button>
+
+              {showCal && (
+                <div className="absolute z-50 bottom-full mb-1.5 left-0">
+                  <div className="fixed inset-0 z-0" onClick={() => setShowCal(false)} />
+                  <div className="relative z-10">
+                    <MiniCalendar
+                      selected={form.scheduledDate}
+                      onSelect={(date) => {
+                        setForm((f) => ({ ...f, scheduledDate: date }));
+                        setShowCal(false);
+                      }}
+                      onClear={() => {
+                        setForm((f) => ({ ...f, scheduledDate: null }));
+                        setShowCal(false);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         <div className="px-6 pb-5 flex gap-3">
@@ -888,7 +1067,7 @@ function TaskModal({
             Cancelar
           </button>
           <button
-            onClick={() => { if (form.titulo.trim()) onSave({ ...form, diaSemana: form.diaSemana || null } as Partial<Task>); }}
+            onClick={handleSaveClick}
             disabled={!form.titulo.trim()}
             className="flex-1 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 disabled:opacity-40"
           >
@@ -1066,7 +1245,12 @@ export default function PlanejamentoSemanalPage() {
       updateMutation.mutate({ id: editTask.id, ...data });
       toast({ title: "Tarefa atualizada!" });
     } else {
-      createMutation.mutate({ semanaInicio: semanaStr, ...data });
+      // If scheduledDate provided, API derives semanaInicio; otherwise pass current week
+      if (data.scheduledDate) {
+        createMutation.mutate({ ...data });
+      } else {
+        createMutation.mutate({ semanaInicio: semanaStr, ...data });
+      }
     }
     setShowModal(false); setEditTask(null); setAddToDay(null);
   };
@@ -1077,7 +1261,14 @@ export default function PlanejamentoSemanalPage() {
     const s = id.toString();
     if (s === "pool" || DIAS.some((d) => d.id === s)) return s;
     const task = tasks.find((t) => t.id === parseInt(s));
-    return task?.diaSemana || "pool";
+    if (!task) return "pool";
+    if (task.scheduledDate) {
+      const wDates = DIAS.map((_, i) => addDays(weekStart, i));
+      const idx = wDates.findIndex((d) => toDateStr(d) === task.scheduledDate);
+      if (idx >= 0) return DIAS[idx].id;
+      return "pool";
+    }
+    return task.diaSemana || "pool";
   }
 
   function handleDragStart(e: DragStartEvent) { setActiveId(e.active.id); }
@@ -1089,7 +1280,9 @@ export default function PlanejamentoSemanalPage() {
     if (aC === oC) return;
     const taskId = parseInt(active.id.toString());
     const newDia = oC === "pool" ? null : oC;
-    setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, diaSemana: newDia } : t));
+    const dayIdx = DIAS.findIndex((d) => d.id === newDia);
+    const newScheduledDate = dayIdx >= 0 ? toDateStr(addDays(weekStart, dayIdx)) : null;
+    setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, diaSemana: newDia, scheduledDate: newScheduledDate } : t));
   }
 
   function handleDragEnd(e: DragEndEvent) {
@@ -1103,8 +1296,9 @@ export default function PlanejamentoSemanalPage() {
 
     if (aC === oC) {
       const cTasks = tasks.filter((t) => {
-        if (aC === "pool") return !t.diaSemana && t.status === "pendente";
-        return t.diaSemana === aC && t.status === "pendente";
+        const tDayId = getTaskDayId(t, DIAS.map((_, i) => addDays(weekStart, i)));
+        if (aC === "pool") return !tDayId && t.status === "pendente";
+        return tDayId === aC && t.status === "pendente";
       });
       const overId = parseInt(over.id.toString());
       const oi = cTasks.findIndex((t) => t.id === taskId);
@@ -1115,7 +1309,12 @@ export default function PlanejamentoSemanalPage() {
         reordered.forEach(({ id, ordem }) => updateMutation.mutate({ id, ordem }));
       }
     } else {
-      updateMutation.mutate({ id: taskId, diaSemana: task.diaSemana, status: task.status === "postergada" ? "pendente" : task.status });
+      updateMutation.mutate({
+        id: taskId,
+        diaSemana: task.diaSemana,
+        scheduledDate: task.scheduledDate,
+        status: task.status === "postergada" ? "pendente" : task.status,
+      });
     }
   }
 
@@ -1214,7 +1413,7 @@ export default function PlanejamentoSemanalPage() {
             <div className="flex-1 overflow-y-auto min-w-0">
               {DIAS.map((day, i) => {
                 const date = weekDates[i];
-                const dayTasks = tasks.filter((t) => t.diaSemana === day.id && t.status !== "proxima_semana");
+                const dayTasks = tasks.filter((t) => getTaskDayId(t, weekDates) === day.id && t.status !== "proxima_semana");
                 return (
                   <DayBlock
                     key={day.id}
@@ -1222,7 +1421,7 @@ export default function PlanejamentoSemanalPage() {
                     date={date}
                     tasks={dayTasks}
                     isToday={toDateStr(date) === todayStr}
-                    onAddTask={() => { setEditTask(null); setAddToDay(day.id); setShowModal(true); }}
+                    onAddTask={() => { setEditTask(null); setAddToDay(toDateStr(date)); setShowModal(true); }}
                     onComplete={handleComplete}
                     onDelete={(id) => deleteMutation.mutate(id)}
                     onDuplicate={(id) => duplicateMutation.mutate(id)}
@@ -1284,7 +1483,7 @@ export default function PlanejamentoSemanalPage() {
       {showModal && (
         <TaskModal
           initial={editTask}
-          defaultDia={addToDay}
+          defaultDate={addToDay}
           onClose={() => { setShowModal(false); setEditTask(null); setAddToDay(null); }}
           onSave={handleSave}
         />

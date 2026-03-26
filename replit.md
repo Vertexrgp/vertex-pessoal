@@ -71,6 +71,7 @@ Tables:
 - `idioma_config` — per-language config (nivel_atual, nivel_meta in CEFR scale)
 - `idioma_sessoes` — study session records (data, duracao, tipo, concluida, notas)
 - `idioma_vocabulario` — vocabulary words (palavra, traducao, nivel, aprendida, notas)
+- `agenda_planner_tasks` — weekly planner tasks; `scheduledDate` (date) = specific calendar date for a task; `diaSemana` (text) = legacy day-of-week (kept for backward compat); API auto-derives `semanaInicio` and `diaSemana` from `scheduledDate` when provided
 
 ## Navigation Structure (Sidebar)
 

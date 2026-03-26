@@ -28,6 +28,7 @@ export const agendaPlannerTasksTable = pgTable("agenda_planner_tasks", {
   estimativaTempo: text("estimativa_tempo"),
   status: text("status").notNull().default("pendente"),
   diaSemana: text("dia_semana"),
+  scheduledDate: date("scheduled_date"),
   ordem: integer("ordem").notNull().default(0),
   observacao: text("observacao"),
   postergadaCount: integer("postergada_count").notNull().default(0),

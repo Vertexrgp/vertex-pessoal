@@ -1,0 +1,112 @@
+Quero corrigir o campo "Alocar para o dia" na criação/edição de tarefas do módulo Agenda.
+
+PROBLEMA
+Hoje o sistema permite escolher apenas o dia da semana (segunda, terça, etc.), mas eu preciso escolher a data real completa para uso prático do sistema.
+
+OBJETIVO
+Ao criar ou editar uma tarefa, quero poder selecionar uma data específica do calendário (dia, mês e ano), e não apenas o dia da semana vigente.
+
+====================================================
+1) ALTERAR O CAMPO
+====================================================
+
+Substituir o campo atual "Alocar para o dia" baseado em dia da semana por um campo de data real.
+
+Quero que o usuário possa escolher:
+
+- dia
+- mês
+- ano
+
+Usar um date picker / calendário visual.
+
+====================================================
+2) COMPORTAMENTO
+====================================================
+
+Na criação da tarefa, o campo deve permitir:
+
+- selecionar data completa no calendário
+- opcionalmente deixar "não alocada"
+- se uma data for escolhida, a tarefa deve aparecer exatamente nesse dia
+
+====================================================
+3) INTERFACE
+====================================================
+
+No modal de nova tarefa:
+
+- manter opção "Não alocada"
+- adicionar um campo de data claro e elegante
+- ao clicar, abrir calendário
+- visual premium e consistente com o sistema
+
+====================================================
+4) RELAÇÃO COM A AGENDA SEMANAL
+====================================================
+
+Se a tarefa for criada com uma data específica:
+
+- ela deve aparecer automaticamente na semana correta
+- no dia correto
+- mesmo que seja em outra semana/mês
+
+Se a data estiver fora da semana visível atual, o sistema deve armazenar corretamente e exibir quando o usuário navegar para aquela semana.
+
+====================================================
+5) EDIÇÃO
+====================================================
+
+Ao editar uma tarefa, também quero poder:
+
+- mudar a data
+- tirar a data e voltar para "não alocada"
+- mover a tarefa para outro dia específico
+
+====================================================
+6) DADOS / ESTRUTURA
+====================================================
+
+Garantir que a tarefa passe a salvar:
+
+- scheduledDate (data completa)
+ou equivalente
+
+E não apenas o nome do dia da semana.
+
+====================================================
+7) COMPATIBILIDADE
+====================================================
+
+Manter compatibilidade com a lógica atual da agenda semanal.
+
+Ou seja:
+- a agenda continua mostrando a semana
+- mas a tarefa passa a ser posicionada pela data real
+
+====================================================
+8) VISUAL / UX
+====================================================
+
+Quero uma experiência premium:
+- date picker elegante
+- fácil de usar
+- coerente com o design do Vertex OS
+
+====================================================
+9) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. campo de data real no modal de tarefa
+2. calendário visual/date picker
+3. suporte a não alocada
+4. salvamento por data completa
+5. exibição correta na semana correspondente
+6. edição de data na tarefa
+
+No final, me mostrar:
+- o que foi alterado
+- como a data está sendo salva
+- como a tarefa aparece na agenda semanal

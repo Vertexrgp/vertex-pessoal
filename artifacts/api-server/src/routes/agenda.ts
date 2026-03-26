@@ -3,6 +3,23 @@ import { db } from "@workspace/db";
 import { agendaEventsTable, agendaPlannerTasksTable } from "@workspace/db";
 import { eq, gte, lte, and } from "drizzle-orm";
 
+// ─── Date helpers ─────────────────────────────────────────
+const DOW_TO_DIA = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+
+function getMondayStr(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00");
+  const dow = d.getDay();
+  const daysFromMonday = dow === 0 ? 6 : dow - 1;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - daysFromMonday);
+  return monday.toISOString().split("T")[0];
+}
+
+function getDiaSemanaStr(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00");
+  return DOW_TO_DIA[d.getDay()];
+}
+
 const router = Router();
 
 // ─── Events ───────────────────────────────────────────────
@@ -93,19 +110,31 @@ router.get("/agenda/planner", async (req, res) => {
 
 router.post("/agenda/planner", async (req, res) => {
   try {
-    const { semanaInicio, titulo, descricao, prioridade, categoria, estimativaTempo, status, diaSemana, ordem, observacao, goalId, checkpointId } = req.body;
-    if (!semanaInicio || !titulo) return res.status(400).json({ error: "semanaInicio e titulo são obrigatórios" });
+    const { semanaInicio, titulo, descricao, prioridade, categoria, estimativaTempo, status, diaSemana, scheduledDate, ordem, observacao, goalId, checkpointId } = req.body;
+    if (!titulo) return res.status(400).json({ error: "titulo é obrigatório" });
+
+    let resolvedSemanaInicio = semanaInicio;
+    let resolvedDiaSemana = diaSemana || null;
+
+    if (scheduledDate) {
+      resolvedSemanaInicio = getMondayStr(scheduledDate);
+      resolvedDiaSemana = getDiaSemanaStr(scheduledDate);
+    }
+
+    if (!resolvedSemanaInicio) return res.status(400).json({ error: "semanaInicio ou scheduledDate é obrigatório" });
+
     const [task] = await db
       .insert(agendaPlannerTasksTable)
       .values({
-        semanaInicio,
+        semanaInicio: resolvedSemanaInicio,
         titulo,
         descricao,
         prioridade: prioridade || "media",
         categoria,
         estimativaTempo,
         status: status || "pendente",
-        diaSemana: diaSemana || null,
+        diaSemana: resolvedDiaSemana,
+        scheduledDate: scheduledDate || null,
         ordem: ordem || 0,
         observacao,
         postergadaCount: 0,
@@ -122,7 +151,7 @@ router.post("/agenda/planner", async (req, res) => {
 router.put("/agenda/planner/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { titulo, descricao, prioridade, categoria, estimativaTempo, status, diaSemana, ordem, observacao, postergadaCount, isFoco } = req.body;
+    const { titulo, descricao, prioridade, categoria, estimativaTempo, status, diaSemana, scheduledDate, ordem, observacao, postergadaCount, isFoco } = req.body;
     const setObj: Record<string, unknown> = { updatedAt: new Date() };
     if (titulo !== undefined) setObj.titulo = titulo;
     if (descricao !== undefined) setObj.descricao = descricao;
@@ -130,11 +159,22 @@ router.put("/agenda/planner/:id", async (req, res) => {
     if (categoria !== undefined) setObj.categoria = categoria;
     if (estimativaTempo !== undefined) setObj.estimativaTempo = estimativaTempo;
     if (status !== undefined) setObj.status = status;
-    if (diaSemana !== undefined) setObj.diaSemana = diaSemana;
     if (ordem !== undefined) setObj.ordem = ordem;
     if (observacao !== undefined) setObj.observacao = observacao;
     if (postergadaCount !== undefined) setObj.postergadaCount = postergadaCount;
     if (isFoco !== undefined) setObj.isFoco = isFoco;
+    if (scheduledDate !== undefined) {
+      if (scheduledDate) {
+        setObj.scheduledDate = scheduledDate;
+        setObj.diaSemana = getDiaSemanaStr(scheduledDate);
+        setObj.semanaInicio = getMondayStr(scheduledDate);
+      } else {
+        setObj.scheduledDate = null;
+        setObj.diaSemana = diaSemana !== undefined ? diaSemana : null;
+      }
+    } else if (diaSemana !== undefined) {
+      setObj.diaSemana = diaSemana;
+    }
     const [updated] = await db
       .update(agendaPlannerTasksTable)
       .set(setObj)
