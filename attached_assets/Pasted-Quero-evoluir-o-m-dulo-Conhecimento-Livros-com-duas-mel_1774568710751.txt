@@ -1,0 +1,145 @@
+Quero evoluir o módulo Conhecimento > Livros com duas melhorias importantes:
+
+1. upload real da capa do livro
+2. progresso automático por páginas
+
+OBJETIVO
+Deixar o cadastro e acompanhamento de livros muito mais prático e realista.
+
+====================================================
+1) CAPA DO LIVRO POR UPLOAD
+====================================================
+
+Hoje o sistema aceita apenas URL da capa.
+Quero mudar isso para permitir upload real de imagem.
+
+Implementar no cadastro e edição do livro:
+
+- campo de upload de imagem
+- aceitar formatos:
+  - jpg
+  - jpeg
+  - png
+  - webp
+- mostrar preview da capa antes de salvar
+- permitir trocar a capa
+- permitir remover a capa
+
+Se o livro não tiver capa, manter fallback visual com cor e ícone.
+
+====================================================
+2) PROGRESSO POR PÁGINAS
+====================================================
+
+Hoje o progresso está sendo tratado como percentual manual.
+Quero mudar a lógica.
+
+Cada livro deve ter:
+
+- totalPages
+- currentPage
+
+O sistema deve calcular automaticamente:
+
+progressPercent = currentPage / totalPages * 100
+
+Exibir esse percentual automaticamente na interface.
+
+====================================================
+3) TELA DE CADASTRO / EDIÇÃO
+====================================================
+
+No modal de adicionar/editar livro:
+
+Manter:
+- título
+- autor
+- gênero
+- status
+- nota
+
+Ajustar:
+- remover dependência de URL da capa como opção principal
+- adicionar upload de capa
+
+Melhorar:
+- campo “Total páginas”
+- adicionar campo “Página atual”
+- progresso percentual deve ser derivado automaticamente
+
+====================================================
+4) TELA DE DETALHE DO LIVRO
+====================================================
+
+Na aba Progresso:
+
+Quero poder informar:
+- página atual
+ou
+- quantas páginas já li
+
+Sugestão:
+usar "Página atual" como campo principal
+
+Exemplo:
+- Total: 258
+- Página atual: 206
+
+Resultado:
+- progresso = 80%
+
+Quero que:
+- a barra atualize automaticamente
+- o percentual seja recalculado automaticamente
+- não precise digitar o percentual manualmente
+
+====================================================
+5) REGRAS DE VALIDAÇÃO
+====================================================
+
+- currentPage não pode ser maior que totalPages
+- currentPage não pode ser negativa
+- se currentPage == totalPages:
+  - sugerir status = concluído
+  - permitir preencher data de conclusão
+
+====================================================
+6) UX / VISUAL
+====================================================
+
+Quero visual premium:
+
+- preview bonito da capa
+- upload simples
+- progresso claro
+- leitura confortável
+- coerente com o design do Vertex OS
+
+====================================================
+7) COMPATIBILIDADE
+====================================================
+
+Se já existirem livros cadastrados com progressPercent manual:
+- migrar para a nova lógica quando possível
+ou
+- manter compatibilidade sem quebrar os registros atuais
+
+====================================================
+8) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. upload real de capa do livro
+2. suporte a jpg/jpeg/png/webp
+3. preview da capa
+4. progresso baseado em páginas
+5. cálculo automático de percentual
+6. validações corretas
+7. atualização visual da barra de progresso
+
+No final, me mostrar:
+- como a capa está sendo salva
+- como o progresso está sendo calculado
+- como editar a página atual
+- o que mudou no cadastro e no detalhe do livro

@@ -17,6 +17,7 @@ export interface Livro {
   genero: string;
   status: "quero_ler" | "lendo" | "concluido" | "abandonado";
   progresso: number;
+  currentPage: number | null;
   nota: number;
   dataInicio: string | null;
   dataFim: string | null;
@@ -55,6 +56,8 @@ export interface Frase {
   frase: string;
   pagina: string | null;
   tag: string | null;
+  imagemUrl: string | null;
+  favorito: boolean;
   createdAt: string;
 }
 
@@ -77,8 +80,14 @@ export const livrosApi = {
 
 export const frasesApi = {
   list: (livroId: number) => req<Frase[]>("GET", `/api/conhecimento/frases?livroId=${livroId}`),
-  create: (data: { livroId: number; frase: string; pagina?: string; tag?: string }) => req<Frase>("POST", "/api/conhecimento/frases", data),
+  create: (data: { livroId: number; frase: string; pagina?: string; tag?: string; imagemUrl?: string; favorito?: boolean }) => req<Frase>("POST", "/api/conhecimento/frases", data),
+  toggleFavorito: (id: number) => req<Frase>("PATCH", `/api/conhecimento/frases/${id}/favorito`),
   remove: (id: number) => req<{ ok: true }>("DELETE", `/api/conhecimento/frases/${id}`),
+};
+
+export const ocrApi = {
+  extrairTexto: (imagemBase64: string, mimeType?: string) =>
+    req<{ texto: string }>("POST", "/api/conhecimento/ocr", { imagemBase64, mimeType }),
 };
 
 export const insightsApi = {

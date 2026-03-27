@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { livrosApi, type Livro } from "@/lib/conhecimento-api";
 import {
   BookOpen, Plus, Star, CheckCircle2, Clock, BookMarked,
-  Loader2, X, Trash2, Edit2, Heart, Search,
+  Loader2, X, Trash2, Edit2, Heart, Search, Upload, BookCopy,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,6 +18,15 @@ const STATUS_MAP = {
 
 const GENEROS = ["Desenvolvimento", "Finanças", "Produtividade", "Saúde", "Filosofia", "Ficção", "História", "Negócios", "Ciência", "Outro"];
 const CORES = ["#F59E0B", "#6366F1", "#10B981", "#EF4444", "#3B82F6", "#8B5CF6", "#EC4899", "#14B8A6", "#64748B"];
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 function LivroModal({
   initial,
@@ -35,12 +44,57 @@ function LivroModal({
   const [genero, setGenero] = useState(initial?.genero ?? "Desenvolvimento");
   const [status, setStatus] = useState<Livro["status"]>(initial?.status ?? "quero_ler");
   const [totalPaginas, setTotalPaginas] = useState(initial?.totalPaginas?.toString() ?? "");
-  const [progresso, setProgresso] = useState(initial?.progresso?.toString() ?? "0");
+  const [currentPage, setCurrentPage] = useState(initial?.currentPage?.toString() ?? "");
   const [nota, setNota] = useState(initial?.nota?.toString() ?? "0");
   const [cor, setCor] = useState(initial?.cor ?? "#F59E0B");
-  const [capa, setCapa] = useState(initial?.capa ?? "");
+  const [capaPreview, setCapaPreview] = useState<string | null>(initial?.capa ?? null);
+  const [uploadingCapa, setUploadingCapa] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const isEdit = !!initial;
+
+  const computedProgresso = (() => {
+    const cp = parseInt(currentPage);
+    const tp = parseInt(totalPaginas);
+    if (!isNaN(cp) && !isNaN(tp) && tp > 0) return Math.min(100, Math.round((cp / tp) * 100));
+    return 0;
+  })();
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) return;
+    setUploadingCapa(true);
+    try {
+      const dataUrl = await fileToBase64(file);
+      setCapaPreview(dataUrl);
+    } finally {
+      setUploadingCapa(false);
+    }
+  };
+
+  const handleSave = () => {
+    if (!titulo.trim() || !autor.trim()) return;
+    const cp = currentPage.trim() ? parseInt(currentPage) : null;
+    const tp = totalPaginas.trim() ? parseInt(totalPaginas) : null;
+    const progresso = (() => {
+      if (cp != null && tp != null && tp > 0) return Math.min(100, Math.round((cp / tp) * 100));
+      return 0;
+    })();
+    onSave({
+      titulo, autor, genero, status,
+      progresso,
+      currentPage: cp,
+      nota: nota ? parseInt(nota) : 0,
+      dataInicio: initial?.dataInicio ?? null,
+      dataFim: initial?.dataFim ?? null,
+      resumo: initial?.resumo ?? null,
+      cor,
+      totalPaginas: tp,
+      capa: capaPreview ?? null,
+      favorito: initial?.favorito ?? false,
+    });
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -74,25 +128,52 @@ function LivroModal({
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Total páginas</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Total págs.</label>
               <input type="number" value={totalPaginas} onChange={(e) => setTotalPaginas(e.target.value)} placeholder="320" className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Progresso %</label>
-              <input type="number" min="0" max="100" value={progresso} onChange={(e) => setProgresso(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Página atual</label>
+              <input type="number" value={currentPage} onChange={(e) => setCurrentPage(e.target.value)} placeholder="0" className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5">Nota (0–5)</label>
               <input type="number" min="0" max="5" value={nota} onChange={(e) => setNota(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
           </div>
+          {(currentPage || totalPaginas) && (
+            <div className="bg-slate-50 rounded-xl px-3 py-2 flex items-center gap-2">
+              <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${computedProgresso}%` }} />
+              </div>
+              <span className="text-xs font-bold text-slate-700 tabular-nums w-10 text-right">{computedProgresso}%</span>
+            </div>
+          )}
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1.5">URL da Capa (opcional)</label>
-            <input value={capa} onChange={(e) => setCapa(e.target.value)} placeholder="https://images.example.com/book-cover.jpg" className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-            {capa && <img src={capa} alt="preview" className="mt-2 h-24 object-cover rounded-xl border border-slate-200" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Capa do livro</label>
+            <input ref={fileRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
+            {capaPreview ? (
+              <div className="relative group">
+                <img src={capaPreview} alt="capa" className="h-32 object-cover rounded-xl border border-slate-200 w-full" />
+                <button
+                  onClick={() => { setCapaPreview(null); if (fileRef.current) fileRef.current.value = ""; }}
+                  className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-3 h-3 text-slate-600" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => fileRef.current?.click()}
+                disabled={uploadingCapa}
+                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-xl py-6 text-sm text-slate-400 hover:border-primary/40 hover:text-primary/60 transition-colors"
+              >
+                {uploadingCapa ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                {uploadingCapa ? "Carregando..." : "Clique para enviar foto da capa"}
+              </button>
+            )}
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-2">Cor da capa {capa ? "(fallback)" : ""}</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-2">Cor {capaPreview ? "(fallback)" : "da capa"}</label>
             <div className="flex gap-2 flex-wrap">
               {CORES.map((c) => (
                 <button key={c} onClick={() => setCor(c)} className="w-7 h-7 rounded-full border-2 transition-all" style={{ backgroundColor: c, borderColor: cor === c ? "#1e293b" : "transparent" }} />
@@ -103,18 +184,7 @@ function LivroModal({
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100">
           <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancelar</button>
           <button
-            onClick={() => titulo.trim() && autor.trim() && onSave({
-              titulo, autor, genero, status,
-              progresso: progresso ? parseInt(progresso) : 0,
-              nota: nota ? parseInt(nota) : 0,
-              dataInicio: initial?.dataInicio ?? null,
-              dataFim: initial?.dataFim ?? null,
-              resumo: initial?.resumo ?? null,
-              cor,
-              totalPaginas: totalPaginas ? parseInt(totalPaginas) : null,
-              capa: capa.trim() || null,
-              favorito: initial?.favorito ?? false,
-            })}
+            onClick={handleSave}
             disabled={saving || !titulo.trim() || !autor.trim()}
             className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-xl text-sm font-semibold disabled:opacity-50"
           >
@@ -139,6 +209,10 @@ function BookCard({
   onToggleFavorito: () => void;
 }) {
   const st = STATUS_MAP[livro.status] ?? STATUS_MAP.quero_ler;
+  const showProgress = livro.status === "lendo" || livro.progresso > 0;
+  const pageLabel = livro.currentPage != null && livro.totalPaginas != null
+    ? `Pág. ${livro.currentPage}/${livro.totalPaginas}`
+    : livro.progresso > 0 ? `${livro.progresso}%` : null;
 
   return (
     <div className="group relative bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-lg transition-all overflow-hidden flex flex-col">
@@ -176,16 +250,10 @@ function BookCard({
       </button>
 
       <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-        <button
-          onClick={(e) => { e.preventDefault(); onEdit(); }}
-          className="p-1.5 rounded-full bg-white/90 shadow-sm hover:bg-white"
-        >
+        <button onClick={(e) => { e.preventDefault(); onEdit(); }} className="p-1.5 rounded-full bg-white/90 shadow-sm hover:bg-white">
           <Edit2 className="w-3 h-3 text-slate-600" />
         </button>
-        <button
-          onClick={(e) => { e.preventDefault(); onDelete(); }}
-          className="p-1.5 rounded-full bg-white/90 shadow-sm hover:bg-red-50"
-        >
+        <button onClick={(e) => { e.preventDefault(); onDelete(); }} className="p-1.5 rounded-full bg-white/90 shadow-sm hover:bg-red-50">
           <Trash2 className="w-3 h-3 text-red-400" />
         </button>
       </div>
@@ -198,12 +266,12 @@ function BookCard({
             <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${st.cls}`}>{st.label}</span>
             <span className="text-[10px] text-slate-300">{livro.genero}</span>
           </div>
-          {(livro.status === "lendo" || livro.progresso > 0) && (
+          {showProgress && (
             <div className="mt-1">
               <div className="w-full bg-slate-100 rounded-full h-1">
                 <div className="h-1 rounded-full transition-all" style={{ width: `${livro.progresso}%`, backgroundColor: livro.cor }} />
               </div>
-              <p className="text-[9px] text-slate-400 mt-0.5">{livro.progresso}%</p>
+              {pageLabel && <p className="text-[9px] text-slate-400 mt-0.5">{pageLabel}</p>}
             </div>
           )}
         </div>

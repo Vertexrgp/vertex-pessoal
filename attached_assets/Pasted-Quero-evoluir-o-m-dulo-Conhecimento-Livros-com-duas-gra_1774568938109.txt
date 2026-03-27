@@ -1,0 +1,266 @@
+Quero evoluir o módulo Conhecimento > Livros com duas grandes melhorias integradas:
+
+1. upload real da capa do livro + progresso automático por páginas
+2. evolução da aba “Frases” para “Frases & Trechos”, incluindo upload de foto de trechos grifados e conversão em texto editável
+
+OBJETIVO
+Transformar o módulo de Livros em uma experiência muito mais completa, prática e premium, permitindo:
+
+- cadastrar livros com capa real
+- acompanhar progresso de leitura por páginas
+- salvar frases digitadas
+- salvar trechos fotografados do livro físico
+- converter imagem em texto editável antes de salvar
+- organizar e buscar esse conhecimento depois
+
+====================================================
+1) CAPA DO LIVRO POR UPLOAD
+====================================================
+
+Hoje o sistema aceita apenas URL da capa.
+Quero mudar isso para permitir upload real de imagem.
+
+Implementar no cadastro e edição do livro:
+
+- campo de upload de imagem
+- aceitar formatos:
+  - jpg
+  - jpeg
+  - png
+  - webp
+- mostrar preview da capa antes de salvar
+- permitir trocar a capa
+- permitir remover a capa
+
+Se o livro não tiver capa, manter fallback visual com cor e ícone.
+
+====================================================
+2) PROGRESSO AUTOMÁTICO POR PÁGINAS
+====================================================
+
+Hoje o progresso está sendo tratado como percentual manual.
+Quero mudar a lógica.
+
+Cada livro deve ter:
+
+- totalPages
+- currentPage
+
+O sistema deve calcular automaticamente:
+
+progressPercent = currentPage / totalPages * 100
+
+Exibir esse percentual automaticamente na interface.
+
+====================================================
+3) TELA DE CADASTRO / EDIÇÃO DO LIVRO
+====================================================
+
+No modal de adicionar/editar livro:
+
+Manter:
+- título
+- autor
+- gênero
+- status
+- nota
+
+Ajustar:
+- remover dependência de URL da capa como opção principal
+- adicionar upload de capa
+
+Melhorar:
+- campo “Total páginas”
+- adicionar campo “Página atual”
+- progresso percentual deve ser derivado automaticamente
+
+====================================================
+4) TELA DE DETALHE DO LIVRO — ABA PROGRESSO
+====================================================
+
+Na aba Progresso:
+
+Quero poder informar:
+- página atual
+ou
+- quantas páginas já li
+
+Sugestão:
+usar "Página atual" como campo principal
+
+Exemplo:
+- Total: 258
+- Página atual: 206
+
+Resultado:
+- progresso = 80%
+
+Quero que:
+- a barra atualize automaticamente
+- o percentual seja recalculado automaticamente
+- não precise digitar o percentual manualmente
+
+====================================================
+5) REGRAS DE VALIDAÇÃO DO PROGRESSO
+====================================================
+
+- currentPage não pode ser maior que totalPages
+- currentPage não pode ser negativa
+- se currentPage == totalPages:
+  - sugerir status = concluído
+  - permitir preencher data de conclusão
+
+====================================================
+6) EVOLUIR A ABA "FRASES" PARA "FRASES & TRECHOS"
+====================================================
+
+Quero mudar a aba "Frases" para:
+
+Frases & Trechos
+
+OBJETIVO
+Permitir que eu salve:
+
+- frases digitadas manualmente
+- trechos maiores
+- parágrafos importantes
+- fotos de páginas grifadas do livro físico
+
+====================================================
+7) UPLOAD DE IMAGEM EM "FRASES & TRECHOS"
+====================================================
+
+Permitir upload de imagem nessa aba.
+
+Formatos aceitos:
+- jpg
+- jpeg
+- png
+- webp
+
+Cada item pode ter:
+- imagem original
+- texto extraído
+- página (opcional)
+- observação
+- tags
+
+====================================================
+8) EXTRAÇÃO DE TEXTO DA IMAGEM
+====================================================
+
+Ao enviar a imagem:
+
+- o sistema deve tentar extrair o texto da imagem
+- converter em texto editável
+- mostrar uma etapa de revisão antes de salvar
+
+IMPORTANTE:
+não salvar automaticamente sem eu revisar
+
+Fluxo ideal:
+foto → extração → revisão → salvar
+
+====================================================
+9) REVISÃO MANUAL DO TRECHO
+====================================================
+
+Depois da extração, quero ver:
+
+- imagem original
+- texto reconhecido
+- campo editável para corrigir erros
+- botão salvar
+
+====================================================
+10) ESTRUTURA DO ITEM "FRASE / TRECHO"
+====================================================
+
+Cada trecho salvo deve ter:
+
+- texto final
+- foto original (quando houver)
+- livro vinculado
+- página (opcional)
+- capítulo/tema (opcional)
+- tags
+- favorito
+- observação/insight
+
+====================================================
+11) BUSCA E ORGANIZAÇÃO
+====================================================
+
+Quero poder depois:
+
+- pesquisar por palavra
+- filtrar por livro
+- filtrar por tag
+- filtrar favoritos
+
+====================================================
+12) COMPATIBILIDADE
+====================================================
+
+Manter compatibilidade com frases digitadas manualmente.
+
+Ou seja:
+a aba deve aceitar tanto:
+- frase digitada
+- trecho vindo de imagem
+
+Também manter compatibilidade com livros já cadastrados com progressPercent manual:
+- migrar para a nova lógica quando possível
+ou
+- manter compatibilidade sem quebrar os registros atuais
+
+====================================================
+13) UX / VISUAL
+====================================================
+
+Quero visual premium:
+
+Nos livros:
+- preview bonito da capa
+- upload simples
+- progresso claro
+- leitura confortável
+
+Na aba Frases & Trechos:
+- lista bonita dos trechos
+- preview da foto
+- texto bem legível
+- layout elegante
+- coerente com o design do Vertex OS
+
+====================================================
+14) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+LIVROS
+1. upload real de capa do livro
+2. suporte a jpg/jpeg/png/webp
+3. preview da capa
+4. progresso baseado em páginas
+5. cálculo automático de percentual
+6. validações corretas
+7. atualização visual da barra de progresso
+
+FRASES & TRECHOS
+8. mudança da aba para "Frases & Trechos"
+9. upload de imagem
+10. extração de texto
+11. etapa de revisão antes de salvar
+12. salvamento com imagem + texto
+13. busca e filtros
+
+No final, me mostrar:
+- como a capa está sendo salva
+- como o progresso está sendo calculado
+- como editar a página atual
+- como o texto está sendo extraído
+- como revisar antes de salvar
+- como os trechos ficam organizados
+- o que mudou no cadastro e no detalhe do livro

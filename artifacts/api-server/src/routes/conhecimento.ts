@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { conhecimentoLivros, conhecimentoFrases, conhecimentoInsights, conhecimentoArtigos, conhecimentoArtigoInsights, conhecimentoVideos } from "@workspace/db";
-import { eq, desc, asc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
+import OpenAI from "openai";
 
 const router = Router();
 
@@ -29,11 +30,15 @@ router.get("/conhecimento/livros/:id", async (req, res) => {
 
 router.post("/conhecimento/livros", async (req, res) => {
   try {
-    const { titulo, autor, genero, status, progresso, nota, dataInicio, dataFim, resumo, cor, totalPaginas, capa, favorito } = req.body;
+    const { titulo, autor, genero, status, progresso, currentPage, nota, dataInicio, dataFim, resumo, cor, totalPaginas, capa, favorito } = req.body;
     if (!titulo || !autor) return res.status(400).json({ error: "titulo e autor são obrigatórios" });
+    const computedProgresso = (() => {
+      if (currentPage != null && totalPaginas != null && totalPaginas > 0) return Math.round((currentPage / totalPaginas) * 100);
+      return progresso ?? 0;
+    })();
     const [livro] = await db
       .insert(conhecimentoLivros)
-      .values({ titulo, autor, genero: genero || "geral", status: status || "quero_ler", progresso: progresso ?? 0, nota: nota ?? 0, dataInicio: dataInicio || null, dataFim: dataFim || null, resumo: resumo || null, cor: cor || "#F59E0B", totalPaginas: totalPaginas || null, capa: capa || null, favorito: favorito ?? false })
+      .values({ titulo, autor, genero: genero || "geral", status: status || "quero_ler", progresso: computedProgresso, currentPage: currentPage ?? null, nota: nota ?? 0, dataInicio: dataInicio || null, dataFim: dataFim || null, resumo: resumo || null, cor: cor || "#F59E0B", totalPaginas: totalPaginas || null, capa: capa || null, favorito: favorito ?? false })
       .returning();
     res.json(livro);
   } catch {
@@ -44,15 +49,37 @@ router.post("/conhecimento/livros", async (req, res) => {
 router.put("/conhecimento/livros/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { titulo, autor, genero, status, progresso, nota, dataInicio, dataFim, resumo, cor, totalPaginas, capa, favorito } = req.body;
+    const { titulo, autor, genero, status, progresso, currentPage, nota, dataInicio, dataFim, resumo, cor, totalPaginas, capa, favorito } = req.body;
+    const setData: Record<string, unknown> = { updatedAt: new Date() };
+    if (titulo !== undefined) setData.titulo = titulo;
+    if (autor !== undefined) setData.autor = autor;
+    if (genero !== undefined) setData.genero = genero;
+    if (status !== undefined) setData.status = status;
+    if (nota !== undefined) setData.nota = nota;
+    if (dataInicio !== undefined) setData.dataInicio = dataInicio;
+    if (dataFim !== undefined) setData.dataFim = dataFim;
+    if (resumo !== undefined) setData.resumo = resumo;
+    if (cor !== undefined) setData.cor = cor;
+    if (totalPaginas !== undefined) setData.totalPaginas = totalPaginas;
+    if (capa !== undefined) setData.capa = capa;
+    if (favorito !== undefined) setData.favorito = favorito;
+    if (currentPage !== undefined) {
+      setData.currentPage = currentPage;
+      if (totalPaginas != null && totalPaginas > 0) {
+        setData.progresso = Math.min(100, Math.round((currentPage / totalPaginas) * 100));
+      }
+    } else if (progresso !== undefined) {
+      setData.progresso = progresso;
+    }
     const [updated] = await db
       .update(conhecimentoLivros)
-      .set({ titulo, autor, genero, status, progresso, nota, dataInicio, dataFim, resumo, cor, totalPaginas, capa: capa !== undefined ? capa : undefined, favorito: favorito !== undefined ? favorito : undefined, updatedAt: new Date() })
+      .set(setData as Parameters<typeof db.update>[0] extends infer T ? any : any)
       .where(eq(conhecimentoLivros.id, id))
       .returning();
     if (!updated) return res.status(404).json({ error: "Livro não encontrado" });
     res.json(updated);
-  } catch {
+  } catch (e) {
+    console.error(e);
     res.status(500).json({ error: "Erro ao atualizar livro" });
   }
 });
@@ -83,12 +110,24 @@ router.get("/conhecimento/frases", async (req, res) => {
 
 router.post("/conhecimento/frases", async (req, res) => {
   try {
-    const { livroId, frase, pagina, tag } = req.body;
+    const { livroId, frase, pagina, tag, imagemUrl, favorito } = req.body;
     if (!livroId || !frase) return res.status(400).json({ error: "livroId e frase são obrigatórios" });
-    const [f] = await db.insert(conhecimentoFrases).values({ livroId: parseInt(livroId), frase, pagina: pagina || null, tag: tag || null }).returning();
+    const [f] = await db.insert(conhecimentoFrases).values({ livroId: parseInt(livroId), frase, pagina: pagina || null, tag: tag || null, imagemUrl: imagemUrl || null, favorito: favorito ?? false }).returning();
     res.json(f);
   } catch {
     res.status(500).json({ error: "Erro ao criar frase" });
+  }
+});
+
+router.patch("/conhecimento/frases/:id/favorito", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [current] = await db.select().from(conhecimentoFrases).where(eq(conhecimentoFrases.id, id));
+    if (!current) return res.status(404).json({ error: "Frase não encontrada" });
+    const [updated] = await db.update(conhecimentoFrases).set({ favorito: !current.favorito }).where(eq(conhecimentoFrases.id, id)).returning();
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: "Erro ao alternar favorito" });
   }
 });
 
@@ -99,6 +138,47 @@ router.delete("/conhecimento/frases/:id", async (req, res) => {
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: "Erro ao deletar frase" });
+  }
+});
+
+// ─── OCR ──────────────────────────────────────────────────────────────────────
+
+router.post("/conhecimento/ocr", async (req, res) => {
+  try {
+    const { imagemBase64, mimeType } = req.body;
+    if (!imagemBase64) return res.status(400).json({ error: "imagemBase64 é obrigatório" });
+
+    const openai = new OpenAI({
+      baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "dummy",
+    });
+
+    const mime = mimeType || "image/jpeg";
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      max_completion_tokens: 2048,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: { url: `data:${mime};base64,${imagemBase64}` },
+            },
+            {
+              type: "text",
+              text: "Extraia todo o texto visível nesta imagem de página de livro. Retorne apenas o texto extraído, sem comentários, explicações ou formatação extra. Preserve quebras de parágrafo.",
+            },
+          ],
+        },
+      ],
+    });
+
+    const texto = response.choices[0]?.message?.content ?? "";
+    res.json({ texto });
+  } catch (e) {
+    console.error("OCR error:", e);
+    res.status(500).json({ error: "Erro ao extrair texto da imagem" });
   }
 });
 

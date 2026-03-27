@@ -7,6 +7,7 @@ export const conhecimentoLivros = pgTable("conhecimento_livros", {
   genero: text("genero").notNull().default("geral"),
   status: text("status").notNull().default("quero_ler"),
   progresso: integer("progresso").notNull().default(0),
+  currentPage: integer("current_page"),
   nota: integer("nota").notNull().default(0),
   dataInicio: date("data_inicio"),
   dataFim: date("data_fim"),
@@ -28,6 +29,8 @@ export const conhecimentoFrases = pgTable("conhecimento_frases", {
   frase: text("frase").notNull(),
   pagina: text("pagina"),
   tag: text("tag"),
+  imagemUrl: text("imagem_url"),
+  favorito: boolean("favorito").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

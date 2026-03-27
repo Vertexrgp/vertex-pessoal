@@ -18,10 +18,16 @@ Full-stack personal OS — 7 modules: Financeiro (incl. Cartões + Patrimônio),
 
 - **Hub page** (`/conhecimento`): Biblioteca Pessoal com busca global, filtros por tipo e status, e smart blocks (Favoritos, Em andamento, Na fila, Concluídos)
 - **Livros** (`/conhecimento/livros`): Grid visual de livros com capa, progresso, favorito toggle, busca + filtros
+  - **Upload de capa**: FileReader converte arquivo (JPG/PNG/WebP) em base64 data URL, armazenado na coluna `capa text`
+  - **Progresso por páginas**: campo `currentPage integer` em `conhecimento_livros`; progresso (%) calculado automaticamente de currentPage/totalPaginas
+  - **Frases & Trechos** (tab renomeada de "Frases"): dois modos — "Digitar" e "Foto da página" com OCR por IA
+  - **OCR**: POST `/api/conhecimento/ocr` — envia base64 para OpenAI gpt-4o vision → retorna texto extraído para revisão antes de salvar
+  - **frasesApi**: campos adicionados `imagemUrl text` e `favorito boolean` em `conhecimento_frases`; PATCH `/frases/:id/favorito`
 - **Artigos** (`/conhecimento/artigos`): Lista com favoritos, busca, filtros por tema
 - **Vídeos** (`/conhecimento/videos`): Grid com thumbnail, plataforma badge, favoritos, busca, filtros
 - **Favoritos**: campo `favorito boolean` em todos os três; PATCH toggle endpoint; coração em cada card
 - **Schema**: `favorito` boolean em `conhecimento_livros`, `conhecimento_artigos`, `conhecimento_videos`
+- **IA (OCR)**: OpenAI integração via Replit AI Integrations (env vars: `AI_INTEGRATIONS_OPENAI_BASE_URL`, `AI_INTEGRATIONS_OPENAI_API_KEY`); modelo `gpt-4o` para visão
 
 ## Stack
 
