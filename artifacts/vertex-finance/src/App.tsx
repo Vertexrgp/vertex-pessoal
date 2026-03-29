@@ -56,6 +56,7 @@ import InglesPage from "./pages/idiomas/ingles";
 import SugestoesPage from "./pages/sugestoes";
 import VidaPage from "./pages/vida/index";
 import ProjetoDetalhePage from "./pages/vida/projeto-detalhe";
+import CidadeDetalhePage from "./pages/vida/cidade-detalhe";
 
 const queryClient = new QueryClient();
 
@@ -122,6 +123,7 @@ function Router() {
       <Route path="/idiomas/ingles" component={InglesPage} />
 
       <Route path="/vida" component={VidaPage} />
+      <Route path="/vida/:projetoId/cidades/:cidadeId" component={CidadeDetalhePage} />
       <Route path="/vida/:id" component={ProjetoDetalhePage} />
 
       <Route path="/sugestoes" component={SugestoesPage} />

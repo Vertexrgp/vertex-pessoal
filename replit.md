@@ -6,19 +6,25 @@ Full-stack personal OS — 8 modules: Financeiro (incl. Cartões + Patrimônio),
 
 ## Planejamento de Vida Module
 
-- **Route**: `/vida` — project list; `/vida/:id` — project detail
+- **Routes**: `/vida` → project list; `/vida/:id` → project detail; `/vida/:projetoId/cidades/:cidadeId` → city detail
 - **Sidebar**: "PLANEJAMENTO DE VIDA" section with Compass icon, violet accent (`text-violet-400`)
-- **DB Tables**: `vida_projetos`, `vida_cidades`, `vida_custo_vida`, `vida_pros_contras`, `vida_plano_acao`, `vida_checkpoints`
-- **Project types**: mudanca_pais, mudanca_cidade, carreira, estilo_vida, outro
-- **Status**: explorando, planejando, executando, concluido
-- **City detail**: expandable card with quality/adaptation scores (1-10), inline custo de vida editor (7 categories), pros & contras (add via input + Enter or + button)
-- **5 Tabs on project detail**:
-  - **Cidades**: list of cities, expandable with cost breakdown + pros/contras
-  - **Comparação**: side-by-side bar charts + table for cost categories across all cities; scores comparison
-  - **Simulação**: financial simulation — input renda mensal + economias, calculates saldo mensal, reserva coverage (months/years), months to save 6x reserve
-  - **Plano de Ação**: checklist with status toggle (click circle to cycle pendente→em_andamento→concluido), inline edit, prazo date, progress bar
-  - **Checkpoints**: timeline with check-to-complete toggle, dataAlvo, delete on hover
-- **API**: `GET/POST /api/vida/projetos`, `GET/PUT/DELETE /api/vida/projetos/:id`, `POST /api/vida/projetos/:id/cidades`, `PUT/DELETE /api/vida/cidades/:id`, `PUT /api/vida/cidades/:id/custo-vida`, `POST/DELETE /api/vida/cidades/:id/pros-contras`, `POST/PUT/DELETE /api/vida/plano-acao`, `POST/PUT/DELETE /api/vida/checkpoints`
+- **DB Tables** (8): `vida_projetos`, `vida_cidades`, `vida_custo_vida`, `vida_pros_contras`, `vida_plano_acao`, `vida_checkpoints`, `vida_trabalho`, `vida_visto`, `vida_qualidade`, `vida_score_pesos`
+- **City detail page** (`cidade-detalhe.tsx`) with 6 tabs:
+  - **Geral**: nome, pais, estado, moeda, idiomas, fuso, clima, prioridade, scores 1-10
+  - **Custo de Vida**: 12 fields grouped (moradia/alimentação/mobilidade/outros), shows total mensal + anual
+  - **Trabalho & Renda**: renda Rafael/Fernanda, faixas (conservadora/provável/otimista), demanda, idioma, validação, facilidade recolocação 1-10, saldo calculado
+  - **Visto & Imigração**: tipo visto, dificuldades (estudo/trabalho/permanente) 1-10, tempo estimado, custo, job offer, nota viabilidade 1-10
+  - **Qualidade de Vida**: 9 scored criteria with icon+description, média geral shown
+  - **Prós & Riscos**: add/delete items for prós, contras, riscos, dúvidas
+- **Project detail page** (`projeto-detalhe.tsx`) with 6 tabs:
+  - **Cidades**: summary cards with custo/saldo/score + prós/contras badges + "Editar análise completa" link → cidade detail
+  - **Comparação**: full table comparing all cities on 9 criteria with color coding (best=green, worst=red)
+  - **Simulação**: city selector, renda (pre-filled from faixaProvável), economias, calculates saldo/reserva/meses
+  - **Plano de Ação**: checklist with cycle status (click circle), inline edit, prazo, progress bar
+  - **Checkpoints**: timeline with check-to-complete, dataAlvo, delete on hover
+  - **Resumo de Decisão**: score ranking with bar chart, editable peso weights, auto-diagnostics (cheapest/best renda/best balance/easiest visto), decision panel table with traffic lights
+- **Score algorithm**: composite weighted score using pesoCusto/pesoRenda/pesoImigracao/pesoSeguranca/pesoAdaptacao/pesoQualidade; custo inversely scored (cheaper=better); stored in `vida_score_pesos` per project
+- **API**: Full CRUD for all 8 tables + `PUT /api/vida/projetos/:id/score-pesos` + `GET /api/vida/cidades/:id` (full city detail)
 
 ## Agenda — Planejamento Semanal
 

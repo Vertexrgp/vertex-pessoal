@@ -1,0 +1,269 @@
+Quero melhorar o módulo JÁ EXISTENTE "Planejamento de Vida", sem recriar o módulo do zero, focando em torná-lo uma ferramenta real de decisão para morar fora (EUA, Canadá, etc).
+
+OBJETIVO
+Aprimorar o módulo atual para permitir:
+
+- análise profunda de cidades
+- comparação real entre cenários
+- simulação financeira
+- visão clara para tomada de decisão
+
+IMPORTANTE
+- NÃO criar um novo módulo
+- NÃO duplicar estrutura
+- apenas EVOLUIR o módulo Planejamento de Vida já existente
+- manter padrão visual e arquitetura atual
+
+====================================================
+1) MELHORAR O CADASTRO DE CIDADES
+====================================================
+
+Adicionar e organizar melhor os campos existentes:
+
+DADOS GERAIS
+- país
+- cidade
+- estado/província
+- moeda
+- idioma principal
+- fuso horário
+- clima
+- observações gerais
+
+====================================================
+2) CUSTO DE VIDA (ESSENCIAL)
+====================================================
+
+Adicionar uma seção estruturada com campos editáveis:
+
+- aluguel
+- condomínio
+- energia / gás
+- internet / celular
+- transporte
+- alimentação fora
+- mercado
+- academia
+- saúde / seguro
+- lazer
+- impostos estimados
+- custos extras / imprevistos
+
+FUNCIONALIDADE:
+- calcular automaticamente custo mensal total
+- calcular custo anual
+- permitir edição rápida
+
+====================================================
+3) TRABALHO E RENDA
+====================================================
+
+Adicionar campos estratégicos:
+
+- média salarial do Rafael
+- média salarial da Fernanda
+- renda familiar estimada
+- faixa conservadora
+- faixa provável
+- faixa otimista
+- demanda para cada área
+- exigência de idioma
+- necessidade de validação profissional
+- facilidade de recolocação (nota)
+- observações
+
+====================================================
+4) VISTO E IMIGRAÇÃO
+====================================================
+
+Adicionar análise completa:
+
+- tipo de visto mais provável
+- dificuldade (estudo, trabalho, permanente)
+- tempo estimado
+- custo do processo
+- necessidade de job offer
+- exigência de idioma
+- observações
+- nota geral de viabilidade migratória
+
+====================================================
+5) QUALIDADE DE VIDA
+====================================================
+
+Adicionar notas + observações:
+
+- segurança
+- saúde
+- transporte público
+- clima
+- comunidade brasileira
+- adaptação
+- qualidade para família
+- qualidade para carreira
+- potencial financeiro futuro
+
+====================================================
+6) PRÓS, CONTRAS E RISCOS
+====================================================
+
+Campos diretos:
+
+- pontos positivos
+- pontos negativos
+- riscos
+- dúvidas em aberto
+- observações pessoais
+- prioridade da cidade
+
+====================================================
+7) COMPARADOR DE CIDADES
+====================================================
+
+Melhorar ou criar dentro do módulo atual:
+
+Comparação lado a lado:
+
+- custo mensal
+- custo anual
+- renda do Rafael
+- renda da Fernanda
+- renda total
+- saldo mensal estimado
+- dificuldade de imigração
+- qualidade de vida
+- adaptação
+- score final
+
+Permitir selecionar múltiplas cidades.
+
+====================================================
+8) SCORE FINAL (SEM DECISÃO AUTOMÁTICA)
+====================================================
+
+Criar score configurável:
+
+Pesos editáveis:
+- custo de vida
+- renda
+- imigração
+- segurança
+- adaptação
+- qualidade de vida
+
+IMPORTANTE:
+O sistema organiza, não decide.
+
+====================================================
+9) INTEGRAÇÃO COM FINANCEIRO
+====================================================
+
+Simulações automáticas:
+
+- quanto preciso por mês
+- quanto preciso acumular
+- quantos meses consigo viver lá
+- melhor cidade em custo x renda
+- menor risco financeiro
+
+====================================================
+10) NOVA VISÃO: RESUMO EXECUTIVO (MUITO IMPORTANTE)
+====================================================
+
+Criar uma nova tela chamada:
+
+"Resumo de Decisão"
+
+Essa tela deve ser simples e extremamente clara.
+
+====================================================
+10.1 COMPARAÇÃO DIRETA (A vs B)
+====================================================
+
+Exemplo:
+
+Toronto vs Miami
+
+Mostrar:
+
+- custo total mensal
+- renda estimada
+- saldo mensal
+- dificuldade de imigração
+- qualidade de vida
+- score final
+
+====================================================
+10.2 DIAGNÓSTICO AUTOMÁTICO (SEM DECIDIR)
+====================================================
+
+Gerar insights como:
+
+- cidade mais barata
+- cidade com maior potencial de renda
+- cidade com melhor equilíbrio
+- cidade mais fácil de entrar
+- cidade mais arriscada
+
+====================================================
+10.3 VISUAL EXECUTIVO
+====================================================
+
+Quero:
+
+- cards comparativos
+- indicadores claros (verde, amarelo, vermelho)
+- leitura rápida
+- sem excesso de texto
+- sensação de painel de decisão
+
+====================================================
+11) UX / VISUAL
+====================================================
+
+Melhorar o módulo atual:
+
+- organização por blocos
+- visual premium
+- leitura executiva
+- evitar aparência de formulário simples
+- destacar informações importantes
+
+====================================================
+12) ESTRUTURA TÉCNICA
+====================================================
+
+Apenas expandir:
+
+- banco de dados
+- formulários
+- telas
+- cálculos
+
+SEM recriar o módulo.
+
+====================================================
+13) ENTREGAR
+====================================================
+
+Quero que você implemente melhorias no módulo atual:
+
+1. cadastro de cidade completo
+2. custo de vida detalhado
+3. renda e trabalho
+4. imigração
+5. qualidade de vida
+6. prós e riscos
+7. comparador
+8. score
+9. integração financeira
+10. tela "Resumo de Decisão"
+
+No final, me mostrar:
+
+- o que foi melhorado
+- novos campos criados
+- como cadastrar cidades
+- como comparar cidades
+- como funciona o resumo executivo
+- como usar para tomar decisão real
