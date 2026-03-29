@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
+import { useQueries, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
   DragOverlay,
@@ -510,13 +510,14 @@ function SideTaskRow({
 // One full horizontal row per day — the physical agenda feel
 
 function DayBlock({
-  day, date, tasks, isToday,
+  day, date, tasks, isToday, droppableId,
   onAddTask, onComplete, onDelete, onDuplicate, onMoveNext, onPostpone, onEdit,
 }: {
   day: typeof DIAS[0];
   date: Date;
   tasks: Task[];
   isToday: boolean;
+  droppableId: string;
   onAddTask: () => void;
   onComplete: (id: number) => void;
   onDelete: (task: Task) => void;
@@ -525,7 +526,7 @@ function DayBlock({
   onPostpone: (id: number) => void;
   onEdit: (task: Task) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: day.id });
+  const { setNodeRef, isOver } = useDroppable({ id: droppableId });
 
   // Sort: alta first, then media, then baixa — concluídas always at bottom
   const active = tasks
@@ -1387,14 +1388,74 @@ function RecurringActionDialog({
   );
 }
 
+// ─── WeekHeader ───────────────────────────────────────────────────────────────
+
+function WeekHeader({ monday, isCurrentWeek }: { monday: Date; isCurrentWeek: boolean }) {
+  return (
+    <div
+      className={cn(
+        "sticky top-0 z-20 flex items-center gap-3 px-5 py-2 border-b",
+        isCurrentWeek
+          ? "bg-primary/5 border-primary/20"
+          : "bg-slate-50/95 border-slate-100 backdrop-blur-sm"
+      )}
+    >
+      {isCurrentWeek && (
+        <span className="text-[10px] font-bold uppercase tracking-widest text-primary bg-primary/10 rounded-full px-2 py-0.5">
+          Semana atual
+        </span>
+      )}
+      <span className={cn("text-xs font-semibold", isCurrentWeek ? "text-primary/70" : "text-slate-400")}>
+        {formatWeekRange(monday)}
+      </span>
+    </div>
+  );
+}
+
+// ─── InfiniteScrollSentinel ────────────────────────────────────────────────────
+
+function InfiniteScrollSentinel({ onVisible }: { onVisible: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const onVisibleRef = useRef(onVisible);
+  onVisibleRef.current = onVisible;
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) onVisibleRef.current(); },
+      { rootMargin: "300px" }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+  return <div ref={ref} className="h-20 flex items-center justify-center">
+    <div className="flex gap-1">
+      {[0, 1, 2].map(i => (
+        <div key={i} className="w-1.5 h-1.5 rounded-full bg-slate-200 animate-pulse" style={{ animationDelay: `${i * 150}ms` }} />
+      ))}
+    </div>
+  </div>;
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function PlanejamentoSemanalPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
 
-  const [weekStart, setWeekStart] = useState<Date>(() => getMondayOfWeek(new Date()));
-  const semanaStr = toDateStr(weekStart);
+  // ─── Multi-week state ──────────────────────────────────────────────────────
+  const [loadedWeeks, setLoadedWeeks] = useState<string[]>(() => {
+    const today = getMondayOfWeek(new Date());
+    return [
+      toDateStr(addDays(today, -7)),
+      toDateStr(today),
+      toDateStr(addDays(today, 7)),
+      toDateStr(addDays(today, 14)),
+      toDateStr(addDays(today, 21)),
+    ];
+  });
+
+  const currentWeekStr = toDateStr(getMondayOfWeek(new Date()));
+  // semanaStr for new tasks without a specific date (use current week)
+  const semanaStr = currentWeekStr;
 
   const [showModal, setShowModal] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
@@ -1468,14 +1529,92 @@ export default function PlanejamentoSemanalPage() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const { data: tasks = [] } = useQuery<Task[]>({
-    queryKey: ["planner-tasks", semanaStr],
-    queryFn: () => fetch(apiUrl(`/agenda/planner?semana=${semanaStr}`)).then((r) => r.json()),
+  // ─── Multi-week queries ────────────────────────────────────────────────────
+
+  const weekQueriesResult = useQueries({
+    queries: loadedWeeks.map((week) => ({
+      queryKey: ["planner-tasks", week],
+      queryFn: () => fetch(apiUrl(`/agenda/planner?semana=${week}`)).then((r) => r.json()) as Promise<Task[]>,
+      staleTime: 2 * 60 * 1000,
+    })),
   });
 
-  const setTasks = (updater: (prev: Task[]) => Task[]) => {
-    qc.setQueryData(["planner-tasks", semanaStr], updater);
+  const allTasks: Task[] = useMemo(() => {
+    const flat = weekQueriesResult.flatMap((q) => (q.data as Task[] | undefined) ?? []);
+    const seen = new Set<number>();
+    return flat.filter((t) => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
+  }, [weekQueriesResult]);
+
+  const allTasksRef = useRef<Task[]>([]);
+  allTasksRef.current = allTasks;
+
+  // ─── Cache helpers ─────────────────────────────────────────────────────────
+
+  const updateTaskInCache = useCallback((taskId: number, updater: (t: Task) => Task) => {
+    for (const week of loadedWeeks) {
+      const data = qc.getQueryData<Task[]>(["planner-tasks", week]);
+      if (data?.some((t) => t.id === taskId)) {
+        qc.setQueryData<Task[]>(["planner-tasks", week], (prev) => (prev ?? []).map((t) => (t.id === taskId ? updater(t) : t)));
+        return;
+      }
+    }
+  }, [loadedWeeks, qc]);
+
+  const removeTaskFromCache = useCallback((taskId: number) => {
+    for (const week of loadedWeeks) {
+      qc.setQueryData<Task[]>(["planner-tasks", week], (prev) => (prev ?? []).filter((t) => t.id !== taskId));
+    }
+  }, [loadedWeeks, qc]);
+
+  const addTaskToCache = useCallback((task: Task) => {
+    const weekStr = task.semanaInicio;
+    if (loadedWeeks.includes(weekStr)) {
+      qc.setQueryData<Task[]>(["planner-tasks", weekStr], (prev) => [...(prev ?? []), task]);
+    } else {
+      qc.invalidateQueries({ queryKey: ["planner-tasks", weekStr] });
+    }
+  }, [loadedWeeks, qc]);
+
+  const invalidateAllWeeks = useCallback(() => {
+    loadedWeeks.forEach((week) => qc.invalidateQueries({ queryKey: ["planner-tasks", week] }));
+  }, [loadedWeeks, qc]);
+
+  // ─── Scroll to today ref ───────────────────────────────────────────────────
+
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const todayBlockRef = useRef<HTMLDivElement>(null);
+  const didScrollToToday = useRef(false);
+
+  const todayStr = toDateStr(new Date());
+
+  useEffect(() => {
+    if (didScrollToToday.current) return;
+    const el = todayBlockRef.current;
+    const container = scrollAreaRef.current;
+    if (!el || !container) return;
+    setTimeout(() => {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      didScrollToToday.current = true;
+    }, 200);
+  });
+
+  const scrollToToday = () => {
+    todayBlockRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  // ─── Infinite scroll ───────────────────────────────────────────────────────
+
+  const loadMoreWeeks = useCallback(() => {
+    setLoadedWeeks((prev) => {
+      const last = prev[prev.length - 1];
+      const lastDate = new Date(last + "T12:00:00");
+      const next1 = toDateStr(addDays(lastDate, 7));
+      const next2 = toDateStr(addDays(lastDate, 14));
+      const toAdd = [next1, next2].filter((w) => !prev.includes(w));
+      if (toAdd.length === 0) return prev;
+      return [...prev, ...toAdd];
+    });
+  }, []);
 
   // ─── Mutations ─────────────────────────────────────────────────────────────
 
@@ -1483,7 +1622,7 @@ export default function PlanejamentoSemanalPage() {
     mutationFn: (body: object) =>
       fetch(apiUrl("/agenda/planner"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json()),
     onSuccess: (t: Task) => {
-      setTasks((prev) => [...prev, t]);
+      addTaskToCache(t);
       toast({ title: "Tarefa criada!" });
       emitEvent(EVENT_TYPES.TASK_CREATED, "agenda", `Tarefa criada: "${t.titulo}"`, { id: t.id, titulo: t.titulo, prioridade: t.prioridade });
     },
@@ -1493,15 +1632,7 @@ export default function PlanejamentoSemanalPage() {
     mutationFn: (body: object) =>
       fetch(apiUrl("/agenda/recurring-series"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json()),
     onSuccess: (data: { series: object; tasks: Task[] }) => {
-      // Add the tasks for this week to the cache
-      const thisSemana = semanaStr;
-      const weekTasks = (data.tasks || []).filter((t) => t.semanaInicio === thisSemana);
-      if (weekTasks.length > 0) {
-        setTasks((prev) => [...prev, ...weekTasks]);
-      } else {
-        // Invalidate to reload from server
-        qc.invalidateQueries({ queryKey: ["planner-tasks", semanaStr] });
-      }
+      (data.tasks || []).forEach((t) => addTaskToCache(t));
       toast({ title: `Recorrência criada! (${data.tasks?.length || 0} instâncias geradas)` });
     },
     onError: () => toast({ title: "Erro ao criar recorrência", variant: "destructive" }),
@@ -1512,10 +1643,9 @@ export default function PlanejamentoSemanalPage() {
       fetch(apiUrl(`/agenda/planner/${id}`), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json()),
     onSuccess: (t: Task, vars) => {
       if (vars.editMode === "future" || vars.editMode === "all") {
-        // Full reload since many tasks were changed
-        qc.invalidateQueries({ queryKey: ["planner-tasks", semanaStr] });
+        invalidateAllWeeks();
       } else {
-        setTasks((prev) => prev.map((x) => x.id === t.id ? t : x));
+        updateTaskInCache(t.id, () => t);
       }
     },
   });
@@ -1525,10 +1655,9 @@ export default function PlanejamentoSemanalPage() {
       fetch(apiUrl(`/agenda/planner/${id}${deleteMode ? `?deleteMode=${deleteMode}` : ""}`), { method: "DELETE" }).then((r) => r.json()),
     onSuccess: (_, { id, deleteMode }) => {
       if (deleteMode === "all") {
-        // Reload since many tasks were removed
-        qc.invalidateQueries({ queryKey: ["planner-tasks", semanaStr] });
+        invalidateAllWeeks();
       } else {
-        setTasks((prev) => prev.filter((t) => t.id !== id));
+        removeTaskFromCache(id);
       }
       toast({ title: deleteMode === "all" ? "Série excluída" : "Tarefa removida" });
     },
@@ -1537,21 +1666,21 @@ export default function PlanejamentoSemanalPage() {
   const duplicateMutation = useMutation({
     mutationFn: (id: number) =>
       fetch(apiUrl(`/agenda/planner/${id}/duplicar`), { method: "POST" }).then((r) => r.json()),
-    onSuccess: (t: Task) => { setTasks((prev) => [...prev, t]); toast({ title: "Tarefa duplicada!" }); },
+    onSuccess: (t: Task) => { addTaskToCache(t); toast({ title: "Tarefa duplicada!" }); },
   });
 
   const moveNextMutation = useMutation({
     mutationFn: (id: number) =>
       fetch(apiUrl(`/agenda/planner/${id}/proxima-semana`), { method: "POST" }).then((r) => r.json()),
-    onSuccess: (_, id) => { setTasks((prev) => prev.map((t) => t.id === id ? { ...t, status: "proxima_semana" } : t)); toast({ title: "Movida para próxima semana" }); },
+    onSuccess: (_, id) => { updateTaskInCache(id, (t) => ({ ...t, status: "proxima_semana" })); toast({ title: "Movida para próxima semana" }); },
   });
 
   const postponeMutation = useMutation({
     mutationFn: (id: number) =>
       fetch(apiUrl(`/agenda/planner/${id}/postergar`), { method: "POST" }).then((r) => r.json()),
     onSuccess: (_, id) => {
-      const task = tasks.find((t) => t.id === id);
-      setTasks((prev) => prev.map((t) => t.id === id ? { ...t, status: "postergada" } : t));
+      const task = allTasksRef.current.find((t) => t.id === id);
+      updateTaskInCache(id, (t) => ({ ...t, status: "postergada" }));
       toast({ title: "Marcada como postergada" });
       if (task) emitEvent(EVENT_TYPES.TASK_POSTPONED, "agenda", `Tarefa postergada: "${task.titulo}"`, { id, titulo: task.titulo });
     },
@@ -1565,7 +1694,7 @@ export default function PlanejamentoSemanalPage() {
         body: JSON.stringify({ isFoco }),
       }).then((r) => r.json()),
     onSuccess: (_, { id, isFoco }) => {
-      setTasks((prev) => prev.map((t) => t.id === id ? { ...t, isFoco } : t));
+      updateTaskInCache(id, (t) => ({ ...t, isFoco }));
       toast({ title: isFoco ? "⭐ Tarefa fixada no foco" : "Foco removido" });
     },
   });
@@ -1577,10 +1706,10 @@ export default function PlanejamentoSemanalPage() {
   // ─── Ops ───────────────────────────────────────────────────────────────────
 
   const handleComplete = (id: number) => {
-    const task = tasks.find((t) => t.id === id);
+    const task = allTasksRef.current.find((t) => t.id === id);
     if (!task) return;
     const newStatus = task.status === "concluida" ? "pendente" : "concluida";
-    setTasks((prev) => prev.map((t) => t.id === id ? { ...t, status: newStatus } : t));
+    updateTaskInCache(id, (t) => ({ ...t, status: newStatus }));
     updateMutation.mutate({ id, status: newStatus });
     if (newStatus === "concluida") {
       emitEvent(EVENT_TYPES.TASK_COMPLETED, "agenda", `Tarefa concluída: "${task.titulo}"`, { id, titulo: task.titulo, prioridade: task.prioridade, categoria: task.categoria });
@@ -1595,18 +1724,14 @@ export default function PlanejamentoSemanalPage() {
 
   const handleSave = (data: TaskFormData) => {
     if (editTask) {
-      // If the task is recurring, show the recurring action dialog
       if (editTask.recurringSeriesId) {
         setRecurringDialog({ mode: "edit", task: editTask, pendingData: data });
         setShowModal(false);
         return;
       }
-      // Non-recurring edit
       doUpdate(editTask.id, data);
     } else {
-      // Creating new task
       if (data.recurrenceType && data.recurrenceType !== "none") {
-        // Create a recurring series
         createRecurringMutation.mutate({
           titulo: data.titulo,
           descricao: data.descricao,
@@ -1623,7 +1748,6 @@ export default function PlanejamentoSemanalPage() {
           recurrenceEndDate: data.recurrenceEndDate || null,
         });
       } else {
-        // Normal one-off task
         if (data.scheduledDate) {
           createMutation.mutate({ ...data });
         } else {
@@ -1642,20 +1766,20 @@ export default function PlanejamentoSemanalPage() {
     }
   };
 
-  // ─── DnD ───────────────────────────────────────────────────────────────────
+  // ─── DnD (date-string container IDs) ──────────────────────────────────────
 
   function findContainer(id: UniqueIdentifier): string {
     const s = id.toString();
-    if (s === "pool" || DIAS.some((d) => d.id === s)) return s;
-    const task = tasks.find((t) => t.id === parseInt(s));
+    if (s === "pool" || /^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const taskId = parseInt(s);
+    const task = allTasksRef.current.find((t) => t.id === taskId);
     if (!task) return "pool";
-    if (task.scheduledDate) {
-      const wDates = DIAS.map((_, i) => addDays(weekStart, i));
-      const idx = wDates.findIndex((d) => toDateStr(d) === task.scheduledDate);
-      if (idx >= 0) return DIAS[idx].id;
-      return "pool";
+    if (task.scheduledDate) return task.scheduledDate;
+    if (task.diaSemana && task.semanaInicio) {
+      const dayIdx = DIAS.findIndex((d) => d.id === task.diaSemana);
+      if (dayIdx >= 0) return toDateStr(addDays(new Date(task.semanaInicio + "T12:00:00"), dayIdx));
     }
-    return task.diaSemana || "pool";
+    return "pool";
   }
 
   function handleDragStart(e: DragStartEvent) { setActiveId(e.active.id); }
@@ -1666,10 +1790,13 @@ export default function PlanejamentoSemanalPage() {
     const aC = findContainer(active.id), oC = findContainer(over.id);
     if (aC === oC) return;
     const taskId = parseInt(active.id.toString());
-    const newDia = oC === "pool" ? null : oC;
-    const dayIdx = DIAS.findIndex((d) => d.id === newDia);
-    const newScheduledDate = dayIdx >= 0 ? toDateStr(addDays(weekStart, dayIdx)) : null;
-    setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, diaSemana: newDia, scheduledDate: newScheduledDate } : t));
+    if (oC === "pool") {
+      updateTaskInCache(taskId, (t) => ({ ...t, diaSemana: null, scheduledDate: null }));
+    } else {
+      const dayIdx = new Date(oC + "T12:00:00").getDay();
+      const DAY_MAP = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+      updateTaskInCache(taskId, (t) => ({ ...t, diaSemana: DAY_MAP[dayIdx], scheduledDate: oC }));
+    }
   }
 
   function handleDragEnd(e: DragEndEvent) {
@@ -1677,23 +1804,25 @@ export default function PlanejamentoSemanalPage() {
     setActiveId(null);
     if (!over) return;
     const taskId = parseInt(active.id.toString());
-    const task = tasks.find((t) => t.id === taskId);
+    const task = allTasksRef.current.find((t) => t.id === taskId);
     if (!task) return;
     const aC = findContainer(active.id), oC = findContainer(over.id);
 
     if (aC === oC) {
-      const cTasks = tasks.filter((t) => {
-        const tDayId = getTaskDayId(t, DIAS.map((_, i) => addDays(weekStart, i)));
-        if (aC === "pool") return !tDayId && t.status === "pendente";
-        return tDayId === aC && t.status === "pendente";
+      const cTasks = allTasksRef.current.filter((t) => {
+        const tC = findContainer(t.id.toString() as UniqueIdentifier);
+        if (aC === "pool") return tC === "pool" && t.status === "pendente";
+        return tC === aC && t.status === "pendente";
       });
       const overId = parseInt(over.id.toString());
       const oi = cTasks.findIndex((t) => t.id === taskId);
       const ni = cTasks.findIndex((t) => t.id === overId);
       if (oi !== -1 && ni !== -1 && oi !== ni) {
         const reordered = arrayMove(cTasks, oi, ni).map((t, i) => ({ id: t.id, ordem: i }));
-        setTasks((prev) => prev.map((t) => { const u = reordered.find((r) => r.id === t.id); return u ? { ...t, ordem: u.ordem } : t; }));
-        reordered.forEach(({ id, ordem }) => updateMutation.mutate({ id, ordem }));
+        reordered.forEach(({ id, ordem }) => {
+          updateTaskInCache(id, (t) => ({ ...t, ordem }));
+          updateMutation.mutate({ id, ordem });
+        });
       }
     } else {
       updateMutation.mutate({
@@ -1705,16 +1834,9 @@ export default function PlanejamentoSemanalPage() {
     }
   }
 
-  const activeTask = activeId ? tasks.find((t) => t.id === parseInt(activeId.toString())) : null;
+  const activeTask = activeId ? allTasksRef.current.find((t) => t.id === parseInt(activeId.toString())) : null;
 
-  // ─── Week nav ──────────────────────────────────────────────────────────────
-
-  const prevWeek = () => setWeekStart((d) => { const n = new Date(d); n.setDate(n.getDate() - 7); return n; });
-  const nextWeek = () => setWeekStart((d) => { const n = new Date(d); n.setDate(n.getDate() + 7); return n; });
-  const goToday = () => setWeekStart(getMondayOfWeek(new Date()));
-
-  const todayStr = toDateStr(new Date());
-  const weekDates = DIAS.map((_, i) => addDays(weekStart, i));
+  const todayBlockId = `day-${todayStr}`;
 
   // Map JS getDay() (0=Sun, 1=Mon…6=Sat) to diaSemana string
   const DAY_MAP = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
@@ -1728,8 +1850,8 @@ export default function PlanejamentoSemanalPage() {
           {/* ─── Header ──────────────────────────────────────────── */}
           <div className="flex items-center justify-between mb-5 flex-shrink-0 gap-3">
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Planejamento Semanal</h1>
-              <p className="text-sm text-slate-400 mt-0.5">{formatWeekRange(weekStart)}</p>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Planejamento</h1>
+              <p className="text-sm text-slate-400 mt-0.5">Timeline contínua · role para ver mais dias</p>
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
@@ -1758,18 +1880,13 @@ export default function PlanejamentoSemanalPage() {
                 </button>
               </div>
 
-              {/* Week nav */}
-              <div className="flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                <button onClick={prevWeek} className="p-2.5 hover:bg-slate-50 transition-colors border-r border-slate-200">
-                  <ChevronLeft className="w-4 h-4 text-slate-600" />
-                </button>
-                <button onClick={goToday} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-                  Hoje
-                </button>
-                <button onClick={nextWeek} className="p-2.5 hover:bg-slate-50 transition-colors border-l border-slate-200">
-                  <ChevronRight className="w-4 h-4 text-slate-600" />
-                </button>
-              </div>
+              {/* Scroll to today */}
+              <button
+                onClick={scrollToToday}
+                className="flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm"
+              >
+                Ir para hoje
+              </button>
 
               <button
                 onClick={() => { setEditTask(null); setAddToDay(null); setShowModal(true); }}
@@ -1782,7 +1899,7 @@ export default function PlanejamentoSemanalPage() {
 
           {/* ─── Foco do Dia ─────────────────────────────────────── */}
           <FocoDoDia
-            tasks={tasks.filter((t) => t.status !== "proxima_semana")}
+            tasks={allTasks.filter((t) => t.status !== "proxima_semana")}
             todayId={todayId}
             onComplete={handleComplete}
             onToggleFoco={handleToggleFoco}
@@ -1796,28 +1913,53 @@ export default function PlanejamentoSemanalPage() {
               isDragging && "select-none"
             )}
           >
-            {/* Day blocks (scrollable) */}
-            <div className="flex-1 overflow-y-auto min-w-0">
-              {DIAS.map((day, i) => {
-                const date = weekDates[i];
-                const dayTasks = tasks.filter((t) => getTaskDayId(t, weekDates) === day.id && t.status !== "proxima_semana");
+            {/* Continuous timeline (scrollable) */}
+            <div ref={scrollAreaRef} className="flex-1 overflow-y-auto min-w-0 scroll-smooth">
+              {loadedWeeks.map((weekMonday) => {
+                const monday = new Date(weekMonday + "T12:00:00");
+                const isCurrentWeek = weekMonday === currentWeekStr;
+
                 return (
-                  <DayBlock
-                    key={day.id}
-                    day={day}
-                    date={date}
-                    tasks={dayTasks}
-                    isToday={toDateStr(date) === todayStr}
-                    onAddTask={() => { setEditTask(null); setAddToDay(toDateStr(date)); setShowModal(true); }}
-                    onComplete={handleComplete}
-                    onDelete={handleDelete}
-                    onDuplicate={(id) => duplicateMutation.mutate(id)}
-                    onMoveNext={(id) => moveNextMutation.mutate(id)}
-                    onPostpone={(id) => postponeMutation.mutate(id)}
-                    onEdit={(task) => { setEditTask(task); setShowModal(true); }}
-                  />
+                  <div key={weekMonday}>
+                    <WeekHeader monday={monday} isCurrentWeek={isCurrentWeek} />
+                    {DIAS.map((day, i) => {
+                      const date = addDays(monday, i);
+                      const dateStr = toDateStr(date);
+                      const isToday = dateStr === todayStr;
+                      const dayTasks = allTasks.filter((t) => {
+                        if (t.status === "proxima_semana") return false;
+                        if (t.scheduledDate) return t.scheduledDate === dateStr;
+                        return t.semanaInicio === weekMonday && t.diaSemana === day.id;
+                      });
+                      return (
+                        <div
+                          key={dateStr}
+                          id={isToday ? todayBlockId : undefined}
+                          ref={isToday ? todayBlockRef : undefined}
+                        >
+                          <DayBlock
+                            day={day}
+                            date={date}
+                            droppableId={dateStr}
+                            tasks={dayTasks}
+                            isToday={isToday}
+                            onAddTask={() => { setEditTask(null); setAddToDay(dateStr); setShowModal(true); }}
+                            onComplete={handleComplete}
+                            onDelete={handleDelete}
+                            onDuplicate={(id) => duplicateMutation.mutate(id)}
+                            onMoveNext={(id) => moveNextMutation.mutate(id)}
+                            onPostpone={(id) => postponeMutation.mutate(id)}
+                            onEdit={(task) => { setEditTask(task); setShowModal(true); }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
                 );
               })}
+
+              {/* Infinite scroll sentinel */}
+              <InfiniteScrollSentinel onVisible={loadMoreWeeks} />
             </div>
 
             {/* Resizable divider */}
@@ -1840,7 +1982,7 @@ export default function PlanejamentoSemanalPage() {
 
             {/* Side panel */}
             <SidePanel
-              tasks={tasks.filter((t) => t.status !== "proxima_semana")}
+              tasks={allTasks.filter((t) => t.status !== "proxima_semana")}
               notes={notes}
               onNotesChange={setNotes}
               onAddTask={() => { setEditTask(null); setAddToDay(null); setShowModal(true); }}
@@ -1907,9 +2049,6 @@ export default function PlanejamentoSemanalPage() {
             setRecurringDialog(null);
           }}
           onFuture={() => {
-            // For "future", delete from this date onwards. We'll use "single" for now and delete future tasks manually.
-            // A simpler approach: delete this and future by calling the API with future logic
-            // For now, treat as single (full future delete would need a separate endpoint)
             deleteMutation.mutate({ id: recurringDialog.task.id, deleteMode: "single" });
             setRecurringDialog(null);
             toast({ title: "Ocorrência excluída. Para excluir futuras, exclua cada uma individualmente ou use 'Toda a série'." });

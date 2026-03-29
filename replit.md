@@ -4,7 +4,7 @@
 
 Full-stack personal OS — 7 modules: Financeiro (incl. Cartões + Patrimônio), Performance, Agenda, Viagens, Crescimento, Conhecimento, Idiomas. Premium SaaS product built with React + Vite frontend, Express backend, and PostgreSQL database. All UI in Brazilian Portuguese. Collapsible sidebar with compact (icon-only) mode and cross-module event bus.
 
-## Agenda — Planejamento Semanal (recent additions)
+## Agenda — Planejamento Semanal
 
 - **scheduledDate date picker**: `MiniCalendar` component (above trigger, PT locale, "Remover data" button)
 - **Time fields**: `startTime`/`endTime` per task (displayed as chip on TaskRow)
@@ -13,6 +13,17 @@ Full-stack personal OS — 7 modules: Financeiro (incl. Cartões + Patrimônio),
 - **Recurrence badge** (↻) on recurring TaskRows; `isRecurringException` for single edits
 - **editMode**: `single` marks `isRecurringException=true`; `future` bulk-updates from date forward; `all` updates all + series record
 - **deleteMode**: `single` removes one instance; `all` deletes entire series + all instances
+- **Continuous scroll timeline**: replaced week-navigation with infinite vertical scroll
+  - `loadedWeeks` state: starts with 1 week before + current + 4 weeks ahead (5 weeks total)
+  - `useQueries` (parallel per week): each week fetched independently, cached by Monday date string
+  - `allTasks` = flat merge of all week queries (deduplicated by ID)
+  - `DayBlock.droppableId` = date string (e.g. `"2026-03-29"`) — unique across all weeks
+  - DnD `findContainer` maps task IDs to their `scheduledDate` date string (or `"pool"`)
+  - `InfiniteScrollSentinel`: IntersectionObserver appends 2 more weeks at bottom automatically
+  - `WeekHeader`: sticky header per week group; current week highlighted with "SEMANA ATUAL" badge
+  - `todayBlockRef` + `useEffect`: auto-scrolls to today's DayBlock on first render
+  - "Ir para hoje" button: `scrollIntoView({ behavior: "smooth" })` to today's block
+  - Cache helpers: `updateTaskInCache`, `removeTaskFromCache`, `addTaskToCache`, `invalidateAllWeeks`
 
 ## Conhecimento Module (Premium)
 
