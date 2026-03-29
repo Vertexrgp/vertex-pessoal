@@ -44,6 +44,7 @@ import {
   Landmark,
   ArrowLeftRight,
   Play,
+  Compass,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActivityFeed, useUnreadEventCount } from "@/components/ActivityFeed";
@@ -207,6 +208,17 @@ const modules: Module[] = [
     prefixes: ["/idiomas"],
     items: [
       { name: "Inglês", path: "/idiomas/ingles", icon: Globe },
+    ],
+  },
+  {
+    id: "vida",
+    label: "Planejamento de Vida",
+    icon: Compass,
+    color: "text-violet-400",
+    accentClass: "text-violet-400",
+    prefixes: ["/vida"],
+    items: [
+      { name: "Projetos de Vida", path: "/vida", icon: Compass },
     ],
   },
 ];

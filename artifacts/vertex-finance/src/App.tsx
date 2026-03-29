@@ -54,6 +54,8 @@ import VideoDetailPage from "./pages/conhecimento/video-detalhe";
 
 import InglesPage from "./pages/idiomas/ingles";
 import SugestoesPage from "./pages/sugestoes";
+import VidaPage from "./pages/vida/index";
+import ProjetoDetalhePage from "./pages/vida/projeto-detalhe";
 
 const queryClient = new QueryClient();
 
@@ -118,6 +120,9 @@ function Router() {
       </Route>
 
       <Route path="/idiomas/ingles" component={InglesPage} />
+
+      <Route path="/vida" component={VidaPage} />
+      <Route path="/vida/:id" component={ProjetoDetalhePage} />
 
       <Route path="/sugestoes" component={SugestoesPage} />
 

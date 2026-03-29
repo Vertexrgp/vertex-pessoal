@@ -1,0 +1,104 @@
+Quero criar um novo módulo no Vertex OS chamado:
+
+Planejamento de Vida
+
+OBJETIVO
+Ajudar o usuário a tomar decisões estratégicas importantes, como mudança de país, analisando cenários, custos e comparações.
+
+====================================================
+1) ESTRUTURA
+====================================================
+
+Criar:
+
+- Projetos de Vida
+
+Exemplo:
+"Morar no exterior"
+
+====================================================
+2) DENTRO DO PROJETO
+====================================================
+
+Criar seções:
+
+- Países
+- Cidades
+- Custo de vida
+- Comparação
+- Pontos positivos e negativos
+- Simulação financeira
+- Plano de ação
+- Checkpoints
+
+====================================================
+3) CIDADES
+====================================================
+
+Para cada cidade:
+
+- nome
+- país
+- custo de vida
+- observações
+
+====================================================
+4) CUSTO DE VIDA
+====================================================
+
+Categorias:
+
+- aluguel
+- transporte
+- alimentação
+- saúde
+- impostos
+- lazer
+
+====================================================
+5) COMPARAÇÃO
+====================================================
+
+Permitir comparar cidades:
+
+- custo total
+- qualidade de vida
+- facilidade de adaptação
+
+====================================================
+6) SIMULAÇÃO
+====================================================
+
+Integrar com financeiro:
+
+- quanto preciso por mês
+- quanto preciso juntar
+- quanto tempo consigo viver lá
+
+====================================================
+7) UX
+====================================================
+
+Quero visual premium:
+
+- claro
+- comparativo
+- fácil de decisão
+
+====================================================
+8) ENTREGAR
+====================================================
+
+Implementar:
+
+1. módulo Planejamento de Vida
+2. estrutura de projetos
+3. cidades e países
+4. custo de vida
+5. comparação
+6. integração com financeiro
+
+No final, me mostrar:
+- como usar
+- como comparar cidades
+- como simular custo de vida

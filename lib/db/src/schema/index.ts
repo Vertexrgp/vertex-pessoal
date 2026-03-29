@@ -15,3 +15,4 @@ export * from "./crescimento";
 export * from "./conhecimento";
 export * from "./sugestoes";
 export * from "./idiomas";
+export * from "./vida";

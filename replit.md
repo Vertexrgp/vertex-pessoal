@@ -2,7 +2,23 @@
 
 ## Overview
 
-Full-stack personal OS — 7 modules: Financeiro (incl. Cartões + Patrimônio), Performance, Agenda, Viagens, Crescimento, Conhecimento, Idiomas. Premium SaaS product built with React + Vite frontend, Express backend, and PostgreSQL database. All UI in Brazilian Portuguese. Collapsible sidebar with compact (icon-only) mode and cross-module event bus.
+Full-stack personal OS — 8 modules: Financeiro (incl. Cartões + Patrimônio), Performance, Agenda, Viagens, Crescimento, Conhecimento, Idiomas, Planejamento de Vida. Premium SaaS product built with React + Vite frontend, Express backend, and PostgreSQL database. All UI in Brazilian Portuguese. Collapsible sidebar with compact (icon-only) mode and cross-module event bus.
+
+## Planejamento de Vida Module
+
+- **Route**: `/vida` — project list; `/vida/:id` — project detail
+- **Sidebar**: "PLANEJAMENTO DE VIDA" section with Compass icon, violet accent (`text-violet-400`)
+- **DB Tables**: `vida_projetos`, `vida_cidades`, `vida_custo_vida`, `vida_pros_contras`, `vida_plano_acao`, `vida_checkpoints`
+- **Project types**: mudanca_pais, mudanca_cidade, carreira, estilo_vida, outro
+- **Status**: explorando, planejando, executando, concluido
+- **City detail**: expandable card with quality/adaptation scores (1-10), inline custo de vida editor (7 categories), pros & contras (add via input + Enter or + button)
+- **5 Tabs on project detail**:
+  - **Cidades**: list of cities, expandable with cost breakdown + pros/contras
+  - **Comparação**: side-by-side bar charts + table for cost categories across all cities; scores comparison
+  - **Simulação**: financial simulation — input renda mensal + economias, calculates saldo mensal, reserva coverage (months/years), months to save 6x reserve
+  - **Plano de Ação**: checklist with status toggle (click circle to cycle pendente→em_andamento→concluido), inline edit, prazo date, progress bar
+  - **Checkpoints**: timeline with check-to-complete toggle, dataAlvo, delete on hover
+- **API**: `GET/POST /api/vida/projetos`, `GET/PUT/DELETE /api/vida/projetos/:id`, `POST /api/vida/projetos/:id/cidades`, `PUT/DELETE /api/vida/cidades/:id`, `PUT /api/vida/cidades/:id/custo-vida`, `POST/DELETE /api/vida/cidades/:id/pros-contras`, `POST/PUT/DELETE /api/vida/plano-acao`, `POST/PUT/DELETE /api/vida/checkpoints`
 
 ## Agenda — Planejamento Semanal
 

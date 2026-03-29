@@ -21,6 +21,7 @@ import conhecimentoRouter from "./conhecimento";
 import sugestoesRouter from "./sugestoes";
 import globalDashboardRouter from "./global-dashboard";
 import { idiomasRouter } from "./idiomas";
+import vidaRouter from "./vida";
 
 const router: IRouter = Router();
 
@@ -46,5 +47,6 @@ router.use(conhecimentoRouter);
 router.use(sugestoesRouter);
 router.use(globalDashboardRouter);
 router.use("/idiomas", idiomasRouter);
+router.use(vidaRouter);
 
 export default router;
