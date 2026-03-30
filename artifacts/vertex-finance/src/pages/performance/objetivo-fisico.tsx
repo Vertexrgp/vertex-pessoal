@@ -23,7 +23,9 @@ type BodyGoal = {
 type BodyPhoto = {
   id: number;
   tipo: string;
-  imageData: string;
+  imageUrl: string | null;
+  objectPath: string | null;
+  imageData: string | null;  // legacy
   goalId: number | null;
   createdAt?: string;
 };
@@ -34,13 +36,31 @@ const CURRENT_SLOTS = [
   { tipo: "atual_costas", label: "Costas" },
 ];
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+async function uploadToStorage(file: File, apiBase: string): Promise<string> {
+  if (!ALLOWED_TYPES.includes(file.type)) throw new Error("Formato inválido. Use JPG, PNG ou WebP.");
+  if (file.size > MAX_FILE_SIZE) throw new Error("Arquivo muito grande. Limite: 5MB.");
+
+  // Step 1: Request presigned URL
+  const res = await fetch(`${apiBase}/api/storage/uploads/request-url`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
   });
+  if (!res.ok) throw new Error("Falha ao obter URL de upload.");
+  const { uploadURL, objectPath } = await res.json();
+
+  // Step 2: Upload directly to GCS via presigned URL
+  const putRes = await fetch(uploadURL, {
+    method: "PUT",
+    headers: { "Content-Type": file.type },
+    body: file,
+  });
+  if (!putRes.ok) throw new Error("Falha no upload da imagem.");
+
+  return objectPath as string;
 }
 
 function fmtDate(d?: string | null) {
@@ -96,10 +116,10 @@ function RefPhotoCard({ photo, onRemove, onZoom }: {
 }) {
   return (
     <div className="relative aspect-[2/3] rounded-xl overflow-hidden border border-slate-200 shadow-sm group transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer">
-      <img src={photo.imageData} alt="Referência" className="w-full h-full object-cover" onClick={() => onZoom(photo.imageData)} />
+      <img src={photo.imageUrl ?? photo.imageData ?? ""} alt="Referência" className="w-full h-full object-cover" onClick={() => onZoom(photo.imageUrl ?? photo.imageData ?? "")} />
       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={() => onZoom(photo.imageData)}
+        <button onClick={() => onZoom(photo.imageUrl ?? photo.imageData ?? "")}
           className="w-7 h-7 rounded-full bg-white/90 shadow flex items-center justify-center hover:bg-white transition-colors">
           <ZoomIn className="w-3.5 h-3.5 text-slate-700" />
         </button>
@@ -167,10 +187,10 @@ function FixedPhotoSlot({ tipo, label, photo, onUpload, onRemove, onZoom, upload
       >
         {photo ? (
           <>
-            <img src={photo.imageData} alt={label} className="w-full h-full object-cover" onClick={() => onZoom(photo.imageData)} />
+            <img src={photo.imageUrl ?? photo.imageData ?? ""} alt={label} className="w-full h-full object-cover" onClick={() => onZoom(photo.imageUrl ?? photo.imageData ?? "")} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={e => { e.stopPropagation(); onZoom(photo.imageData); }}
+              <button onClick={e => { e.stopPropagation(); onZoom(photo.imageUrl ?? photo.imageData ?? ""); }}
                 className="w-7 h-7 rounded-full bg-white/90 shadow flex items-center justify-center hover:bg-white transition-colors">
                 <ZoomIn className="w-3.5 h-3.5 text-slate-700" />
               </button>
@@ -284,7 +304,7 @@ export default function ObjetivoFisicoPage() {
   });
 
   const addPhoto = useMutation({
-    mutationFn: (data: { tipo: string; imageData: string; goalId?: number }) =>
+    mutationFn: (data: { tipo: string; objectPath: string; goalId?: number }) =>
       fetch(`${getApiBase()}/api/performance/body-photos`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["body-photos"] }); setUploadingTipo(null); },
     onError: () => setUploadingTipo(null),
@@ -298,9 +318,12 @@ export default function ObjetivoFisicoPage() {
   const handleUpload = useCallback(async (tipo: string, file: File) => {
     setUploadingTipo(tipo);
     try {
-      const imageData = await fileToBase64(file);
-      await addPhoto.mutateAsync({ tipo, imageData, goalId: goal?.id });
-    } catch { setUploadingTipo(null); }
+      const objectPath = await uploadToStorage(file, getApiBase());
+      await addPhoto.mutateAsync({ tipo, objectPath, goalId: goal?.id });
+    } catch (err) {
+      setUploadingTipo(null);
+      alert(err instanceof Error ? err.message : "Erro ao enviar imagem.");
+    }
   }, [goal, addPhoto]);
 
   function setField(k: keyof typeof form, v: string) { setForm(f => ({ ...f, [k]: v })); setDirty(true); }

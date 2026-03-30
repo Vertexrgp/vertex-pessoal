@@ -175,7 +175,8 @@ export const performanceBodyGoalTable = pgTable("performance_body_goal", {
 export const performanceBodyPhotosTable = pgTable("performance_body_photos", {
   id: serial("id").primaryKey(),
   tipo: text("tipo").notNull(), // objetivo | atual_frente | atual_lado | atual_costas
-  imageData: text("image_data").notNull(),
+  imageData: text("image_data"),           // legacy: base64 (nullable)
+  objectPath: text("object_path"),         // GCS object path (e.g. /objects/uploads/uuid)
   goalId: integer("goal_id").references(() => performanceBodyGoalTable.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

@@ -458,6 +458,17 @@ router.put("/performance/body-goal/:id", async (req, res) => {
 });
 
 /* ─── Objetivo Físico — Body Photos ─────────────────────────────────── */
+
+// Build a served URL from an objectPath or fall back to raw imageData
+function resolveImageUrl(row: { objectPath: string | null; imageData: string | null }, req: import("express").Request): string | null {
+  if (row.objectPath) {
+    const proto = req.headers["x-forwarded-proto"] || req.protocol;
+    const host = req.headers["x-forwarded-host"] || req.get("host") || "";
+    return `${proto}://${host}/api/storage${row.objectPath}`;
+  }
+  return row.imageData ?? null;
+}
+
 router.get("/performance/body-photos", async (req, res) => {
   const goalId = req.query.goalId ? Number(req.query.goalId) : null;
   let rows;
@@ -469,18 +480,26 @@ router.get("/performance/body-photos", async (req, res) => {
     rows = await db.select().from(performanceBodyPhotosTable)
       .orderBy(performanceBodyPhotosTable.createdAt);
   }
-  res.json(rows);
+  const result = rows.map((r) => ({
+    ...r,
+    imageUrl: resolveImageUrl(r, req),
+  }));
+  res.json(result);
 });
 
 router.post("/performance/body-photos", async (req, res) => {
   const b = req.body;
-  if (!b.tipo || !b.imageData) return res.status(400).json({ error: "tipo e imageData são obrigatórios" });
+  if (!b.tipo) return res.status(400).json({ error: "tipo é obrigatório" });
+  if (!b.objectPath && !b.imageData) return res.status(400).json({ error: "objectPath ou imageData é obrigatório" });
+
   const [row] = await db.insert(performanceBodyPhotosTable).values({
     tipo: String(b.tipo),
-    imageData: String(b.imageData),
+    objectPath: b.objectPath ? String(b.objectPath) : null,
+    imageData: b.imageData ? String(b.imageData) : null,
     goalId: b.goalId ? Number(b.goalId) : null,
   }).returning();
-  res.json(row);
+
+  res.json({ ...row, imageUrl: resolveImageUrl(row, req) });
 });
 
 router.delete("/performance/body-photos/:id", async (req, res) => {
