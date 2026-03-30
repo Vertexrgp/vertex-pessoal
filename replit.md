@@ -23,6 +23,19 @@ The system is built as a monorepo using pnpm workspaces. The frontend uses React
 **Technical Implementations & Feature Specifications:**
 
 *   **Global**: Cross-module event bus for inter-module communication.
+*   **AI Integration**: Anthropic Claude claude-sonnet-4-6 with vision capability via Replit AI Integrations proxy. Used in the Performance > Análise Corporal IA module. Client configured in `lib/integrations-anthropic-ai/src/client.ts`.
+*   **Object Storage**: Replit GCS-backed object storage for photo uploads. Presigned URL upload flow: POST `/api/storage/uploads/request-url` → PUT to GCS → save `objectPath` in DB. Images served via GET `/api/storage/objects/*path`. Minimum image size filter (500 bytes) applied before sending to AI.
+*   **Performance Module — Análise Corporal IA**:
+    *   New page at `/performance/analise-corporal` with Claude claude-sonnet-4-6 vision analysis.
+    *   Analyzes current body photos (frente/lado/costas) + reference photos + numeric data (peso/gordura atual/alvo).
+    *   Returns structured JSON: corpoAtual, corpoDesejado, comparacao, prioridades (5 groups), estrategia (cutting/bulking/recomposicao/ganho_controlado/reducao_massa), treino (with weekly division), observacoes.
+    *   DB table: `performance_corpo_analise` (JSONB columns for all sections).
+    *   API: GET/POST `/api/performance/corpo-analise`. Image download via GCS SDK `file.download()`.
+    *   Falls back to text-only analysis when photos are absent or too small.
+*   **Performance Module — Objetivo Físico**:
+    *   Photo upload via GCS presigned URL flow (replaces base64).
+    *   DB: `performanceBodyPhotosTable` with `objectPath` column, `imageData` nullable (legacy).
+    *   `imageUrl` computed server-side via `resolveImageUrl()` helper in `/api/performance/body-photos`.
 *   **Planejamento de Vida Module**:
     *   Manages life projects and city analyses with detailed financial, immigration, quality of life, and pros/cons assessments.
     *   Features a sophisticated weighted scoring algorithm for comparing cities based on user-defined criteria.

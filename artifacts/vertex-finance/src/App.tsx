@@ -23,6 +23,7 @@ import SimuladorPage from "./pages/simulador";
 
 import ObjetivoPage from "./pages/performance/objetivo";
 import ObjetivoFisicoPage from "./pages/performance/objetivo-fisico";
+import AnaliseCorporalPage from "./pages/performance/analise-corporal";
 import AvaliacaoPage from "./pages/performance/avaliacao";
 import ExamesPage from "./pages/performance/exames";
 import ProtocolosPage from "./pages/performance/protocolos";
@@ -81,6 +82,7 @@ function Router() {
 
       <Route path="/performance/objetivo" component={ObjetivoPage} />
       <Route path="/performance/objetivo-fisico" component={ObjetivoFisicoPage} />
+      <Route path="/performance/analise-corporal" component={AnaliseCorporalPage} />
       <Route path="/performance/avaliacao" component={AvaliacaoPage} />
       <Route path="/performance/exames" component={ExamesPage} />
       <Route path="/performance/protocolos" component={ProtocolosPage} />

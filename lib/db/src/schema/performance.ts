@@ -181,6 +181,54 @@ export const performanceBodyPhotosTable = pgTable("performance_body_photos", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+/* ─── Análise Corporal IA ─────────────────────────────────────────────────── */
+export const performanceCorpoAnaliseTable = pgTable("performance_corpo_analise", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => performanceBodyGoalTable.id),
+  status: text("status").notNull().default("pending"), // pending | done | error
+  corpoAtual: jsonb("corpo_atual").$type<{
+    resumo: string;
+    pontoFortes: string[];
+    proporcao: string;
+    postura: string;
+    gruposDestaques: string[];
+    acumuloGordura: string;
+  }>(),
+  corpoDesejado: jsonb("corpo_desejado").$type<{
+    resumo: string;
+    silhueta: string;
+    gruposDestacados: string[];
+    definicao: string;
+    caracteristicas: string[];
+  }>(),
+  comparacao: jsonb("comparacao").$type<{
+    diferencasPrincipais: string[];
+    precisaEvolucao: string[];
+    jaRelativamenteBom: string[];
+  }>(),
+  prioridades: jsonb("prioridades").$type<{
+    rank: number;
+    grupo: string;
+    descricao: string;
+  }[]>(),
+  estrategia: jsonb("estrategia").$type<{
+    tipo: string;
+    titulo: string;
+    explicacao: string;
+  }>(),
+  treino: jsonb("treino").$type<{
+    frequenciaSemanal: number;
+    divisao: { dia: string; foco: string; musculos: string[] }[];
+    destaquesVolume: string[];
+  }>(),
+  observacoes: jsonb("observacoes").$type<string[]>(),
+  erro: text("erro"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type PerformanceCorpoAnalise = typeof performanceCorpoAnaliseTable.$inferSelect;
+
 export type PerformanceGoal = typeof performanceGoalsTable.$inferSelect;
 export type PerformanceCurrentState = typeof performanceCurrentStateTable.$inferSelect;
 export type PerformanceExam = typeof performanceExamsTable.$inferSelect;

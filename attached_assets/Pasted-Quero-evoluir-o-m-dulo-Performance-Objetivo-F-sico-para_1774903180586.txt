@@ -1,0 +1,207 @@
+Quero evoluir o módulo Performance > Objetivo Físico para que ele NÃO use apenas peso e percentual de gordura como base da recomendação.
+
+OBJETIVO
+Quero que o sistema faça uma análise corporal mais inteligente, usando:
+
+1. fotos do físico atual
+2. fotos do físico desejado
+3. dados numéricos do usuário
+
+A partir disso, o sistema deve gerar um diagnóstico visual e estrutural do corpo, identificar pontos fortes e fracos, comparar com o objetivo desejado e sugerir uma estratégia de treino coerente.
+
+IMPORTANTE
+Não quero um sistema simplista que apenas use peso e gordura.
+Quero que as fotos tenham papel central na análise.
+
+====================================================
+1) INPUTS DA ANÁLISE
+====================================================
+
+O sistema deve usar juntos:
+
+- peso atual
+- percentual de gordura atual
+- peso alvo
+- percentual de gordura alvo
+- prazo
+- fotos do físico atual:
+  - frente
+  - lado
+  - costas
+- fotos do físico desejado / referência
+
+====================================================
+2) ANÁLISE VISUAL DO FÍSICO ATUAL
+====================================================
+
+Quero que o sistema use as fotos para gerar uma análise visual e estrutural do corpo atual, observando de forma descritiva:
+
+- proporção geral
+- simetria visual
+- postura aparente
+- largura de ombros
+- dorsal / costas
+- peitoral
+- braços
+- cintura
+- pernas
+- glúteos
+- nível aparente de definição
+- acúmulo visual de gordura
+
+Essa análise não precisa ser médica nem clínica.
+Quero uma análise funcional para treino e estratégia corporal.
+
+====================================================
+3) ANÁLISE DO FÍSICO DESEJADO
+====================================================
+
+O sistema deve analisar as fotos de referência do físico desejado e identificar:
+
+- silhueta buscada
+- grupos musculares mais destacados
+- nível aparente de definição
+- proporção geral do shape desejado
+- quais características mais chamam atenção no objetivo visual
+
+====================================================
+4) COMPARAÇÃO ENTRE ATUAL E OBJETIVO
+====================================================
+
+Quero que o sistema compare:
+
+- físico atual
+- físico desejado
+- dados atuais
+- dados alvo
+
+E gere um diagnóstico como:
+
+- principais diferenças entre meu shape atual e o shape desejado
+- quais grupos musculares precisam de mais evolução
+- quais pontos já estão relativamente bons
+- quais pontos precisam de correção ou maior prioridade
+
+====================================================
+5) PRIORIZAÇÃO MUSCULAR
+====================================================
+
+O sistema deve gerar uma lista de prioridade, por exemplo:
+
+- prioridade 1
+- prioridade 2
+- prioridade 3
+
+Exemplo de lógica:
+- mais ombro
+- mais dorsal
+- mais peitoral superior
+- mais pernas
+- reduzir cintura visual
+- melhorar definição geral
+
+====================================================
+6) ESTRATÉGIA CORPORAL
+====================================================
+
+Com base nos dados e fotos, o sistema deve definir uma estratégia principal:
+
+- cutting
+- bulking
+- recomposição corporal
+- ganho de massa com controle de gordura
+- redução de gordura preservando massa
+
+Além disso, quero uma explicação simples do porquê dessa estratégia.
+
+====================================================
+7) GERAÇÃO DE TREINO
+====================================================
+
+Depois da análise, o sistema deve sugerir um treino coerente com o objetivo visual.
+
+O treino deve considerar:
+
+- pontos fracos prioritários
+- frequência semanal
+- volume de treino por grupo muscular
+- divisão semanal sugerida
+- foco específico em músculos que precisam evoluir mais
+
+Exemplo:
+- deltoide lateral com mais frequência
+- dorsal com mais volume
+- peitoral superior com prioridade
+- pernas em manutenção ou prioridade, conforme análise
+
+====================================================
+8) SAÍDA DO SISTEMA
+====================================================
+
+Quero que o módulo entregue algo como:
+
+1. resumo do corpo atual
+2. resumo do corpo desejado
+3. principais diferenças
+4. prioridades musculares
+5. estratégia corporal
+6. recomendação de treino
+7. observações e alertas
+
+====================================================
+9) VISUAL / UX
+====================================================
+
+Quero um visual premium.
+
+A tela deve mostrar:
+
+- fotos do atual
+- fotos do desejado
+- comparação visual
+- card com prioridades
+- card com estratégia
+- card com treino sugerido
+
+====================================================
+10) LIMITES E POSICIONAMENTO
+====================================================
+
+O sistema não deve se vender como diagnóstico médico.
+
+Ele deve funcionar como:
+- analisador visual corporal
+- assistente de estratégia física
+- gerador de treino orientado por objetivo visual
+
+====================================================
+11) ESTRUTURA TÉCNICA
+====================================================
+
+Se necessário, organizar a lógica em etapas:
+
+- ingestão das imagens
+- comparação visual
+- geração de insights
+- priorização muscular
+- montagem do treino
+
+====================================================
+12) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. uso real das fotos na análise
+2. comparação entre físico atual e físico desejado
+3. diagnóstico visual
+4. priorização muscular
+5. estratégia corporal
+6. sugestão de treino baseada nisso
+
+No final, me mostrar:
+- como o sistema usa as fotos
+- como ele compara atual vs desejado
+- como define os pontos fracos
+- como gera a estratégia
+- como monta o treino

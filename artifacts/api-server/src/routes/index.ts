@@ -23,6 +23,7 @@ import sugestoesRouter from "./sugestoes";
 import globalDashboardRouter from "./global-dashboard";
 import { idiomasRouter } from "./idiomas";
 import vidaRouter from "./vida";
+import corpoAnaliseRouter from "./corpo-analise";
 
 const router: IRouter = Router();
 
@@ -50,5 +51,6 @@ router.use(sugestoesRouter);
 router.use(globalDashboardRouter);
 router.use("/idiomas", idiomasRouter);
 router.use(vidaRouter);
+router.use(corpoAnaliseRouter);
 
 export default router;
