@@ -32,6 +32,16 @@ The system is built as a monorepo using pnpm workspaces. The frontend uses React
     *   DB table: `performance_corpo_analise` (JSONB columns for all sections).
     *   API: GET/POST `/api/performance/corpo-analise`. Image download via GCS SDK `file.download()`.
     *   Falls back to text-only analysis when photos are absent or too small.
+*   **Performance Module — Sistema de Treino**:
+    *   Complete workout system at `/performance/treinos` with 4-tab UI.
+    *   **Plano** tab: AI-generated weekly plan using Claude + body analysis priorities. Weekly calendar view + collapsible day cards showing exercises, sets, reps, rest.
+    *   **Hoje** tab: Select a workout day to start a timed session. Pre-populates sets from plan. Exercise set logger with weight + reps inputs + completion toggle.
+    *   **Histórico** tab: Past sessions list grouped by period with summary stats.
+    *   **Progressão** tab: Line chart of max load per exercise over time. Auto-progression suggestions (increase/maintain/reduce load).
+    *   DB tables: `performance_exercise_db` (47 seeded exercises), `performance_workout_plan`, `performance_workout_day`, `performance_workout_day_exercise`, `performance_workout_log`, `performance_workout_set_log`.
+    *   API routes in `treino-sistema.ts`: exercises, seed, plan CRUD, plan/generate (AI), logs CRUD, sets PATCH, progressao GET, sugestoes-progressao GET.
+    *   AI plan uses body analysis prioridades to assign exercise volume: primário=4 séries, secundário=3, manutenção=2-3.
+    *   Auto-progression: suggests load increase when user hits top of rep range consistently.
 *   **Performance Module — Objetivo Físico**:
     *   Photo upload via GCS presigned URL flow (replaces base64).
     *   DB: `performanceBodyPhotosTable` with `objectPath` column, `imageData` nullable (legacy).

@@ -1,0 +1,153 @@
+Quero transformar o módulo Performance em um sistema completo de treino, acompanhamento e evolução.
+
+OBJETIVO
+Gerar treinos completos baseados no objetivo físico e acompanhar evolução real de força e performance.
+
+IMPORTANTE
+Não quero treino genérico.
+Quero treino estruturado, baseado em lógica real de hipertrofia e evolução.
+
+====================================================
+1) BASE DE CONHECIMENTO
+====================================================
+
+Criar uma base estruturada de exercícios:
+
+Para cada grupo muscular:
+
+- peito
+- costas
+- ombro
+- braços
+- pernas
+- glúteos
+
+Cada exercício deve ter:
+
+- nome
+- grupo muscular
+- tipo (composto / isolado)
+- nível (iniciante/intermediário/avançado)
+
+====================================================
+2) GERAÇÃO DE TREINO
+====================================================
+
+Com base em:
+
+- objetivo físico
+- fotos
+- diagnóstico corporal
+- prioridades musculares
+
+O sistema deve gerar:
+
+- divisão semanal (ex: ABC, ABCD)
+- dias de treino
+- lista de exercícios por dia
+- séries
+- repetições
+- descanso
+
+====================================================
+3) VOLUME INTELIGENTE
+====================================================
+
+Definir volume baseado em prioridade:
+
+Exemplo:
+- músculo prioritário → mais volume
+- músculo secundário → volume médio
+- manutenção → volume baixo
+
+====================================================
+4) PERIODIZAÇÃO
+====================================================
+
+Criar fases:
+
+- fase 1 (ganho massa)
+- fase 2 (ajuste)
+- fase 3 (refinamento)
+
+Cada fase com:
+- objetivo
+- tipo de treino
+- intensidade
+
+====================================================
+5) TRACKER DE TREINO (ESSENCIAL)
+====================================================
+
+Criar sistema para registrar treino real:
+
+Para cada exercício:
+
+- carga usada
+- número de reps
+- número de séries
+- data
+
+====================================================
+6) HISTÓRICO E EVOLUÇÃO
+====================================================
+
+Mostrar evolução:
+
+- progressão de carga
+- aumento de reps
+- evolução semanal
+
+Exemplo:
+Supino:
+Semana 1 → 60kg
+Semana 2 → 65kg
+
+====================================================
+7) PROGRESSÃO AUTOMÁTICA
+====================================================
+
+Sistema deve sugerir:
+
+- aumentar carga
+- manter carga
+- ajustar reps
+
+====================================================
+8) VISUAL
+====================================================
+
+Quero visual premium:
+
+- treino do dia claro
+- fácil de registrar
+- histórico simples
+- gráficos de evolução
+
+====================================================
+9) IMPORTANTE
+====================================================
+
+- não gerar treino aleatório
+- seguir lógica real de hipertrofia
+- permitir ajustes manuais
+
+====================================================
+10) ENTREGAR
+====================================================
+
+Quero:
+
+1. geração de treino completo
+2. divisão semanal
+3. exercícios definidos
+4. séries e reps
+5. tracker de treino
+6. histórico de evolução
+7. sugestão de progressão
+
+No final, me mostrar:
+- como o treino é gerado
+- como registrar cargas
+- como acompanhar evolução
+- como o sistema ajusta treino automaticamente

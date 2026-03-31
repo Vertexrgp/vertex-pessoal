@@ -229,6 +229,94 @@ export const performanceCorpoAnaliseTable = pgTable("performance_corpo_analise",
 
 export type PerformanceCorpoAnalise = typeof performanceCorpoAnaliseTable.$inferSelect;
 
+/* ─── Sistema de Treino ──────────────────────────────────────────────────── */
+
+export const performanceExerciseDbTable = pgTable("performance_exercise_db", {
+  id: serial("id").primaryKey(),
+  nome: text("nome").notNull(),
+  grupoMuscular: text("grupo_muscular").notNull(), // peito|costas|ombro|bracos|pernas|gluteos|abdomen
+  musculosSecundarios: jsonb("musculos_secundarios").$type<string[]>().default([]),
+  tipo: text("tipo").notNull().default("isolado"), // composto|isolado
+  nivel: text("nivel").notNull().default("intermediario"), // iniciante|intermediario|avancado
+  equipamento: text("equipamento"), // barra|halter|maquina|cabos|peso_corporal
+  descricao: text("descricao"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const performanceWorkoutPlanTable = pgTable("performance_workout_plan", {
+  id: serial("id").primaryKey(),
+  nome: text("nome").notNull(),
+  divisao: text("divisao").notNull().default("ABC"), // ABC|ABCD|ABCDE|Upper-Lower
+  fase: text("fase").notNull().default("ganho_massa"), // ganho_massa|ajuste|refinamento
+  frequenciaSemanal: integer("frequencia_semanal").notNull().default(4),
+  objetivo: text("objetivo"),
+  ativo: boolean("ativo").notNull().default(true),
+  geradoPorIa: boolean("gerado_por_ia").notNull().default(false),
+  analiseId: integer("analise_id").references(() => performanceCorpoAnaliseTable.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const performanceWorkoutDayTable = pgTable("performance_workout_day", {
+  id: serial("id").primaryKey(),
+  planoId: integer("plano_id").notNull().references(() => performanceWorkoutPlanTable.id),
+  nome: text("nome").notNull(),
+  letra: text("letra").notNull().default("A"), // A, B, C...
+  diaSemana: text("dia_semana").notNull(),
+  focoPrincipal: text("foco_principal"),
+  musculos: jsonb("musculos").$type<string[]>().default([]),
+  ordem: integer("ordem").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const performanceWorkoutDayExerciseTable = pgTable("performance_workout_day_exercise", {
+  id: serial("id").primaryKey(),
+  diaId: integer("dia_id").notNull().references(() => performanceWorkoutDayTable.id),
+  exerciseId: integer("exercise_id").references(() => performanceExerciseDbTable.id),
+  nomeOverride: text("nome_override"),
+  grupoMuscular: text("grupo_muscular"),
+  series: integer("series").notNull().default(3),
+  repsMin: integer("reps_min").notNull().default(8),
+  repsMax: integer("reps_max").notNull().default(12),
+  descansoSeg: integer("descanso_seg").notNull().default(90),
+  ordem: integer("ordem").notNull().default(0),
+  prioridade: text("prioridade").notNull().default("secundario"), // primario|secundario|manutencao
+  observacoes: text("observacoes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const performanceWorkoutLogTable = pgTable("performance_workout_log", {
+  id: serial("id").primaryKey(),
+  diaId: integer("dia_id").references(() => performanceWorkoutDayTable.id),
+  planoId: integer("plano_id").references(() => performanceWorkoutPlanTable.id),
+  data: date("data").notNull(),
+  duracaoMin: integer("duracao_min"),
+  observacoes: text("observacoes"),
+  concluido: boolean("concluido").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const performanceWorkoutSetLogTable = pgTable("performance_workout_set_log", {
+  id: serial("id").primaryKey(),
+  logId: integer("log_id").notNull().references(() => performanceWorkoutLogTable.id),
+  diaExercicioId: integer("dia_exercicio_id").references(() => performanceWorkoutDayExerciseTable.id),
+  nomeExercicio: text("nome_exercicio").notNull(),
+  grupoMuscular: text("grupo_muscular"),
+  numeroSerie: integer("numero_serie").notNull().default(1),
+  cargaKg: numeric("carga_kg", { precision: 6, scale: 2 }),
+  reps: integer("reps"),
+  concluido: boolean("concluido").notNull().default(false),
+  observacoes: text("observacoes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type PerformanceExerciseDb = typeof performanceExerciseDbTable.$inferSelect;
+export type PerformanceWorkoutPlan = typeof performanceWorkoutPlanTable.$inferSelect;
+export type PerformanceWorkoutDay = typeof performanceWorkoutDayTable.$inferSelect;
+export type PerformanceWorkoutDayExercise = typeof performanceWorkoutDayExerciseTable.$inferSelect;
+export type PerformanceWorkoutLog = typeof performanceWorkoutLogTable.$inferSelect;
+export type PerformanceWorkoutSetLog = typeof performanceWorkoutSetLogTable.$inferSelect;
+
 export type PerformanceGoal = typeof performanceGoalsTable.$inferSelect;
 export type PerformanceCurrentState = typeof performanceCurrentStateTable.$inferSelect;
 export type PerformanceExam = typeof performanceExamsTable.$inferSelect;
