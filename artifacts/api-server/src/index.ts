@@ -1,11 +1,53 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { runMigrations } from "stripe-replit-sync";
+import { getStripeSync } from "./stripeClient";
+
+async function initStripe() {
+  const databaseUrl = process.env.DATABASE_URL;
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+
+  if (!stripeKey) {
+    logger.warn(
+      "STRIPE_SECRET_KEY not set — Stripe features disabled. Connect the Stripe integration to enable payments."
+    );
+    return;
+  }
+
+  if (!databaseUrl) {
+    logger.warn("DATABASE_URL not set — skipping Stripe init");
+    return;
+  }
+
+  try {
+    logger.info("Initializing Stripe schema...");
+    await runMigrations({ databaseUrl });
+    logger.info("Stripe schema ready");
+
+    const stripeSync = await getStripeSync();
+
+    const domains = process.env.REPLIT_DOMAINS?.split(",")[0];
+    if (domains) {
+      const webhookUrl = `https://${domains}/api/stripe/webhook`;
+      logger.info({ webhookUrl }, "Setting up managed webhook...");
+      await stripeSync.findOrCreateManagedWebhook(webhookUrl);
+      logger.info("Webhook configured");
+    }
+
+    stripeSync
+      .syncBackfill()
+      .then(() => logger.info("Stripe backfill complete"))
+      .catch((err: any) => logger.error({ err }, "Stripe backfill error"));
+  } catch (err: any) {
+    logger.error({ err }, "Stripe init failed — continuing without Stripe");
+  }
+}
 
 const rawPort = process.env["PORT"];
 
 if (!rawPort) {
   throw new Error(
-    "PORT environment variable is required but was not provided.",
+    "PORT environment variable is required but was not provided."
   );
 }
 
@@ -14,6 +56,8 @@ const port = Number(rawPort);
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
+
+await initStripe();
 
 app.listen(port, (err) => {
   if (err) {

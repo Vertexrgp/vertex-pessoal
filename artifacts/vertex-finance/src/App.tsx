@@ -61,6 +61,7 @@ import SugestoesPage from "./pages/sugestoes";
 import VidaPage from "./pages/vida/index";
 import ProjetoDetalhePage from "./pages/vida/projeto-detalhe";
 import CidadeDetalhePage from "./pages/vida/cidade-detalhe";
+import PricingPage from "./pages/pricing";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -175,6 +176,7 @@ function Router() {
         <Route path="/vida/:id" component={ProjetoDetalhePage} />
 
         <Route path="/sugestoes" component={SugestoesPage} />
+        <Route path="/pricing" component={PricingPage} />
 
         {/* Legacy */}
         <Route path="/assets" component={AssetsPage} />

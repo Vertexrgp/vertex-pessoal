@@ -27,6 +27,7 @@ import { idiomasRouter } from "./idiomas";
 import vidaRouter from "./vida";
 import corpoAnaliseRouter from "./corpo-analise";
 import treinoSistemaRouter from "./treino-sistema";
+import stripeRouter from "./stripe";
 
 const router: IRouter = Router();
 
@@ -62,5 +63,6 @@ router.use("/idiomas", idiomasRouter);
 router.use(vidaRouter);
 router.use(corpoAnaliseRouter);
 router.use(treinoSistemaRouter);
+router.use(stripeRouter);
 
 export default router;

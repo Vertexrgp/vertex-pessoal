@@ -47,9 +47,12 @@ import {
   Play,
   Compass,
   LogOut,
+  Zap,
+  Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActivityFeed, useUnreadEventCount } from "@/components/ActivityFeed";
+import { useSubscription, planLabel, planBgColor, planColor } from "@/hooks/useSubscription";
 
 type NavItem = {
   name: string;
@@ -435,6 +438,7 @@ function ModuleSection({
 function UserPanel({ compact }: { compact: boolean }) {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
+  const { plan } = useSubscription();
 
   async function handleLogout() {
     await logout();
@@ -474,6 +478,26 @@ function UserPanel({ compact }: { compact: boolean }) {
         >
           <LogOut className="w-3.5 h-3.5" />
         </button>
+      </div>
+      <div className={cn("mx-2.5 mb-2.5 px-2 py-1 rounded-lg border flex items-center justify-between", planBgColor(plan))}>
+        <div className="flex items-center gap-1.5">
+          {plan === "premium" ? (
+            <Crown className={cn("w-3 h-3", planColor(plan))} />
+          ) : plan === "pro" ? (
+            <Zap className={cn("w-3 h-3", planColor(plan))} />
+          ) : null}
+          <span className={cn("text-[10px] font-semibold", planColor(plan))}>
+            {planLabel(plan)}
+          </span>
+        </div>
+        {plan === "free" && (
+          <Link
+            href="/pricing"
+            className="text-[9px] text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+          >
+            Upgrade →
+          </Link>
+        )}
       </div>
     </div>
   );
