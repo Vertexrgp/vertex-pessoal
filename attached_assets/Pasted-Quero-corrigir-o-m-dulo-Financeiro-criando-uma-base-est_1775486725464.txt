@@ -1,0 +1,120 @@
+Quero corrigir o módulo Financeiro, criando uma base estruturada de Categorias e Contas, pois hoje os campos de seleção estão vazios.
+
+OBJETIVO
+Permitir que o usuário cadastre categorias e contas e utilize essas informações nos lançamentos financeiros.
+
+====================================================
+1) CATEGORIAS
+====================================================
+
+Criar um sistema de categorias financeiras.
+
+Cada categoria deve ter:
+
+- nome
+- tipo:
+  - despesa
+  - receita
+- cor (para visual)
+- ícone (opcional)
+
+Exemplos padrão:
+- Alimentação
+- Moradia
+- Transporte
+- Lazer
+- Saúde
+- Investimentos
+- Salário
+
+Permitir:
+
+- criar
+- editar
+- excluir
+
+====================================================
+2) CONTAS
+====================================================
+
+Criar sistema de contas financeiras.
+
+Cada conta deve ter:
+
+- nome
+- tipo:
+  - conta corrente
+  - cartão de crédito
+  - carteira
+- saldo inicial
+- banco (opcional)
+
+Exemplos:
+- Nubank
+- Itaú
+- Dinheiro
+- Inter
+
+Permitir:
+
+- criar
+- editar
+- excluir
+
+====================================================
+3) INTEGRAÇÃO COM LANÇAMENTOS
+====================================================
+
+No modal de "Novo Lançamento":
+
+- dropdown de categoria deve puxar do banco
+- dropdown de conta deve puxar do banco
+
+Se não houver dados:
+- mostrar botão rápido: "Criar categoria"
+- mostrar botão rápido: "Criar conta"
+
+====================================================
+4) UX
+====================================================
+
+Quero:
+
+- tela simples para gerenciar categorias
+- tela simples para gerenciar contas
+- visual premium
+- fluxo rápido
+
+====================================================
+5) DADOS
+====================================================
+
+Salvar tudo no banco corretamente:
+
+- categorias vinculadas ao usuário
+- contas vinculadas ao usuário
+
+====================================================
+6) IMPORTANTE
+====================================================
+
+Sem categorias e contas:
+- não permitir salvar lançamento
+- orientar o usuário a criar antes
+
+====================================================
+7) ENTREGAR
+====================================================
+
+Quero:
+
+1. tela de categorias funcionando
+2. tela de contas funcionando
+3. integração com lançamentos
+4. dropdowns preenchidos corretamente
+5. UX simples e fluida
+
+No final, me mostrar:
+- onde criar categorias
+- onde criar contas
+- como isso aparece nos lançamentos

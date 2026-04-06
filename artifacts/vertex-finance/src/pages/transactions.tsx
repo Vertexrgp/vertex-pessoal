@@ -20,7 +20,8 @@ import {
   useDeleteTransaction,
   useDeleteInstallmentGroup,
 } from "@workspace/api-client-react";
-import { Plus, Search, Trash2, Edit2, FileText, CheckCircle2, Clock, CreditCard, Layers } from "lucide-react";
+import { Plus, Search, Trash2, Edit2, FileText, CheckCircle2, Clock, CreditCard, Layers, Tag, Landmark } from "lucide-react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -633,25 +634,77 @@ export default function TransactionsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name={"categoryId" as any} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Categoria</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value?.toString() ?? ""}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        {categories?.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel className="flex items-center justify-between">
+                      <span>Categoria</span>
+                      {!categories?.length && (
+                        <Link href="/settings">
+                          <button type="button" onClick={() => setIsModalOpen(false)} className="text-xs text-primary hover:underline flex items-center gap-1">
+                            <Tag className="w-3 h-3" /> Criar
+                          </button>
+                        </Link>
+                      )}
+                    </FormLabel>
+                    {categories?.length ? (
+                      <Select onValueChange={field.onChange} value={field.value?.toString() ?? ""}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          {categories.filter(c => c.isActive).map(c => (
+                            <SelectItem key={c.id} value={c.id.toString()}>
+                              <span className="flex items-center gap-2">
+                                {c.color && <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0" style={{ backgroundColor: c.color }} />}
+                                {c.name}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="flex items-center gap-2 h-10 px-3 rounded-md border border-slate-200 bg-slate-50">
+                        <Tag className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-sm text-slate-400">Nenhuma categoria —</span>
+                        <Link href="/settings">
+                          <button type="button" onClick={() => setIsModalOpen(false)} className="text-xs text-primary font-medium hover:underline">criar agora</button>
+                        </Link>
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name={"accountId" as any} render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Conta</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value?.toString() ?? ""}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        {accounts?.map(a => <SelectItem key={a.id} value={a.id.toString()}>{a.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel className="flex items-center justify-between">
+                      <span>Conta</span>
+                      {!accounts?.length && (
+                        <Link href="/settings">
+                          <button type="button" onClick={() => setIsModalOpen(false)} className="text-xs text-primary hover:underline flex items-center gap-1">
+                            <Landmark className="w-3 h-3" /> Criar
+                          </button>
+                        </Link>
+                      )}
+                    </FormLabel>
+                    {accounts?.length ? (
+                      <Select onValueChange={field.onChange} value={field.value?.toString() ?? ""}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          {accounts.map(a => (
+                            <SelectItem key={a.id} value={a.id.toString()}>
+                              <span className="flex items-center gap-2">
+                                {(a as any).color && <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0" style={{ backgroundColor: (a as any).color }} />}
+                                {a.name}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="flex items-center gap-2 h-10 px-3 rounded-md border border-slate-200 bg-slate-50">
+                        <Landmark className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-sm text-slate-400">Nenhuma conta —</span>
+                        <Link href="/settings">
+                          <button type="button" onClick={() => setIsModalOpen(false)} className="text-xs text-primary font-medium hover:underline">criar agora</button>
+                        </Link>
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )} />
