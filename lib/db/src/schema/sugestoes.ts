@@ -2,6 +2,7 @@ import { pgTable, serial, text, timestamp, jsonb, integer } from "drizzle-orm/pg
 
 export const sugestoesTable = pgTable("sugestoes", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   modulo: text("modulo").notNull(),
   titulo: text("titulo").notNull(),
   explicacao: text("explicacao").notNull(),
@@ -20,6 +21,7 @@ export type NewSugestao = typeof sugestoesTable.$inferInsert;
 
 export const comportamentoLogsTable = pgTable("comportamento_logs", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   tipo: text("tipo").notNull(),
   modulo: text("modulo").notNull(),
   sugestaoId: integer("sugestao_id"),

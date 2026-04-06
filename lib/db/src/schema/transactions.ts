@@ -7,6 +7,7 @@ import { creditCardsTable } from "./credit-cards";
 
 export const transactionsTable = pgTable("transactions", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   competenceDate: date("competence_date").notNull(),
   movementDate: date("movement_date").notNull(),
   categoryId: integer("category_id").references(() => categoriesTable.id),

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -45,6 +46,7 @@ import {
   ArrowLeftRight,
   Play,
   Compass,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActivityFeed, useUnreadEventCount } from "@/components/ActivityFeed";
@@ -430,6 +432,53 @@ function ModuleSection({
   );
 }
 
+function UserPanel({ compact }: { compact: boolean }) {
+  const { user, logout } = useAuth();
+  const [, setLocation] = useLocation();
+
+  async function handleLogout() {
+    await logout();
+    setLocation("/login");
+  }
+
+  if (!user) return null;
+
+  const initials = user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+
+  if (compact) {
+    return (
+      <button
+        onClick={handleLogout}
+        title="Sair"
+        className="flex items-center justify-center w-8 h-8 rounded-lg bg-neutral-800 hover:bg-red-500/20 hover:text-red-400 text-white/40 transition-colors"
+      >
+        <LogOut className="w-3.5 h-3.5" />
+      </button>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 mb-2 overflow-hidden">
+      <div className="flex items-center gap-2.5 p-2.5">
+        <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0">
+          <span className="text-[10px] font-bold text-white">{initials}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-white/90 truncate">{user.name}</p>
+          <p className="text-[10px] text-white/35 truncate">{user.email}</p>
+        </div>
+        <button
+          onClick={handleLogout}
+          title="Sair"
+          className="flex-shrink-0 p-1 rounded-md hover:bg-red-500/15 text-white/30 hover:text-red-400 transition-colors"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function Sidebar() {
   const [location] = useLocation();
   const [compact, setCompact] = useState(() => {
@@ -560,12 +609,8 @@ export function Sidebar() {
 
       {/* Bottom */}
       <div className={cn("border-t border-neutral-800 p-3 flex-shrink-0", compact ? "flex flex-col items-center gap-2" : "")}>
-        {!compact && (
-          <div className="rounded-xl p-3 border border-neutral-800 bg-neutral-900 mb-2">
-            <p className="text-[10px] text-white/35 font-medium">Conta Premium</p>
-            <p className="text-xs font-semibold text-white/80 mt-0.5">Plano Ativo</p>
-          </div>
-        )}
+        {!compact && <UserPanel compact={false} />}
+        {compact && <UserPanel compact={true} />}
 
         <button
           onClick={() => setShowActivity((s) => !s)}

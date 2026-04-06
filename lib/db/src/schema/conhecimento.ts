@@ -2,6 +2,7 @@ import { pgTable, serial, text, date, integer, timestamp, boolean } from "drizzl
 
 export const conhecimentoLivros = pgTable("conhecimento_livros", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   titulo: text("titulo").notNull(),
   autor: text("autor").notNull(),
   genero: text("genero").notNull().default("geral"),
@@ -48,6 +49,7 @@ export type ConhecimentoInsight = typeof conhecimentoInsights.$inferSelect;
 
 export const conhecimentoArtigos = pgTable("conhecimento_artigos", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   titulo: text("titulo").notNull(),
   fonte: text("fonte"),
   tema: text("tema").notNull().default("geral"),
@@ -71,9 +73,9 @@ export const conhecimentoArtigoInsights = pgTable("conhecimento_artigo_insights"
 
 export type ConhecimentoArtigoInsight = typeof conhecimentoArtigoInsights.$inferSelect;
 
-// ── VÍDEOS ───────────────────────────────────────────────────────────────────
 export const conhecimentoVideos = pgTable("conhecimento_videos", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   titulo: text("titulo").notNull(),
   link: text("link"),
   plataforma: text("plataforma").notNull().default("YouTube"),

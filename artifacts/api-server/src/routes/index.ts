@@ -1,4 +1,6 @@
 import { Router, type IRouter } from "express";
+import { requireAuth } from "../middlewares/auth";
+import authRouter from "./auth";
 import healthRouter from "./health";
 import storageRouter from "./storage";
 import accountsRouter from "./accounts";
@@ -28,7 +30,13 @@ import treinoSistemaRouter from "./treino-sistema";
 
 const router: IRouter = Router();
 
+// Public routes (no auth required)
 router.use(healthRouter);
+router.use(authRouter);
+
+// All routes below require authentication
+router.use(requireAuth);
+
 router.use(storageRouter);
 router.use(accountsRouter);
 router.use(categoriesRouter);

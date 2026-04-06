@@ -2,6 +2,7 @@ import { pgTable, serial, text, date, boolean, timestamp, integer } from "drizzl
 
 export const growthGoals = pgTable("growth_goals", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   titulo: text("titulo").notNull(),
   descricao: text("descricao"),
   tipo: text("tipo").notNull().default("pessoal"),
@@ -58,6 +59,7 @@ export type GrowthCheckpoint = typeof growthCheckpoints.$inferSelect;
 
 export const growthVision = pgTable("growth_vision", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   titulo: text("titulo").notNull(),
   tipo: text("tipo").notNull().default("frase"),
   conteudo: text("conteudo").notNull(),
@@ -71,6 +73,7 @@ export type GrowthVision = typeof growthVision.$inferSelect;
 
 export const visionBoardItems = pgTable("vision_board_items", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   tipo: text("tipo").notNull().default("texto"),
   conteudo: text("conteudo").notNull(),
   x: integer("x").notNull().default(100),

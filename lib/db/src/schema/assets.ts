@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 
 export const assetsTable = pgTable("assets", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   description: text("description").notNull(),
   category: text("category").notNull(),
   amount: numeric("amount", { precision: 15, scale: 2 }).notNull(),
@@ -16,6 +17,7 @@ export const assetsTable = pgTable("assets", {
 
 export const receivablesTable = pgTable("receivables", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   description: text("description").notNull(),
   category: text("category").notNull(),
   amount: numeric("amount", { precision: 15, scale: 2 }).notNull(),
@@ -28,6 +30,7 @@ export const receivablesTable = pgTable("receivables", {
 
 export const debtsTable = pgTable("debts", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   description: text("description").notNull(),
   creditor: text("creditor").notNull(),
   totalAmount: numeric("total_amount", { precision: 15, scale: 2 }).notNull(),
@@ -41,6 +44,7 @@ export const debtsTable = pgTable("debts", {
 
 export const incomesTable = pgTable("incomes", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   description: text("description").notNull(),
   source: text("source").notNull(),
   amount: numeric("amount", { precision: 15, scale: 2 }).notNull(),
@@ -50,7 +54,6 @@ export const incomesTable = pgTable("incomes", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// ── Asset value history ─────────────────────────────────────────────────────
 export const assetHistoryTable = pgTable("asset_history", {
   id: serial("id").primaryKey(),
   assetId: integer("asset_id").references(() => assetsTable.id).notNull(),
@@ -60,7 +63,6 @@ export const assetHistoryTable = pgTable("asset_history", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// ── Debt payment history ─────────────────────────────────────────────────────
 export const debtPaymentsTable = pgTable("debt_payments", {
   id: serial("id").primaryKey(),
   debtId: integer("debt_id").references(() => debtsTable.id).notNull(),

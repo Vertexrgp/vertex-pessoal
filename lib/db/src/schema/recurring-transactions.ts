@@ -6,6 +6,7 @@ import { accountsTable } from "./accounts";
 
 export const recurringTransactionsTable = pgTable("recurring_transactions", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   tipo: text("tipo").notNull(),
   descricao: text("descricao").notNull(),
   categoriaId: integer("categoria_id").references(() => categoriesTable.id),

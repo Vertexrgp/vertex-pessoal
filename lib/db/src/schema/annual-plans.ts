@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 
 export const annualPlansTable = pgTable("annual_plans", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   year: integer("year").notNull(),
   month: integer("month").notNull(),
   plannedReceitas: numeric("planned_receitas", { precision: 15, scale: 2 }).notNull().default("0"),

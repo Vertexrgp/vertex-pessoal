@@ -5,6 +5,7 @@ import { categoriesTable } from "./categories";
 
 export const budgetGroupsTable = pgTable("budget_groups", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   name: text("name").notNull(),
   type: text("type").notNull(),
   targetPercentage: numeric("target_percentage", { precision: 5, scale: 2 }),
@@ -15,6 +16,7 @@ export const budgetGroupsTable = pgTable("budget_groups", {
 
 export const budgetItemsTable = pgTable("budget_items", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   groupId: integer("group_id").notNull().references(() => budgetGroupsTable.id),
   categoryId: integer("category_id").references(() => categoriesTable.id),
   description: text("description").notNull(),

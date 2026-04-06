@@ -2,6 +2,7 @@ import { pgTable, serial, text, date, numeric, boolean, timestamp, integer } fro
 
 export const viagensTripsTable = pgTable("viagens_trips", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   destino: text("destino").notNull(),
   dataInicio: date("data_inicio"),
   dataFim: date("data_fim"),
@@ -100,7 +101,6 @@ export const viagensOrcamentoTable = pgTable("viagens_orcamento", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// ── AI Suggestions ─────────────────────────────────────────────────────────
 export const viagensSugestoesTable = pgTable("viagens_sugestoes", {
   id: serial("id").primaryKey(),
   viagemId: integer("viagem_id").references(() => viagensTripsTable.id).notNull(),
@@ -114,7 +114,6 @@ export const viagensSugestoesTable = pgTable("viagens_sugestoes", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// ── User Preferences (learned from suggestions) ────────────────────────────
 export const viagensPreferenciasTable = pgTable("viagens_preferencias", {
   id: serial("id").primaryKey(),
   viagemId: integer("viagem_id").references(() => viagensTripsTable.id).notNull(),

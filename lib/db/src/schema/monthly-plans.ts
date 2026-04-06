@@ -5,6 +5,7 @@ import { categoriesTable } from "./categories";
 
 export const monthlyPlansTable = pgTable("monthly_plans", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   month: integer("month").notNull(),
   year: integer("year").notNull(),
   categoryId: integer("category_id").notNull().references(() => categoriesTable.id),

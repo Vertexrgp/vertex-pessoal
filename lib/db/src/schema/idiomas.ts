@@ -2,6 +2,7 @@ import { pgTable, serial, text, integer, boolean, timestamp } from "drizzle-orm/
 
 export const idiomaConfig = pgTable("idioma_config", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   idioma: text("idioma").notNull().default("ingles"),
   nivelAtual: text("nivel_atual").notNull().default("B1"),
   nivelMeta: text("nivel_meta").notNull().default("B2"),
@@ -11,6 +12,7 @@ export const idiomaConfig = pgTable("idioma_config", {
 
 export const idiomaSessoes = pgTable("idioma_sessoes", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   idioma: text("idioma").notNull().default("ingles"),
   data: text("data").notNull(),
   duracao: integer("duracao"),
@@ -23,6 +25,7 @@ export const idiomaSessoes = pgTable("idioma_sessoes", {
 
 export const idiomaVocabulario = pgTable("idioma_vocabulario", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   idioma: text("idioma").notNull().default("ingles"),
   palavra: text("palavra").notNull(),
   traducao: text("traducao").notNull(),

@@ -1,9 +1,8 @@
 import { pgTable, serial, text, date, timestamp, integer, real, boolean } from "drizzle-orm/pg-core";
 
-// ─── Projetos ─────────────────────────────────────────────────────────────────
-
 export const vidaProjetos = pgTable("vida_projetos", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   titulo: text("titulo").notNull(),
   descricao: text("descricao"),
   tipo: text("tipo").notNull().default("mudanca_pais"),
@@ -14,8 +13,6 @@ export const vidaProjetos = pgTable("vida_projetos", {
 
 export type VidaProjeto = typeof vidaProjetos.$inferSelect;
 export type NewVidaProjeto = typeof vidaProjetos.$inferInsert;
-
-// ─── Score Pesos (por projeto) ─────────────────────────────────────────────────
 
 export const vidaScorePesos = pgTable("vida_score_pesos", {
   id: serial("id").primaryKey(),
@@ -30,8 +27,6 @@ export const vidaScorePesos = pgTable("vida_score_pesos", {
 });
 
 export type VidaScorePesos = typeof vidaScorePesos.$inferSelect;
-
-// ─── Cidades ──────────────────────────────────────────────────────────────────
 
 export const vidaCidades = pgTable("vida_cidades", {
   id: serial("id").primaryKey(),
@@ -54,29 +49,21 @@ export const vidaCidades = pgTable("vida_cidades", {
 export type VidaCidade = typeof vidaCidades.$inferSelect;
 export type NewVidaCidade = typeof vidaCidades.$inferInsert;
 
-// ─── Custo de Vida ─────────────────────────────────────────────────────────────
-
 export const vidaCustoVida = pgTable("vida_custo_vida", {
   id: serial("id").primaryKey(),
   cidadeId: integer("cidade_id").notNull().unique(),
-  // Moradia
   aluguel: real("aluguel").notNull().default(0),
   condominio: real("condominio").notNull().default(0),
   energiaGas: real("energia_gas").notNull().default(0),
   internetCelular: real("internet_celular").notNull().default(0),
-  // Alimentação
   mercado: real("mercado").notNull().default(0),
   alimentacaoFora: real("alimentacao_fora").notNull().default(0),
-  // Mobilidade
   transporte: real("transporte").notNull().default(0),
-  // Saúde & Bem-estar
   saude: real("saude").notNull().default(0),
   academia: real("academia").notNull().default(0),
-  // Outros
   lazer: real("lazer").notNull().default(0),
   impostos: real("impostos").notNull().default(0),
   custosExtras: real("custos_extras").notNull().default(0),
-  // Legacy fields (kept for backward compat)
   alimentacao: real("alimentacao").notNull().default(0),
   outros: real("outros").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -84,8 +71,6 @@ export const vidaCustoVida = pgTable("vida_custo_vida", {
 });
 
 export type VidaCustoVida = typeof vidaCustoVida.$inferSelect;
-
-// ─── Trabalho & Renda ─────────────────────────────────────────────────────────
 
 export const vidaTrabalho = pgTable("vida_trabalho", {
   id: serial("id").primaryKey(),
@@ -106,8 +91,6 @@ export const vidaTrabalho = pgTable("vida_trabalho", {
 
 export type VidaTrabalho = typeof vidaTrabalho.$inferSelect;
 
-// ─── Visto & Imigração ────────────────────────────────────────────────────────
-
 export const vidaVisto = pgTable("vida_visto", {
   id: serial("id").primaryKey(),
   cidadeId: integer("cidade_id").notNull().unique(),
@@ -125,8 +108,6 @@ export const vidaVisto = pgTable("vida_visto", {
 });
 
 export type VidaVisto = typeof vidaVisto.$inferSelect;
-
-// ─── Qualidade de Vida ────────────────────────────────────────────────────────
 
 export const vidaQualidade = pgTable("vida_qualidade", {
   id: serial("id").primaryKey(),
@@ -146,8 +127,6 @@ export const vidaQualidade = pgTable("vida_qualidade", {
 
 export type VidaQualidade = typeof vidaQualidade.$inferSelect;
 
-// ─── Prós e Contras ───────────────────────────────────────────────────────────
-
 export const vidaProsContras = pgTable("vida_pros_contras", {
   id: serial("id").primaryKey(),
   cidadeId: integer("cidade_id").notNull(),
@@ -157,8 +136,6 @@ export const vidaProsContras = pgTable("vida_pros_contras", {
 });
 
 export type VidaProContra = typeof vidaProsContras.$inferSelect;
-
-// ─── Plano de Ação ────────────────────────────────────────────────────────────
 
 export const vidaPlanoAcao = pgTable("vida_plano_acao", {
   id: serial("id").primaryKey(),
@@ -173,8 +150,6 @@ export const vidaPlanoAcao = pgTable("vida_plano_acao", {
 });
 
 export type VidaPlanoAcao = typeof vidaPlanoAcao.$inferSelect;
-
-// ─── Checkpoints ──────────────────────────────────────────────────────────────
 
 export const vidaCheckpoints = pgTable("vida_checkpoints", {
   id: serial("id").primaryKey(),

@@ -2,6 +2,7 @@ import { pgTable, serial, text, numeric, date, boolean, timestamp, jsonb, intege
 
 export const performanceGoalsTable = pgTable("performance_goals", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   fotoUrl: text("foto_url"),
   descricao: text("descricao").notNull(),
   metaPeso: numeric("meta_peso", { precision: 6, scale: 2 }),
@@ -15,6 +16,7 @@ export const performanceGoalsTable = pgTable("performance_goals", {
 
 export const performanceCurrentStateTable = pgTable("performance_current_state", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   dataAvaliacao: date("data_avaliacao").notNull(),
   peso: numeric("peso", { precision: 6, scale: 2 }),
   altura: numeric("altura", { precision: 5, scale: 2 }),
@@ -32,6 +34,7 @@ export const performanceCurrentStateTable = pgTable("performance_current_state",
 
 export const performanceExamsTable = pgTable("performance_exams", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   tipo: text("tipo").notNull(),
   data: date("data").notNull(),
   laboratorio: text("laboratorio"),
@@ -44,8 +47,9 @@ export const performanceExamsTable = pgTable("performance_exams", {
 
 export const performanceProtocolsTable = pgTable("performance_protocols", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   nome: text("nome").notNull(),
-  tipo: text("tipo").notNull(), // manipulado | medicamento | suplemento | hormonio
+  tipo: text("tipo").notNull(),
   principioAtivo: text("principio_ativo"),
   dosagem: text("dosagem").notNull(),
   unidade: text("unidade"),
@@ -62,6 +66,7 @@ export const performanceProtocolsTable = pgTable("performance_protocols", {
 
 export const performanceWorkoutsTable = pgTable("performance_workouts", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   nome: text("nome").notNull(),
   letra: text("letra"),
   diaSemana: text("dia_semana"),
@@ -84,6 +89,7 @@ export const performanceWorkoutsTable = pgTable("performance_workouts", {
 
 export const performanceNutritionTable = pgTable("performance_nutrition", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   estrategia: text("estrategia").notNull(),
   calorias: integer("calorias"),
   proteina: numeric("proteina", { precision: 6, scale: 1 }),
@@ -102,6 +108,7 @@ export const performanceNutritionTable = pgTable("performance_nutrition", {
 
 export const performanceProgressTable = pgTable("performance_progress", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   data: date("data").notNull(),
   peso: numeric("peso", { precision: 6, scale: 2 }),
   bf: numeric("bf", { precision: 5, scale: 2 }),
@@ -127,6 +134,7 @@ export const performanceExamMarkersTable = pgTable("performance_exam_markers", {
 
 export const performanceMealPlansTable = pgTable("performance_meal_plans", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   nome: text("nome").notNull(),
   prescritoPor: text("prescrito_por"),
   dataInicio: date("data_inicio"),
@@ -160,9 +168,9 @@ export type PerformanceExamMarker = typeof performanceExamMarkersTable.$inferSel
 export type PerformanceMealPlan = typeof performanceMealPlansTable.$inferSelect;
 export type PerformanceMeal = typeof performanceMealsTable.$inferSelect;
 
-/* ─── Objetivo Físico ─────────────────────────────────────────────────────── */
 export const performanceBodyGoalTable = pgTable("performance_body_goal", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   pesoAtual: numeric("peso_atual", { precision: 6, scale: 2 }),
   bfAtual: numeric("bf_atual", { precision: 5, scale: 2 }),
   pesoAlvo: numeric("peso_alvo", { precision: 6, scale: 2 }),
@@ -174,18 +182,17 @@ export const performanceBodyGoalTable = pgTable("performance_body_goal", {
 
 export const performanceBodyPhotosTable = pgTable("performance_body_photos", {
   id: serial("id").primaryKey(),
-  tipo: text("tipo").notNull(), // objetivo | atual_frente | atual_lado | atual_costas
-  imageData: text("image_data"),           // legacy: base64 (nullable)
-  objectPath: text("object_path"),         // GCS object path (e.g. /objects/uploads/uuid)
+  tipo: text("tipo").notNull(),
+  imageData: text("image_data"),
+  objectPath: text("object_path"),
   goalId: integer("goal_id").references(() => performanceBodyGoalTable.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-/* ─── Análise Corporal IA ─────────────────────────────────────────────────── */
 export const performanceCorpoAnaliseTable = pgTable("performance_corpo_analise", {
   id: serial("id").primaryKey(),
   goalId: integer("goal_id").references(() => performanceBodyGoalTable.id),
-  status: text("status").notNull().default("pending"), // pending | done | error
+  status: text("status").notNull().default("pending"),
   corpoAtual: jsonb("corpo_atual").$type<{
     resumo: string;
     pontoFortes: string[];
@@ -229,25 +236,24 @@ export const performanceCorpoAnaliseTable = pgTable("performance_corpo_analise",
 
 export type PerformanceCorpoAnalise = typeof performanceCorpoAnaliseTable.$inferSelect;
 
-/* ─── Sistema de Treino ──────────────────────────────────────────────────── */
-
 export const performanceExerciseDbTable = pgTable("performance_exercise_db", {
   id: serial("id").primaryKey(),
   nome: text("nome").notNull(),
-  grupoMuscular: text("grupo_muscular").notNull(), // peito|costas|ombro|bracos|pernas|gluteos|abdomen
+  grupoMuscular: text("grupo_muscular").notNull(),
   musculosSecundarios: jsonb("musculos_secundarios").$type<string[]>().default([]),
-  tipo: text("tipo").notNull().default("isolado"), // composto|isolado
-  nivel: text("nivel").notNull().default("intermediario"), // iniciante|intermediario|avancado
-  equipamento: text("equipamento"), // barra|halter|maquina|cabos|peso_corporal
+  tipo: text("tipo").notNull().default("isolado"),
+  nivel: text("nivel").notNull().default("intermediario"),
+  equipamento: text("equipamento"),
   descricao: text("descricao"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const performanceWorkoutPlanTable = pgTable("performance_workout_plan", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   nome: text("nome").notNull(),
-  divisao: text("divisao").notNull().default("ABC"), // ABC|ABCD|ABCDE|Upper-Lower
-  fase: text("fase").notNull().default("ganho_massa"), // ganho_massa|ajuste|refinamento
+  divisao: text("divisao").notNull().default("ABC"),
+  fase: text("fase").notNull().default("ganho_massa"),
   frequenciaSemanal: integer("frequencia_semanal").notNull().default(4),
   objetivo: text("objetivo"),
   ativo: boolean("ativo").notNull().default(true),
@@ -261,7 +267,7 @@ export const performanceWorkoutDayTable = pgTable("performance_workout_day", {
   id: serial("id").primaryKey(),
   planoId: integer("plano_id").notNull().references(() => performanceWorkoutPlanTable.id),
   nome: text("nome").notNull(),
-  letra: text("letra").notNull().default("A"), // A, B, C...
+  letra: text("letra").notNull().default("A"),
   diaSemana: text("dia_semana").notNull(),
   focoPrincipal: text("foco_principal"),
   musculos: jsonb("musculos").$type<string[]>().default([]),
@@ -280,7 +286,7 @@ export const performanceWorkoutDayExerciseTable = pgTable("performance_workout_d
   repsMax: integer("reps_max").notNull().default(12),
   descansoSeg: integer("descanso_seg").notNull().default(90),
   ordem: integer("ordem").notNull().default(0),
-  prioridade: text("prioridade").notNull().default("secundario"), // primario|secundario|manutencao
+  prioridade: text("prioridade").notNull().default("secundario"),
   observacoes: text("observacoes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

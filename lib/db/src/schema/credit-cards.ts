@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 
 export const creditCardsTable = pgTable("credit_cards", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   nomeCartao: text("nome_cartao").notNull(),
   apelidoCartao: text("apelido_cartao"),
   banco: text("banco").notNull(),

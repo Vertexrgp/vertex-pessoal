@@ -73,6 +73,18 @@ The system is built as a monorepo using pnpm workspaces. The frontend uses React
     *   Manages language learning configurations, study sessions, and vocabulary tracking.
     *   DB tables: `idioma_config`, `idioma_sessoes`, `idioma_vocabulario`.
 
+## Authentication & Multi-tenancy
+
+*   **Auth System**: JWT-based cookie authentication (httpOnly cookie `auth_token`, 30-day expiry).
+*   **Auth Flow**: Register → `bcryptjs` hash → insert `users` table → sign JWT → set cookie. Login → verify hash → sign JWT → set cookie. All routes under `/api/*` except `/api/health`, `/api/auth/*` require the cookie.
+*   **Middleware**: `artifacts/api-server/src/middlewares/auth.ts` — `requireAuth` middleware parses cookie manually (no cookie-parser dependency), verifies JWT, attaches `req.user = { id, email, name }`.
+*   **Auth Routes**: `artifacts/api-server/src/routes/auth.ts` — POST `/api/auth/register`, POST `/api/auth/login`, POST `/api/auth/logout`, GET `/api/auth/me`.
+*   **DB**: `users` table in `lib/db/src/schema/auth.ts` (id, name, email, password_hash, timestamps).
+*   **Multi-tenancy**: Every root-level table across all 14 schema files has a `user_id INTEGER NOT NULL DEFAULT 1` column, enabling full per-user data isolation. First registered user gets id=1 and owns all seeded data.
+*   **Frontend Auth**: `artifacts/vertex-finance/src/contexts/AuthContext.tsx` — `AuthProvider` wraps the entire app, `useAuth()` hook provides `user`, `login()`, `register()`, `logout()`. `AuthGate` component in `App.tsx` redirects unauthenticated users to `/login`. Sidebar shows user info (initials + name + email) with a logout button.
+*   **Packages**: `bcryptjs`, `jsonwebtoken`, `cookie-parser` (+ types) installed in `artifacts/api-server`.
+*   **JWT Secret**: `process.env.JWT_SECRET || "vertex-os-jwt-secret-2026"`. Set `JWT_SECRET` env var in production.
+
 ## External Dependencies
 
 *   **Database**: PostgreSQL

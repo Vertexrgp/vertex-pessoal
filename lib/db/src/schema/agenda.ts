@@ -2,6 +2,7 @@ import { pgTable, serial, text, date, boolean, timestamp, integer } from "drizzl
 
 export const agendaEventsTable = pgTable("agenda_events", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   titulo: text("titulo").notNull(),
   data: date("data").notNull(),
   horaInicio: text("hora_inicio"),
@@ -18,10 +19,9 @@ export const agendaEventsTable = pgTable("agenda_events", {
 
 export type AgendaEvent = typeof agendaEventsTable.$inferSelect;
 
-// ─── Recurring Series ─────────────────────────────────────────────────────────
-
 export const agendaRecurringSeriesTable = pgTable("agenda_recurring_series", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   titulo: text("titulo").notNull(),
   descricao: text("descricao"),
   prioridade: text("prioridade").notNull().default("media"),
@@ -42,10 +42,9 @@ export const agendaRecurringSeriesTable = pgTable("agenda_recurring_series", {
 
 export type AgendaRecurringSeries = typeof agendaRecurringSeriesTable.$inferSelect;
 
-// ─── Planner Tasks ────────────────────────────────────────────────────────────
-
 export const agendaPlannerTasksTable = pgTable("agenda_planner_tasks", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   semanaInicio: date("semana_inicio").notNull(),
   titulo: text("titulo").notNull(),
   descricao: text("descricao"),
