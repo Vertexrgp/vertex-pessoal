@@ -73,6 +73,25 @@ The system is built as a monorepo using pnpm workspaces. The frontend uses React
     *   Manages language learning configurations, study sessions, and vocabulary tracking.
     *   DB tables: `idioma_config`, `idioma_sessoes`, `idioma_vocabulario`.
 
+## Stripe Paywall
+
+*   **Integration**: Replit native Stripe connector (`connector:ccfg_stripe_01K611P4YQR0SZM11XFRQJC44Y`) via the integrations system. Uses Replit's credential API (`REPLIT_CONNECTORS_HOSTNAME` + `REPL_IDENTITY`) — no manual `STRIPE_SECRET_KEY` env var needed.
+*   **Client**: `artifacts/api-server/src/stripeClient.ts` — `getUncachableStripeClient()`, `getStripeSync()`, `getStripeSecretKey()` — fetches live credentials from Replit connector API on every call.
+*   **Packages**: `stripe ^22.0.0` + `stripe-replit-sync ^1.0.0` at workspace root (`package.json`).
+*   **DB**: `stripe-replit-sync` auto-creates `stripe` schema with 29 tables (products, prices, subscriptions, customers, etc.) via `runMigrations({ databaseUrl })`. Run once on startup; tables persist across restarts. Users table has `stripe_customer_id TEXT` + `stripe_subscription_id TEXT` columns.
+*   **Startup**: `artifacts/api-server/src/index.ts` — `initStripe()` runs `runMigrations` → `getStripeSync()` → `findOrCreateManagedWebhook(...)` → `syncBackfill()` async.
+*   **Webhook**: Registered in `app.ts` BEFORE `express.json()` at `/api/stripe/webhook` with `express.raw()`.
+*   **Webhook handler**: `webhookHandlers.ts` — delegates to `stripeSync.processWebhook(payload, sig)`.
+*   **API Routes** (`routes/stripe.ts`): GET `/api/stripe/subscription`, GET `/api/stripe/plans`, POST `/api/stripe/create-checkout-session`, POST `/api/stripe/portal`. All require `requireAuth`.
+*   **Products**: Created via `scripts/src/seed-products.ts`. Products in Stripe sandbox:
+    - `Vertex OS Pro` → `prod_UHuqvJsKWOobEH`, price `price_1TJL0wPnrfebdemuCKhCB6hK` (R$19,90/mês)
+    - `Vertex OS Premium` → `prod_UHuqJKQN0umgZt`, price `price_1TJL0xPnrfebdemuNX4y7I0W` (R$39,90/mês)
+*   **Env vars**: `STRIPE_PRICE_PRO` + `STRIPE_PRICE_PREMIUM` set in shared env. Fetched by `/api/stripe/plans` endpoint.
+*   **Frontend**: `/pricing` page (`artifacts/vertex-finance/src/pages/pricing/index.tsx`) with 3-tier cards (Free/Pro/Premium). `useSubscription` hook (`hooks/useSubscription.ts`) fetches plan from `/api/stripe/subscription`. Sidebar `UserPanel` shows plan badge (Free/Pro/Premium) with color + icon, plus "Upgrade →" link for Free users.
+*   **Plans storage**: `stripe-replit-sync` queryable from `stripe.subscriptions` table. Subscription plan derived from `stripe.products.metadata.vertex_plan` field.
+*   **Plan resolution**: `stripeStorage.ts` `resolvePlanFromSubscription()` — checks product metadata `vertex_plan` field, maps to `free|pro|premium`.
+*   **NOTE — IMPORTANT**: `runMigrations` must complete BEFORE `getStripeSync()` is called. On first run, stripe schema tables may not exist — restart server if needed after DB initialization.
+
 ## Authentication & Multi-tenancy
 
 *   **Auth System**: JWT-based cookie authentication (httpOnly cookie `auth_token`, 30-day expiry).

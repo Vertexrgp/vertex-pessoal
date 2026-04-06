@@ -5,14 +5,6 @@ import { getStripeSync } from "./stripeClient";
 
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
-
-  if (!stripeKey) {
-    logger.warn(
-      "STRIPE_SECRET_KEY not set — Stripe features disabled. Connect the Stripe integration to enable payments."
-    );
-    return;
-  }
 
   if (!databaseUrl) {
     logger.warn("DATABASE_URL not set — skipping Stripe init");
