@@ -1,0 +1,134 @@
+Quero corrigir o bug do módulo Financeiro > Lançamentos.
+
+PROBLEMA
+Ao preencher o modal “Novo Lançamento” e clicar em “Salvar Lançamento”, o registro não está sendo salvo.
+
+OBJETIVO
+Descobrir exatamente por que o lançamento não está sendo persistido e corrigir o fluxo completo de criação.
+
+IMPORTANTE
+Não quero resposta genérica.
+Quero diagnóstico real e correção real.
+
+====================================================
+1) INVESTIGAR O FLUXO COMPLETO
+====================================================
+
+Verificar ponta a ponta:
+
+- frontend
+- validação do formulário
+- chamada da API
+- backend
+- persistência no banco
+- atualização da lista após salvar
+
+====================================================
+2) CHECAR FRONTEND
+====================================================
+
+Validar se o botão “Salvar Lançamento” está:
+
+- disparando o submit
+- chamando a função correta
+- montando o payload corretamente
+- enviando todos os campos necessários
+
+Verificar se há:
+- erro silencioso
+- preventDefault incorreto
+- validação travando sem feedback
+- campo obrigatório faltando
+- problema no estado do formulário
+
+====================================================
+3) CHECAR REQUISIÇÃO
+====================================================
+
+Verificar se ao clicar em salvar:
+
+- a requisição realmente sai do frontend
+- qual método está sendo usado
+- qual endpoint está sendo chamado
+- qual payload está sendo enviado
+
+Se houver erro, quero que ele seja exibido claramente no console e também tratado na interface.
+
+====================================================
+4) CHECAR BACKEND
+====================================================
+
+Validar no backend:
+
+- rota de criação de lançamento
+- schema de validação
+- campos obrigatórios
+- tratamento de erro
+- inserção no banco
+
+Verificar se:
+- categoria ou conta estão impedindo o salvamento
+- algum campo está nulo/inválido
+- existe erro de tipo
+- existe falha silenciosa
+
+====================================================
+5) CHECAR BANCO DE DADOS
+====================================================
+
+Verificar se a tabela de lançamentos está correta:
+
+- colunas necessárias
+- tipos corretos
+- constraints
+- relacionamento com conta/categoria
+
+====================================================
+6) FEEDBACK PARA O USUÁRIO
+====================================================
+
+Melhorar o UX do salvamento:
+
+- se salvar com sucesso → mostrar feedback claro
+- se der erro → mostrar mensagem real
+- não deixar o botão parecer que funcionou quando não funcionou
+
+====================================================
+7) ATUALIZAÇÃO DA LISTA
+====================================================
+
+Depois de salvar corretamente:
+
+- fechar modal
+- atualizar lista de lançamentos automaticamente
+- mostrar o novo item sem precisar recarregar a página
+
+====================================================
+8) DIAGNÓSTICO EXPLÍCITO
+====================================================
+
+Quero que você descubra a causa exata do bug.
+
+Não apenas “tentar corrigir”.
+
+Quero saber:
+- qual era o problema
+- onde ele estava
+- por que o lançamento não salvava
+
+====================================================
+9) ENTREGAR
+====================================================
+
+Quero que você:
+
+1. encontre a causa real do bug
+2. corrija o salvamento
+3. corrija feedback de erro/sucesso
+4. atualize a lista após salvar
+
+No final, me mostrar:
+- o que estava quebrado
+- o que foi corrigido
+- como testar
+- quais campos são obrigatórios hoje

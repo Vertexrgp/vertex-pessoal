@@ -154,10 +154,30 @@ export default function TransactionsPage() {
   const { data: creditCards } = useListCreditCards();
 
   const createMutation = useCreateTransaction({
-    mutation: { onSuccess: () => { toast({ title: "Lançamento criado!" }); setIsModalOpen(false); refetch(); } }
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Lançamento criado com sucesso!" });
+        setIsModalOpen(false);
+        refetch();
+      },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.error ?? err?.message ?? "Erro ao salvar lançamento";
+        toast({ title: "Erro ao salvar", description: msg, variant: "destructive" });
+      },
+    }
   });
   const installmentMutation = useCreateInstallments({
-    mutation: { onSuccess: (data) => { toast({ title: `${data.length} parcelas criadas!` }); setIsModalOpen(false); refetch(); } }
+    mutation: {
+      onSuccess: (data) => {
+        toast({ title: `${data.length} parcelas criadas com sucesso!` });
+        setIsModalOpen(false);
+        refetch();
+      },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.error ?? err?.message ?? "Erro ao criar parcelas";
+        toast({ title: "Erro ao salvar", description: msg, variant: "destructive" });
+      },
+    }
   });
   const deleteMutation = useDeleteTransaction({
     mutation: { onSuccess: () => { toast({ title: "Lançamento excluído." }); refetch(); } }
