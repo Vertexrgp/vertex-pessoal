@@ -231,6 +231,37 @@ router.put("/transactions/:id", async (req, res) => {
   }
 });
 
+// ─── PUT /transactions/group/:groupId ────────────────────────────────────────
+router.put("/transactions/group/:groupId", async (req, res) => {
+  try {
+    const userId = (req as any).user?.id;
+    const groupId = req.params.groupId;
+    const body = req.body;
+
+    const patch: any = {};
+    if ("description" in body) patch.description = String(body.description);
+    if ("categoryId" in body) patch.categoryId = body.categoryId != null ? Number(body.categoryId) : null;
+    if ("subcategoryId" in body) patch.subcategoryId = body.subcategoryId != null ? Number(body.subcategoryId) : null;
+    if ("accountId" in body) patch.accountId = body.accountId != null ? Number(body.accountId) : null;
+    if ("creditCardId" in body) patch.creditCardId = body.creditCardId != null ? Number(body.creditCardId) : null;
+    if ("modoUsoCartao" in body) patch.modoUsoCartao = body.modoUsoCartao ? String(body.modoUsoCartao) : null;
+    if ("notes" in body) patch.notes = body.notes ? String(body.notes) : null;
+
+    if (Object.keys(patch).length === 0) {
+      return res.status(400).json({ error: "Nenhum campo para atualizar" });
+    }
+
+    await db
+      .update(transactionsTable)
+      .set(patch)
+      .where(and(eq(transactionsTable.installmentGroupId, groupId), eq(transactionsTable.userId, userId)));
+
+    res.json({ ok: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message ?? "Erro ao atualizar série" });
+  }
+});
+
 // ─── DELETE /transactions/group/:groupId ──────────────────────────────────────
 router.delete("/transactions/group/:groupId", async (req, res) => {
   try {

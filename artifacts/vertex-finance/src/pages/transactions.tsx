@@ -13,6 +13,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import {
   useListTransactions,
   useCreateTransaction,
+  useUpdateTransaction,
   useCreateInstallments,
   useListCategories,
   useListAccounts,
@@ -142,6 +143,10 @@ export default function TransactionsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1);
   const [filterYear] = useState(new Date().getFullYear());
+  const [editingTx, setEditingTx] = useState<any | null>(null);
+  const [pendingEditTx, setPendingEditTx] = useState<any | null>(null);
+  const [showInstallmentEditDialog, setShowInstallmentEditDialog] = useState(false);
+  const [installmentEditScope, setInstallmentEditScope] = useState<"single" | "group" | null>(null);
   const { toast } = useToast();
 
   const { data: transactions, isLoading, refetch } = useListTransactions({
@@ -175,6 +180,21 @@ export default function TransactionsPage() {
       },
       onError: (err: any) => {
         const msg = err?.response?.data?.error ?? err?.message ?? "Erro ao criar parcelas";
+        toast({ title: "Erro ao salvar", description: msg, variant: "destructive" });
+      },
+    }
+  });
+  const updateMutation = useUpdateTransaction({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Lançamento atualizado!" });
+        setIsModalOpen(false);
+        setEditingTx(null);
+        setInstallmentEditScope(null);
+        refetch();
+      },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.error ?? err?.message ?? "Erro ao atualizar lançamento";
         toast({ title: "Erro ao salvar", description: msg, variant: "destructive" });
       },
     }
@@ -223,7 +243,59 @@ export default function TransactionsPage() {
     }
   }, [creditType]);
 
-  const onSubmit = (values: FormValues) => {
+  const onSubmit = async (values: FormValues) => {
+    if (editingTx) {
+      if (editingTx._editScope === "group" && editingTx.installmentGroupId) {
+        try {
+          const res = await fetch(`/api/transactions/group/${editingTx.installmentGroupId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              description: (values as any).description,
+              categoryId: (values as any).categoryId ?? null,
+              accountId: (values as any).accountId ?? null,
+              creditCardId: (values as any).creditCardId ?? null,
+              modoUsoCartao: (values as any).modoUsoCartao ?? null,
+              notes: (values as any).notes ?? null,
+            }),
+          });
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            toast({ title: "Erro ao salvar", description: errData.error ?? "Erro desconhecido", variant: "destructive" });
+            return;
+          }
+          toast({ title: `Série de parcelas atualizada!` });
+          setIsModalOpen(false);
+          setEditingTx(null);
+          setInstallmentEditScope(null);
+          refetch();
+        } catch (e: any) {
+          toast({ title: "Erro ao salvar", description: e.message, variant: "destructive" });
+        }
+      } else {
+        updateMutation.mutate({
+          id: editingTx.id,
+          data: {
+            description: (values as any).description,
+            amount: (values as any).amount,
+            type: (values as any).type,
+            status: (values as any).status,
+            competenceDate: (values as any).competenceDate,
+            movementDate: (values as any).movementDate,
+            categoryId: (values as any).categoryId ?? null,
+            accountId: (values as any).accountId ?? null,
+            creditCardId: (values as any).creditCardId ?? null,
+            paymentMethod: (values as any).paymentMethod ?? null,
+            creditType: (values as any).creditType ?? null,
+            modoUsoCartao: (values as any).modoUsoCartao ?? null,
+            notes: (values as any).notes ?? null,
+          } as any,
+        });
+      }
+      return;
+    }
+
     if (values.mode === "installment") {
       installmentMutation.mutate({
         data: {
@@ -273,15 +345,58 @@ export default function TransactionsPage() {
     }
   };
 
-  const isPending = createMutation.isPending || installmentMutation.isPending;
+  const isPending = createMutation.isPending || installmentMutation.isPending || updateMutation.isPending;
 
   const openNew = () => {
+    setEditingTx(null);
+    setPendingEditTx(null);
+    setInstallmentEditScope(null);
     form.reset({
       mode: "single", type: "expense", status: "paid",
       competenceDate: new Date().toISOString().split("T")[0],
       movementDate: new Date().toISOString().split("T")[0],
       paymentMethod: "Pix",
     } as any);
+    setIsModalOpen(true);
+  };
+
+  const prefillFormForEdit = (tx: any) => {
+    form.reset({
+      mode: "single",
+      description: tx.description,
+      amount: tx.amount,
+      type: tx.type,
+      status: tx.status,
+      competenceDate: tx.competenceDate,
+      movementDate: tx.movementDate,
+      categoryId: tx.categoryId ?? undefined,
+      accountId: tx.accountId ?? undefined,
+      creditCardId: tx.creditCardId ?? undefined,
+      paymentMethod: tx.paymentMethod ?? undefined,
+      creditType: tx.creditType ?? undefined,
+      modoUsoCartao: tx.modoUsoCartao ?? undefined,
+      notes: tx.notes ?? undefined,
+    } as any);
+  };
+
+  const openEdit = (tx: any) => {
+    if (tx.installmentGroupId) {
+      setPendingEditTx(tx);
+      setShowInstallmentEditDialog(true);
+    } else {
+      setEditingTx(tx);
+      setInstallmentEditScope(null);
+      prefillFormForEdit(tx);
+      setIsModalOpen(true);
+    }
+  };
+
+  const startInstallmentEdit = (scope: "single" | "group") => {
+    const tx = pendingEditTx!;
+    setInstallmentEditScope(scope);
+    setShowInstallmentEditDialog(false);
+    setEditingTx({ ...tx, _editScope: scope });
+    prefillFormForEdit(tx);
     setIsModalOpen(true);
   };
 
@@ -399,7 +514,11 @@ export default function TransactionsPage() {
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-primary hover:bg-primary/10">
+                        <Button
+                          variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-primary hover:bg-primary/10"
+                          title="Editar"
+                          onClick={() => openEdit(tx)}
+                        >
                           <Edit2 className="w-3.5 h-3.5" />
                         </Button>
                         <Button
@@ -430,11 +549,71 @@ export default function TransactionsPage() {
         )}
       </Card>
 
+      {/* Dialog: escolher escopo de edição de parcelado */}
+      <Dialog open={showInstallmentEditDialog} onOpenChange={setShowInstallmentEditDialog}>
+        <DialogContent className="sm:max-w-[380px] bg-white border-slate-200">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold">Editar lançamento parcelado</DialogTitle>
+          </DialogHeader>
+          {pendingEditTx && (
+            <div className="py-2 space-y-3">
+              <p className="text-sm text-slate-500">
+                Este lançamento é a parcela{" "}
+                <span className="font-semibold text-slate-700">
+                  {pendingEditTx.currentInstallment}/{pendingEditTx.totalInstallments}
+                </span>{" "}
+                de <span className="font-semibold text-slate-700">{pendingEditTx.description}</span>.
+              </p>
+              <p className="text-xs text-slate-400">O que você quer editar?</p>
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  className="justify-start gap-3 h-auto py-3 px-4 border-slate-200 hover:border-primary hover:bg-primary/5"
+                  onClick={() => startInstallmentEdit("single")}
+                >
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-slate-800">Apenas esta parcela</p>
+                    <p className="text-xs text-slate-400 font-normal">Edita somente a parcela {pendingEditTx.currentInstallment}/{pendingEditTx.totalInstallments}</p>
+                  </div>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="justify-start gap-3 h-auto py-3 px-4 border-slate-200 hover:border-violet-500 hover:bg-violet-50"
+                  onClick={() => startInstallmentEdit("group")}
+                >
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-slate-800">Toda a série de parcelas</p>
+                    <p className="text-xs text-slate-400 font-normal">Atualiza descrição, categoria, conta e observações em todas as {pendingEditTx.totalInstallments} parcelas</p>
+                  </div>
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <Dialog open={isModalOpen} onOpenChange={(open) => { setIsModalOpen(open); if (!open) { setEditingTx(null); setInstallmentEditScope(null); } }}>
         <DialogContent className="sm:max-w-[520px] bg-white border-slate-200 max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold">Novo Lançamento</DialogTitle>
+            <DialogTitle className="text-xl font-bold">
+              {editingTx
+                ? installmentEditScope === "group"
+                  ? `Editar série: ${editingTx.description}`
+                  : "Editar Lançamento"
+                : "Novo Lançamento"
+              }
+            </DialogTitle>
+            {editingTx && installmentEditScope === "group" && (
+              <p className="text-xs text-violet-600 font-medium mt-1">
+                As alterações serão aplicadas a todas as {editingTx.totalInstallments} parcelas da série.
+              </p>
+            )}
+            {editingTx && installmentEditScope === "single" && editingTx.totalInstallments && (
+              <p className="text-xs text-slate-400 mt-1">
+                Editando apenas a parcela {editingTx.currentInstallment}/{editingTx.totalInstallments}.
+              </p>
+            )}
           </DialogHeader>
 
           <Form {...form}>
@@ -769,9 +948,13 @@ export default function TransactionsPage() {
               <Button type="submit" className="w-full mt-2 h-11" disabled={isPending}>
                 {isPending
                   ? "Salvando..."
-                  : mode === "installment"
-                    ? `Criar ${form.getValues("totalInstallments" as any) || "N"} parcelas`
-                    : "Salvar Lançamento"
+                  : editingTx
+                    ? installmentEditScope === "group"
+                      ? `Atualizar todas as ${editingTx.totalInstallments} parcelas`
+                      : "Salvar alterações"
+                    : mode === "installment"
+                      ? `Criar ${form.getValues("totalInstallments" as any) || "N"} parcelas`
+                      : "Salvar Lançamento"
                 }
               </Button>
             </form>

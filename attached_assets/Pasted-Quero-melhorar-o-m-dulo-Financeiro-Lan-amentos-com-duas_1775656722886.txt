@@ -1,0 +1,170 @@
+Quero melhorar o módulo Financeiro > Lançamentos com duas correções essenciais de uso real.
+
+OBJETIVO
+Permitir edição completa dos lançamentos já criados e corrigir a lógica de parcelamento no cartão de crédito para que a primeira parcela conte no mês/data do lançamento.
+
+IMPORTANTE
+Não quero solução paliativa.
+Quero comportamento real de app financeiro.
+
+====================================================
+1) EDIÇÃO DE LANÇAMENTOS JÁ CRIADOS
+====================================================
+
+PROBLEMA
+Depois que eu crio um lançamento, não consigo editar mais.
+
+QUERO
+Permitir editar qualquer lançamento já salvo.
+
+Implementar:
+- botão de editar em cada linha/lançamento
+- ao clicar, abrir o mesmo modal de lançamento já preenchido
+- permitir alterar:
+  - descrição
+  - valor
+  - categoria
+  - conta/cartão
+  - forma de pagamento
+  - data de competência
+  - status
+  - observações
+  - parcelamento (quando aplicável)
+
+Após salvar:
+- atualizar o banco
+- atualizar a lista automaticamente
+- mostrar feedback de sucesso
+
+====================================================
+2) EDIÇÃO DE LANÇAMENTO PARCELADO
+====================================================
+
+Se o lançamento for parcelado no cartão, quero poder editar corretamente.
+
+Definir comportamento:
+- editar apenas esta parcela
+ou
+- editar todas as parcelas da série
+
+Exemplo:
+compra 3/6 no cartão
+
+Ao editar, quero opção:
+- editar só a parcela atual
+- editar a compra parcelada inteira
+
+====================================================
+3) LÓGICA CORRETA DO PARCELAMENTO
+====================================================
+
+PROBLEMA
+Hoje, quando lanço cartão de crédito parcelado, a primeira parcela não está necessariamente entrando no mês/data correta da compra.
+
+QUERO
+Quando eu lançar uma compra parcelada no cartão:
+
+- a 1ª parcela deve contar no mês da data de lançamento
+- as próximas parcelas devem ser distribuídas nos meses seguintes
+
+Exemplo:
+Compra feita em 08/04/2026 em 6x
+
+Resultado esperado:
+- parcela 1 → abril/2026
+- parcela 2 → maio/2026
+- parcela 3 → junho/2026
+- etc
+
+IMPORTANTE
+A data da compra deve ser a referência da primeira parcela.
+
+====================================================
+4) COMPETÊNCIA DAS PARCELAS
+====================================================
+
+Cada parcela deve ter:
+
+- número da parcela
+- total de parcelas
+- data de competência própria
+- vínculo com a compra original
+
+Exemplo:
+1/6, 2/6, 3/6...
+
+====================================================
+5) VÍNCULO ENTRE PARCELAS
+====================================================
+
+Criar uma estrutura clara para parcelamentos:
+
+- transactionGroupId
+ou equivalente
+- parcela atual
+- total de parcelas
+- data original da compra
+
+Isso é importante para:
+- editar série
+- excluir série
+- rastrear compra original
+
+====================================================
+6) EXCLUSÃO / EDIÇÃO DE PARCELADO
+====================================================
+
+Para lançamentos parcelados, implementar opções:
+
+Ao editar:
+- editar apenas esta parcela
+- editar todas as parcelas futuras
+- editar a compra inteira
+
+Ao excluir:
+- excluir apenas esta parcela
+- excluir toda a compra parcelada
+
+====================================================
+7) IMPACTO NOS RELATÓRIOS E FILTROS
+====================================================
+
+Garantir que os relatórios e totais mensais usem a competência correta das parcelas.
+
+Ou seja:
+- abril mostra a parcela 1
+- maio mostra a parcela 2
+- etc
+
+Não jogar tudo no mês errado.
+
+====================================================
+8) UX / VISUAL
+====================================================
+
+Quero UX clara e premium:
+
+- botão de editar visível mas discreto
+- parcelamento fácil de entender
+- mensagens claras no momento de editar série
+- comportamento semelhante a app financeiro real
+
+====================================================
+9) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. edição completa de lançamentos já criados
+2. edição de lançamentos parcelados
+3. lógica correta de parcelamento começando no mês da compra
+4. vínculo entre parcelas
+5. atualização automática da lista após edição
+6. impacto correto nos totais mensais
+
+No final, me mostrar:
+- o que foi corrigido
+- como editar um lançamento simples
+- como editar um parcelado
+- como a competência das parcelas está sendo calculada
+- como a primeira parcela entra no mês da compra
