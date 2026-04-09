@@ -1,0 +1,91 @@
+Quero ativar a função de lançamento por voz no módulo Financeiro, usando a lógica de lançamento rápido já existente.
+
+OBJETIVO
+Permitir que o usuário fale um lançamento e o sistema transforme isso em texto e utilize o parser já existente.
+
+IMPORTANTE
+Não quero criar uma lógica nova.
+Quero apenas adicionar a camada de voz em cima do sistema atual.
+
+====================================================
+1) USAR WEB SPEECH API
+====================================================
+
+Implementar reconhecimento de voz usando Web Speech API do navegador.
+
+- iniciar gravação ao clicar no botão
+- capturar áudio
+- converter em texto em tempo real
+
+====================================================
+2) INTEGRAÇÃO COM INPUT ATUAL
+====================================================
+
+O texto reconhecido deve ser automaticamente inserido no campo de "Lançamento Rápido".
+
+Ou seja:
+
+voz → texto → campo input
+
+====================================================
+3) BOTÃO DE VOZ
+====================================================
+
+Adicionar botão no modal:
+
+- ícone de microfone
+- ao clicar:
+  - iniciar gravação
+  - mostrar estado "gravando"
+  - ao parar:
+    - preencher o input
+
+====================================================
+4) UX
+====================================================
+
+Quero feedback claro:
+
+- "Ouvindo..."
+- "Processando..."
+- mostrar texto reconhecido
+
+====================================================
+5) FALLBACK
+====================================================
+
+Se não suportar voz:
+- botão desabilitado
+- mensagem simples
+
+====================================================
+6) REAPROVEITAR LÓGICA
+====================================================
+
+Depois de transcrever:
+
+- usar o mesmo parser já existente
+- mesma tela de confirmação
+- mesmo fluxo
+
+====================================================
+7) SEGURANÇA
+====================================================
+
+- não salvar automaticamente
+- sempre passar pela confirmação
+
+====================================================
+8) ENTREGAR
+====================================================
+
+Quero:
+
+1. botão de voz funcional
+2. reconhecimento de fala funcionando
+3. integração com input existente
+4. UX clara
+
+No final, me mostrar:
+- como funciona
+- browsers suportados

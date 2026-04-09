@@ -1,21 +1,29 @@
 /**
- * QuickEntryDialog — Lançamento rápido por linguagem natural
+ * QuickEntryDialog — Lançamento rápido por linguagem natural + voz
  *
- * Arquitetura voice-ready:
- *   transcribe(audio: Blob) → text   [futuro: integração mobile]
- *   parseText(text: string) → ParsedEntry  [motor de interpretação]
- *   confirmSave(entry) → Transaction  [persiste no banco]
+ * Arquitetura de transcrição separada do parser:
+ *   transcribeVoice()  →  text  (Web Speech API — navegador)
+ *   parseNaturalLanguage(text)  →  ParsedEntry  (Claude AI — backend)
+ *   confirmSave(entry)  →  Transaction  (backend)
  *
- * Hoje: transcribe é um stub (botão "Em breve").
- * No app mobile, o mesmo `parseText` receberá o output da transcrição de áudio.
+ * No app mobile Expo, substituir transcribeVoice() por expo-speech/whisper
+ * sem precisar alterar o resto do fluxo.
+ *
+ * Browsers suportados para voz:
+ *   ✅ Chrome 25+, Edge 79+, Chrome Android
+ *   ⚠️  Safari 14.1+ (com flag), Firefox NÃO suporta
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Mic, ArrowRight, Check, X, Edit2, TrendingUp, TrendingDown, Tag, CreditCard, Calendar, Layers, AlertCircle, Loader2 } from "lucide-react";
+import {
+  Sparkles, Mic, MicOff, ArrowRight, Check, X,
+  Edit2, TrendingUp, TrendingDown, Tag, CreditCard,
+  Calendar, Layers, AlertCircle, Loader2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { getApiBase } from "@/lib/api-base";
@@ -31,6 +39,15 @@ const EXAMPLE_PHRASES = [
   "gasolina 180 reais no posto",
 ];
 
+// ─── Suporte ao Web Speech API ────────────────────────────────────────────────
+function getSpeechRecognition(): typeof window.SpeechRecognition | null {
+  if (typeof window === "undefined") return null;
+  return (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition ?? null;
+}
+
+const speechSupported = !!getSpeechRecognition();
+
+// ─── Tipos ───────────────────────────────────────────────────────────────────
 interface ParsedEntry {
   type: "income" | "expense";
   amount: number;
@@ -54,7 +71,9 @@ interface QuickEntryDialogProps {
   onSaved: () => void;
 }
 
-// ─── Motor de interpretação (voice-ready) ────────────────────────────────────
+type VoiceState = "idle" | "listening" | "processing";
+
+// ─── Motor de interpretação (mesmo usado pela voz e pelo texto) ───────────────
 async function parseNaturalLanguage(text: string): Promise<ParsedEntry> {
   const base = getApiBase();
   const res = await fetch(`${base}/api/transactions/quick-parse`, {
@@ -69,9 +88,6 @@ async function parseNaturalLanguage(text: string): Promise<ParsedEntry> {
   }
   return res.json();
 }
-
-// Stub para transcrição de voz (será implementado no app mobile)
-// async function transcribeVoice(audio: Blob): Promise<string> { ... }
 
 // ─── Componente principal ────────────────────────────────────────────────────
 export function QuickEntryDialog({
@@ -88,7 +104,11 @@ export function QuickEntryDialog({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exampleIdx, setExampleIdx] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Voice state
+  const [voiceState, setVoiceState] = useState<VoiceState>("idle");
+  const [interimText, setInterimText] = useState("");  // texto parcial enquanto fala
+  const recognitionRef = useRef<InstanceType<typeof window.SpeechRecognition> | null>(null);
 
   // Edição do resultado
   const [editType, setEditType] = useState<"income" | "expense">("expense");
@@ -100,6 +120,8 @@ export function QuickEntryDialog({
   const [editAccountId, setEditAccountId] = useState<string>("");
   const [editCardId, setEditCardId] = useState<string>("");
 
+  const inputRef = useRef<HTMLInputElement>(null);
+
   // Rotacionar placeholders
   useEffect(() => {
     if (!open) return;
@@ -107,14 +129,18 @@ export function QuickEntryDialog({
     return () => clearInterval(t);
   }, [open]);
 
-  // Reset ao abrir
+  // Reset ao abrir / parar voz ao fechar
   useEffect(() => {
     if (open) {
       setStep("input");
       setText("");
       setParsed(null);
       setError(null);
+      setVoiceState("idle");
+      setInterimText("");
       setTimeout(() => inputRef.current?.focus(), 100);
+    } else {
+      stopListening();
     }
   }, [open]);
 
@@ -130,12 +156,14 @@ export function QuickEntryDialog({
     setEditCardId("");
   }
 
-  async function handleParse() {
-    if (!text.trim()) return;
+  // ─── Parse + navegação para etapa de confirmação ──────────────────────────
+  async function handleParse(inputText?: string) {
+    const t = (inputText ?? text).trim();
+    if (!t) return;
     setLoading(true);
     setError(null);
     try {
-      const result = await parseNaturalLanguage(text.trim());
+      const result = await parseNaturalLanguage(t);
       setParsed(result);
       populateEdits(result);
       setStep("confirm");
@@ -146,6 +174,90 @@ export function QuickEntryDialog({
     }
   }
 
+  // ─── Voz: parar reconhecimento ────────────────────────────────────────────
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setVoiceState("idle");
+    setInterimText("");
+  }, []);
+
+  // ─── Voz: iniciar reconhecimento ─────────────────────────────────────────
+  const startListening = useCallback(() => {
+    const SpeechRecognition = getSpeechRecognition();
+    if (!SpeechRecognition) return;
+
+    setError(null);
+    setInterimText("");
+    setText("");
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "pt-BR";
+    recognition.continuous = false;
+    recognition.interimResults = true;   // mostra texto parcial enquanto fala
+    recognition.maxAlternatives = 1;
+    recognitionRef.current = recognition;
+
+    recognition.onstart = () => setVoiceState("listening");
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let interim = "";
+      let final = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const t = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          final += t;
+        } else {
+          interim += t;
+        }
+      }
+      if (interim) setInterimText(interim);
+      if (final) {
+        const transcribed = final.trim();
+        setText(transcribed);
+        setInterimText("");
+        setVoiceState("processing");
+        recognitionRef.current = null;
+        // Envia automaticamente para o parser
+        handleParse(transcribed);
+      }
+    };
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      recognitionRef.current = null;
+      setVoiceState("idle");
+      setInterimText("");
+      const msgs: Record<string, string> = {
+        "not-allowed": "Permissão de microfone negada. Habilite nas configurações do navegador.",
+        "no-speech": "Nenhuma fala detectada. Tente novamente.",
+        "network": "Erro de rede ao processar voz.",
+        "audio-capture": "Nenhum microfone encontrado.",
+      };
+      setError(msgs[event.error] ?? `Erro de voz: ${event.error}`);
+    };
+
+    recognition.onend = () => {
+      if (voiceState === "listening") {
+        setVoiceState("idle");
+        setInterimText("");
+      }
+    };
+
+    recognition.start();
+  }, [voiceState]);
+
+  // ─── Toggle microfone ─────────────────────────────────────────────────────
+  function toggleVoice() {
+    if (voiceState === "listening") {
+      stopListening();
+    } else if (voiceState === "idle") {
+      startListening();
+    }
+  }
+
+  // ─── Salvar lançamento ────────────────────────────────────────────────────
   async function handleSave() {
     setStep("saving");
     try {
@@ -153,10 +265,9 @@ export function QuickEntryDialog({
       const amount = parseFloat(editAmount.replace(",", ".").replace(/[^\d.]/g, ""));
       const today = editDate || new Date().toISOString().split("T")[0];
 
-      let body: any;
       if (parsed?.installments && parsed.installments >= 2) {
         const totalAmt = parsed.totalAmount ?? amount * parsed.installments;
-        body = {
+        const body = {
           mode: "installment",
           description: editDesc,
           totalAmount: Number(totalAmt.toFixed(2)),
@@ -176,7 +287,7 @@ export function QuickEntryDialog({
         });
         if (!res.ok) throw new Error("Erro ao salvar");
       } else {
-        body = {
+        const body = {
           type: editType,
           description: editDesc,
           amount: Number(amount.toFixed(2)),
@@ -208,13 +319,19 @@ export function QuickEntryDialog({
     editType === "income" ? c.type === "income" : c.type === "expense"
   );
 
+  const isListening = voiceState === "listening";
+  const isProcessingVoice = voiceState === "processing";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl border-0 shadow-2xl">
+
         {/* Header gradiente */}
         <div className={cn(
           "px-6 pt-6 pb-5 text-white transition-colors duration-300",
-          editType === "income" ? "bg-gradient-to-br from-emerald-500 to-teal-600" : "bg-gradient-to-br from-indigo-500 to-violet-600"
+          editType === "income"
+            ? "bg-gradient-to-br from-emerald-500 to-teal-600"
+            : "bg-gradient-to-br from-indigo-500 to-violet-600"
         )}>
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
@@ -224,42 +341,116 @@ export function QuickEntryDialog({
               <span className="font-semibold text-sm">Lançamento Rápido</span>
             </div>
             <button
-              onClick={() => onOpenChange(false)}
+              onClick={() => { stopListening(); onOpenChange(false); }}
               className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
           <p className="text-white/70 text-xs mt-2">
-            {step === "input" ? "Descreva o lançamento em linguagem natural" : "Confirme os dados antes de salvar"}
+            {step === "input"
+              ? isListening ? "Ouvindo… fale o lançamento agora"
+              : isProcessingVoice ? "Processando fala…"
+              : "Digite ou fale o lançamento em linguagem natural"
+              : "Confirme os dados antes de salvar"}
           </p>
         </div>
 
-        {/* Step: Input */}
+        {/* ── Step: Input ─────────────────────────────────────────────────── */}
         {step === "input" && (
           <div className="p-6 space-y-4">
+
+            {/* Campo de texto + botões */}
             <div className="relative">
               <Input
                 ref={inputRef}
-                value={text}
-                onChange={e => setText(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && !loading && text.trim() && handleParse()}
-                placeholder={EXAMPLE_PHRASES[exampleIdx]}
-                className="pr-12 h-12 text-sm rounded-xl border-slate-200 focus:border-indigo-400 focus:ring-indigo-400/20 bg-slate-50 placeholder:text-slate-400"
+                value={isListening ? interimText : text}
+                onChange={e => { if (!isListening) setText(e.target.value); }}
+                onKeyDown={e => e.key === "Enter" && !loading && !isListening && text.trim() && handleParse()}
+                placeholder={
+                  isListening ? "Ouvindo…"
+                  : isProcessingVoice ? "Processando fala…"
+                  : EXAMPLE_PHRASES[exampleIdx]
+                }
+                readOnly={isListening || isProcessingVoice}
+                className={cn(
+                  "pr-24 h-12 text-sm rounded-xl border-slate-200 bg-slate-50 placeholder:text-slate-400",
+                  "focus:border-indigo-400 focus:ring-indigo-400/20",
+                  isListening && "border-red-300 bg-red-50 placeholder:text-red-400 focus:border-red-400",
+                  isProcessingVoice && "border-amber-300 bg-amber-50",
+                )}
               />
+
+              {/* Botão microfone */}
               <button
-                onClick={handleParse}
-                disabled={!text.trim() || loading}
+                onClick={toggleVoice}
+                disabled={!speechSupported || isProcessingVoice || loading}
+                title={
+                  !speechSupported ? "Seu navegador não suporta reconhecimento de voz"
+                  : isListening ? "Parar gravação"
+                  : "Falar lançamento"
+                }
+                className={cn(
+                  "absolute right-11 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center transition-all",
+                  !speechSupported || loading
+                    ? "text-slate-300 cursor-not-allowed"
+                  : isListening
+                    ? "bg-red-500 text-white shadow-md shadow-red-500/30 animate-pulse"
+                  : isProcessingVoice
+                    ? "bg-amber-400 text-white"
+                  : "text-slate-400 hover:text-indigo-500 hover:bg-indigo-50"
+                )}
+              >
+                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </button>
+
+              {/* Botão enviar */}
+              <button
+                onClick={() => handleParse()}
+                disabled={(!text.trim() && !isListening) || loading || isListening || isProcessingVoice}
                 className={cn(
                   "absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-                  text.trim() && !loading
+                  text.trim() && !loading && !isListening && !isProcessingVoice
                     ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm"
                     : "bg-slate-100 text-slate-300 cursor-not-allowed"
                 )}
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+                {loading || isProcessingVoice
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <ArrowRight className="w-4 h-4" />
+                }
               </button>
             </div>
+
+            {/* Feedback de voz */}
+            {isListening && (
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-red-50 border border-red-200">
+                <div className="flex gap-1 items-end h-5">
+                  {[0, 1, 2, 3, 4].map(i => (
+                    <div
+                      key={i}
+                      className="w-1 rounded-full bg-red-400"
+                      style={{
+                        height: `${40 + Math.sin(Date.now() / 200 + i) * 30}%`,
+                        animation: `pulse ${0.5 + i * 0.1}s ease-in-out infinite alternate`,
+                        minHeight: "4px",
+                      }}
+                    />
+                  ))}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-red-700">Ouvindo…</p>
+                  <p className="text-xs text-red-500">Fale o lançamento claramente. Clique no microfone para parar.</p>
+                </div>
+              </div>
+            )}
+
+            {isProcessingVoice && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-sm">
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                Interpretando o que você falou…
+              </div>
+            )}
 
             {error && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
@@ -269,40 +460,51 @@ export function QuickEntryDialog({
             )}
 
             {/* Exemplos rápidos */}
-            <div>
-              <p className="text-xs text-slate-400 mb-2 font-medium">Exemplos</p>
-              <div className="flex flex-wrap gap-1.5">
-                {EXAMPLE_PHRASES.slice(0, 4).map((ex, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setText(ex)}
-                    className="text-xs px-2.5 py-1 rounded-full border border-slate-200 bg-white hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 text-slate-600 transition-colors"
-                  >
-                    {ex}
-                  </button>
-                ))}
+            {!isListening && !isProcessingVoice && (
+              <div>
+                <p className="text-xs text-slate-400 mb-2 font-medium">Exemplos</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {EXAMPLE_PHRASES.slice(0, 4).map((ex, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setText(ex)}
+                      className="text-xs px-2.5 py-1 rounded-full border border-slate-200 bg-white hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 text-slate-600 transition-colors"
+                    >
+                      {ex}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Voz — em breve */}
-            <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
-              <button
-                disabled
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-slate-400 border border-dashed border-slate-200 cursor-not-allowed"
-                title="Disponível em breve no app mobile"
-              >
-                <Mic className="w-3.5 h-3.5" />
-                Adicionar por voz
-                <span className="px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-400 text-[10px] font-medium">Em breve</span>
-              </button>
-            </div>
+            {/* Dica sobre voz */}
+            {!isListening && !isProcessingVoice && (
+              <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+                {speechSupported ? (
+                  <button
+                    onClick={startListening}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-indigo-600 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 transition-colors font-medium"
+                  >
+                    <Mic className="w-3.5 h-3.5" />
+                    Clique para falar
+                    <span className="px-1.5 py-0.5 rounded-full bg-indigo-200 text-indigo-700 text-[10px] font-semibold">pt-BR</span>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-slate-400 border border-dashed border-slate-200 cursor-not-allowed">
+                    <MicOff className="w-3.5 h-3.5" />
+                    Voz não disponível neste navegador
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Step: Confirm */}
+        {/* ── Step: Confirm ────────────────────────────────────────────────── */}
         {(step === "confirm" || step === "saving") && parsed && (
           <div className="p-6 space-y-4">
-            {/* Tipo receita/despesa toggle */}
+
+            {/* Toggle Despesa / Receita */}
             <div className="flex rounded-xl overflow-hidden border border-slate-200 text-sm font-medium">
               <button
                 onClick={() => setEditType("expense")}
@@ -443,7 +645,7 @@ export function QuickEntryDialog({
               )}
             </div>
 
-            {/* Reasoning da IA (discreto) */}
+            {/* Reasoning da IA — só mostra quando confiança não é alta */}
             {parsed.reasoning && parsed.confidence !== "high" && (
               <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs">
                 <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
