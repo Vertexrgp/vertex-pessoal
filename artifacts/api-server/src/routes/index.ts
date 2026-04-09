@@ -28,6 +28,7 @@ import vidaRouter from "./vida";
 import corpoAnaliseRouter from "./corpo-analise";
 import treinoSistemaRouter from "./treino-sistema";
 import stripeRouter from "./stripe";
+import importsRouter from "./imports";
 
 const router: IRouter = Router();
 
@@ -64,5 +65,6 @@ router.use(vidaRouter);
 router.use(corpoAnaliseRouter);
 router.use(treinoSistemaRouter);
 router.use(stripeRouter);
+router.use(importsRouter);
 
 export default router;

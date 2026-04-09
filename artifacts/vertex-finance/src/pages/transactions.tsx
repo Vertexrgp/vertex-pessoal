@@ -21,10 +21,11 @@ import {
   useDeleteTransaction,
   useDeleteInstallmentGroup,
 } from "@workspace/api-client-react";
-import { Plus, Search, Trash2, Edit2, FileText, CheckCircle2, Clock, CreditCard, Layers, Tag, Landmark } from "lucide-react";
+import { Plus, Search, Trash2, Edit2, FileText, CheckCircle2, Clock, CreditCard, Layers, Tag, Landmark, Upload } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { ImportDialog } from "@/components/import/ImportDialog";
 
 const PAYMENT_METHODS = ["Dinheiro", "Débito", "Crédito", "Pix", "Transferência", "Outros"];
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -147,6 +148,7 @@ export default function TransactionsPage() {
   const [pendingEditTx, setPendingEditTx] = useState<any | null>(null);
   const [showInstallmentEditDialog, setShowInstallmentEditDialog] = useState(false);
   const [installmentEditScope, setInstallmentEditScope] = useState<"single" | "group" | null>(null);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: transactions, isLoading, refetch } = useListTransactions({
@@ -408,12 +410,21 @@ export default function TransactionsPage() {
           <h1 className="text-3xl font-display font-bold text-slate-900">Lançamentos</h1>
           <p className="text-slate-500 mt-1">Gerencie suas receitas, despesas e transferências.</p>
         </div>
-        <Button
-          className="bg-primary hover:bg-primary/90 text-white rounded-xl shadow-md shadow-primary/20"
-          onClick={openNew}
-        >
-          <Plus className="w-4 h-4 mr-2" /> Novo Lançamento
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl"
+            onClick={() => setIsImportOpen(true)}
+          >
+            <Upload className="w-4 h-4 mr-2" /> Importar
+          </Button>
+          <Button
+            className="bg-primary hover:bg-primary/90 text-white rounded-xl shadow-md shadow-primary/20"
+            onClick={openNew}
+          >
+            <Plus className="w-4 h-4 mr-2" /> Novo Lançamento
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -961,6 +972,11 @@ export default function TransactionsPage() {
           </Form>
         </DialogContent>
       </Dialog>
+      <ImportDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        onImported={() => refetch()}
+      />
     </AppLayout>
   );
 }

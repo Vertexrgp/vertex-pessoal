@@ -1,0 +1,179 @@
+Quero evoluir o módulo Financeiro para permitir importação de faturas e extratos, com leitura automática dos lançamentos.
+
+OBJETIVO
+Permitir que o usuário envie PDF, CSV, XLSX ou extrato/fatura e o sistema leia automaticamente os lançamentos, criando uma tela de revisão antes de salvar no financeiro.
+
+IMPORTANTE
+Não quero que o sistema lance direto sem revisão.
+Quero um fluxo seguro:
+upload → leitura → revisão → importação
+
+====================================================
+1) TIPOS DE ARQUIVO
+====================================================
+
+Quero suportar, inicialmente:
+
+- PDF de fatura de cartão
+- PDF de extrato bancário
+- CSV
+- XLSX
+
+Se fizer sentido estruturalmente, preparar também para OFX no futuro.
+
+====================================================
+2) EXTRAÇÃO DE DADOS
+====================================================
+
+Ao processar o arquivo, o sistema deve tentar extrair:
+
+- data
+- descrição / título
+- valor
+- número da parcela
+- total de parcelas
+- tipo de pagamento (quando identificável)
+- conta/cartão de origem
+- competência sugerida
+
+Exemplos:
+- “Amazon 3/12”
+- “Netflix”
+- “Pix João”
+- “Supermercado Extra”
+
+====================================================
+3) PARCELAMENTO
+====================================================
+
+Se a linha indicar parcelamento, o sistema deve tentar identificar:
+
+- parcela atual
+- total de parcelas
+
+Exemplo:
+3/12
+
+Salvar isso na prévia e permitir revisão.
+
+====================================================
+4) TELA DE REVISÃO ANTES DE IMPORTAR
+====================================================
+
+Depois da leitura, abrir uma tela/modal de revisão com tabela de pré-lançamentos.
+
+Cada linha deve mostrar:
+
+- checkbox selecionar
+- data
+- descrição
+- valor
+- parcela
+- conta/cartão
+- categoria sugerida
+- nível de confiança (opcional)
+
+O usuário deve poder:
+
+- editar descrição
+- editar valor
+- editar parcela
+- ajustar categoria
+- ajustar conta/cartão
+- excluir linhas que não quer importar
+
+====================================================
+5) CATEGORIA SUGERIDA
+====================================================
+
+O sistema deve tentar sugerir categoria automaticamente com base em histórico.
+
+Exemplos:
+- Netflix → Assinaturas / Streaming
+- Amazon → Compras / Variáveis
+- Uber → Transporte
+
+Mas a categoria deve sempre poder ser alterada manualmente.
+
+====================================================
+6) DUPLICIDADE
+====================================================
+
+Antes de importar, o sistema deve tentar detectar possíveis duplicados com base em:
+
+- data
+- valor
+- descrição parecida
+- mesma conta/cartão
+
+E alertar o usuário.
+
+====================================================
+7) IMPORTAÇÃO FINAL
+====================================================
+
+Depois da revisão, o sistema deve criar os lançamentos reais no financeiro.
+
+Regras:
+- salvar só as linhas aprovadas
+- manter vínculo com conta/cartão
+- respeitar parcelamento quando identificado
+- registrar origem do arquivo importado
+
+====================================================
+8) HISTÓRICO DA IMPORTAÇÃO
+====================================================
+
+Criar registro do lote importado com:
+
+- nome do arquivo
+- data da importação
+- quantidade de lançamentos
+- tipo do arquivo
+- usuário
+
+====================================================
+9) UX / VISUAL
+====================================================
+
+Quero visual premium, simples e confiável.
+
+A experiência deve ser:
+
+- clara
+- rápida
+- segura
+- parecida com fluxo profissional de conciliação financeira
+
+====================================================
+10) LIMITAÇÕES E SEGURANÇA
+====================================================
+
+Para PDF:
+- aceitar que a leitura pode não ser perfeita
+- obrigar revisão antes de salvar
+
+Para CSV/XLSX:
+- priorizar maior precisão
+
+====================================================
+11) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. upload de PDF/CSV/XLSX
+2. leitura automática dos lançamentos
+3. detecção de data, descrição, valor e parcelas
+4. sugestão de categoria
+5. tela de revisão
+6. importação final segura
+7. detecção de duplicados
+8. histórico do lote importado
+
+No final, me mostrar:
+- como os arquivos são processados
+- o que é lido automaticamente
+- como revisar antes de importar
+- como o sistema detecta parcelas
+- como ele sugere categorias
