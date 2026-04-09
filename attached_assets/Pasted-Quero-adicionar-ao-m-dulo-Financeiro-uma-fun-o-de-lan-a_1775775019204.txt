@@ -1,0 +1,126 @@
+Quero adicionar ao módulo Financeiro uma função de lançamento rápido por linguagem natural, preparada para depois evoluir para voz no aplicativo mobile.
+
+OBJETIVO
+Permitir que o usuário registre receitas e despesas de forma muito mais rápida, primeiro por texto livre e depois com estrutura pronta para voz.
+
+IMPORTANTE
+Quero implementar em duas fases:
+1. interpretação por texto
+2. preparação para voz no app
+
+====================================================
+1) FASE 1 — LANÇAMENTO RÁPIDO POR TEXTO
+====================================================
+
+Criar um campo/modal de lançamento rápido onde o usuário pode escrever frases naturais, por exemplo:
+
+- gastei 10 reais com café da manhã
+- paguei 79 reais de Uber
+- recebi 2000 de freela
+- comprei remédio por 32 reais no débito
+- foi 3x de 120 no cartão
+
+O sistema deve interpretar automaticamente:
+
+- tipo (receita ou despesa)
+- valor
+- descrição
+- categoria sugerida
+- forma de pagamento (quando mencionada)
+- parcelamento (quando mencionado)
+- data (assumir hoje, se não houver outra)
+
+====================================================
+2) TELA DE CONFIRMAÇÃO
+====================================================
+
+Depois de interpretar a frase, mostrar uma prévia para confirmação antes de salvar.
+
+Exemplo:
+
+- tipo: despesa
+- valor: R$ 10,00
+- descrição: café da manhã
+- categoria: alimentação
+- conta/cartão: não definido
+- data: hoje
+
+Botões:
+- salvar
+- editar
+- cancelar
+
+====================================================
+3) CATEGORIZAÇÃO INTELIGENTE
+====================================================
+
+O sistema deve sugerir categoria com base em:
+
+- palavras da frase
+- histórico do usuário
+
+Exemplos:
+- padaria / café / almoço → alimentação
+- Uber / posto / gasolina → transporte
+- Netflix / Spotify → assinaturas
+- farmácia / remédio → saúde
+
+====================================================
+4) PREPARAÇÃO PARA VOZ
+====================================================
+
+Estruturar a arquitetura para que no futuro o mesmo fluxo aceite input de voz no app mobile.
+
+Ou seja:
+- criar separação entre transcrição e interpretação
+- deixar preparado para receber texto vindo de áudio
+
+====================================================
+5) FASE 2 — PREPARAÇÃO PARA VOZ
+====================================================
+
+Ainda não precisa integrar a voz completa se for complexo agora, mas quero a base pronta para:
+
+- botão “Adicionar por voz”
+- transcrever fala para texto
+- usar o mesmo motor de interpretação do lançamento rápido
+
+====================================================
+6) UX
+====================================================
+
+Quero uma experiência simples e premium.
+
+Exemplo:
+- botão de “Lançamento rápido”
+- input com placeholder inteligente
+- resposta rápida
+- confirmação clara
+
+====================================================
+7) APRENDIZADO
+====================================================
+
+Se possível, o sistema deve aprender padrões do usuário.
+
+Exemplos:
+- “Muzy” → saúde
+- “padaria” → alimentação
+- “Uber” → transporte
+
+====================================================
+8) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. lançamento rápido por texto
+2. interpretação de linguagem natural
+3. tela de confirmação
+4. sugestão de categoria
+5. estrutura pronta para voz no futuro
+
+No final, me mostrar:
+- como o texto é interpretado
+- como a categoria é sugerida
+- como isso pode virar voz no app depois

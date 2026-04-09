@@ -311,4 +311,98 @@ router.post("/transactions/:id/duplicate", async (req, res) => {
   }
 });
 
+// ─── POST /transactions/quick-parse ─────────────────────────────────────────
+// Interpreta linguagem natural → retorna estrutura de transação para confirmação
+// Arquitetura separada de transcrição/interpretação → pronto para voz no futuro
+router.post("/transactions/quick-parse", async (req, res) => {
+  const userId = (req as any).user?.id;
+  const { text } = req.body;
+
+  if (!text?.trim()) return res.status(400).json({ error: "Texto obrigatório" });
+
+  const userCategories = await db
+    .select({ id: categoriesTable.id, name: categoriesTable.name, type: categoriesTable.type })
+    .from(categoriesTable)
+    .where(eq(categoriesTable.userId, userId));
+
+  const today = new Date().toISOString().split("T")[0];
+  const categoryList = userCategories.length
+    ? userCategories.map(c => `${c.name} (${c.type})`).join(", ")
+    : "Alimentação (expense), Transporte (expense), Saúde (expense), Lazer (expense), Moradia (expense), Educação (expense), Assinaturas (expense), Compras (expense), Salário (income), Freelance (income), Rendimentos (income)";
+
+  const prompt = `Você é um assistente de finanças pessoais brasileiro. Interprete a frase abaixo e extraia os dados da transação financeira.
+
+Data de hoje: ${today}
+Categorias disponíveis: ${categoryList}
+
+Frase do usuário: "${text}"
+
+Responda APENAS com JSON válido (sem markdown), seguindo exatamente este formato:
+{
+  "type": "expense" ou "income",
+  "amount": número decimal positivo (ex: 10.00),
+  "description": "descrição curta e clara, sem detalhes do pagamento",
+  "suggestedCategory": "nome exato de uma categoria da lista acima, sem o tipo entre parênteses",
+  "paymentMethod": "Dinheiro" | "Débito" | "Crédito" | "Pix" | "Transferência" | null,
+  "installments": número inteiro >= 2 se parcelado, null caso contrário,
+  "totalAmount": valor total se parcelado (installments * valor_parcela), null caso contrário,
+  "date": "YYYY-MM-DD",
+  "confidence": "high" | "medium" | "low",
+  "reasoning": "breve explicação em português de como interpretou a frase"
+}
+
+Regras de interpretação:
+- "gastei", "paguei", "comprei", "foi", "saiu" → type: expense
+- "recebi", "ganhei", "entrada de", "caiu" → type: income
+- "no cartão", "crédito", "cartão de crédito" → paymentMethod: Crédito
+- "no débito", "débito" → paymentMethod: Débito
+- "pix", "no pix", "via pix" → paymentMethod: Pix
+- "dinheiro", "em espécie" → paymentMethod: Dinheiro
+- "3x", "3 vezes", "em 3", "3 parcelas" → installments: 3
+- "3x de 120" → amount: 120.00, installments: 3, totalAmount: 360.00
+- "em 3x de 120" → amount: 120.00, installments: 3, totalAmount: 360.00
+- Se não mencionar data, use hoje (${today})
+- Valores: "10 reais", "R$ 10", "dez reais", "10,00" → 10.00
+- Categorização: padaria/café/restaurante/almoço/ifood → Alimentação; uber/99/ônibus/posto/gasolina → Transporte; netflix/spotify/prime → Assinaturas; farmácia/médico/remédio → Saúde; mercado/supermercado → Alimentação; freela/freelance → Freelance`;
+
+  try {
+    const { anthropic } = await import("@workspace/integrations-anthropic-ai");
+    const msg = await anthropic.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 512,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const raw = msg.content[0].type === "text" ? msg.content[0].text.trim() : "";
+    let parsed: any;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (!match) return res.status(422).json({ error: "Não consegui interpretar a frase. Tente descrever de forma diferente." });
+      parsed = JSON.parse(match[0]);
+    }
+
+    const matchedCategory = userCategories.find(
+      c => c.name.toLowerCase() === parsed.suggestedCategory?.toLowerCase()
+    );
+
+    return res.json({
+      type: parsed.type ?? "expense",
+      amount: Number(parsed.amount) || 0,
+      totalAmount: parsed.totalAmount ? Number(parsed.totalAmount) : null,
+      description: parsed.description ?? text,
+      suggestedCategory: parsed.suggestedCategory ?? null,
+      categoryId: matchedCategory?.id ?? null,
+      paymentMethod: parsed.paymentMethod ?? null,
+      installments: parsed.installments ? Number(parsed.installments) : null,
+      date: parsed.date ?? today,
+      confidence: parsed.confidence ?? "medium",
+      reasoning: parsed.reasoning ?? null,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message ?? "Erro ao interpretar lançamento" });
+  }
+});
+
 export default router;

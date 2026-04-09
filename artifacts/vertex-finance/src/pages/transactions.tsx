@@ -21,11 +21,12 @@ import {
   useDeleteTransaction,
   useDeleteInstallmentGroup,
 } from "@workspace/api-client-react";
-import { Plus, Search, Trash2, Edit2, FileText, CheckCircle2, Clock, CreditCard, Layers, Tag, Landmark, Upload } from "lucide-react";
+import { Plus, Search, Trash2, Edit2, FileText, CheckCircle2, Clock, CreditCard, Layers, Tag, Landmark, Upload, Zap } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { ImportDialog } from "@/components/import/ImportDialog";
+import { QuickEntryDialog } from "@/components/quick-entry/QuickEntryDialog";
 
 const PAYMENT_METHODS = ["Dinheiro", "Débito", "Crédito", "Pix", "Transferência", "Outros"];
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -149,6 +150,7 @@ export default function TransactionsPage() {
   const [showInstallmentEditDialog, setShowInstallmentEditDialog] = useState(false);
   const [installmentEditScope, setInstallmentEditScope] = useState<"single" | "group" | null>(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isQuickEntryOpen, setIsQuickEntryOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: transactions, isLoading, refetch } = useListTransactions({
@@ -417,6 +419,13 @@ export default function TransactionsPage() {
             onClick={() => setIsImportOpen(true)}
           >
             <Upload className="w-4 h-4 mr-2" /> Importar
+          </Button>
+          <Button
+            variant="outline"
+            className="border-indigo-200 text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50 rounded-xl font-medium gap-1.5"
+            onClick={() => setIsQuickEntryOpen(true)}
+          >
+            <Zap className="w-4 h-4" /> Lançamento Rápido
           </Button>
           <Button
             className="bg-primary hover:bg-primary/90 text-white rounded-xl shadow-md shadow-primary/20"
@@ -976,6 +985,14 @@ export default function TransactionsPage() {
         open={isImportOpen}
         onOpenChange={setIsImportOpen}
         onImported={() => refetch()}
+      />
+      <QuickEntryDialog
+        open={isQuickEntryOpen}
+        onOpenChange={setIsQuickEntryOpen}
+        categories={categories ?? []}
+        accounts={accounts ?? []}
+        creditCards={creditCards ?? []}
+        onSaved={() => { refetch(); toast({ title: "Lançamento salvo!", description: "Registrado com sucesso." }); }}
       />
     </AppLayout>
   );
