@@ -2,7 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { db } from "@workspace/db";
-import { transactionsTable, importBatchesTable } from "@workspace/db/schema";
+import { transactionsTable, importBatchesTable, creditCardsTable } from "@workspace/db/schema";
 import { eq, sql } from "drizzle-orm";
 import crypto from "crypto";
 
@@ -16,7 +16,7 @@ const upload = multer({
 // ─── DIAGNOSTIC LOGGER ────────────────────────────────────────────────────────
 function log(tag: string, msg: string, extra?: any) {
   const line = `[IMPORT:${tag}] ${msg}`;
-  if (extra !== undefined) console.log(line, JSON.stringify(extra));
+  if (extra !== undefined) console.log(line, typeof extra === "object" ? JSON.stringify(extra) : extra);
   else console.log(line);
 }
 
@@ -24,28 +24,13 @@ function log(tag: string, msg: string, extra?: any) {
 function parseBrazilianDate(raw: string): string | null {
   if (!raw) return null;
   raw = raw.trim();
-
-  // YYYY-MM-DD already
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-
-  // DD/MM/YYYY or DD/MM/YY
   const dmy = raw.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
   if (dmy) {
     let [, d, m, y] = dmy;
     if (y.length === 2) y = `20${y}`;
     return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
   }
-
-  // MM/DD/YYYY (US)
-  const mdy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (mdy) {
-    const [, m, d, y] = mdy;
-    const mo = parseInt(m), da = parseInt(d);
-    if (mo <= 12 && da <= 31) {
-      return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-    }
-  }
-
   return null;
 }
 
@@ -53,39 +38,31 @@ function parseBrazilianDate(raw: string): string | null {
 function parseBrazilianAmount(raw: string): number | null {
   if (!raw) return null;
   let s = raw.trim().replace(/[R$\s]/g, "");
-
   if (!s) return null;
-
   const isNeg = s.startsWith("-") || s.startsWith("(") || s.endsWith(")");
   s = s.replace(/[()+-]/g, "");
-
-  // Brazilian: 1.234,56 → has dot as thousands and comma as decimal
   if (/^\d{1,3}(\.\d{3})*(,\d+)?$/.test(s)) {
     s = s.replace(/\./g, "").replace(",", ".");
   } else if (/^\d+(,\d{1,2})?$/.test(s)) {
-    // 1234,56
     s = s.replace(",", ".");
   }
-  // else: US format 1234.56 — keep as-is
-
   const n = parseFloat(s);
   if (isNaN(n)) return null;
   return isNeg ? -n : n;
 }
 
-// ─── CSV PARSER (robust, handles ; , \t separators) ──────────────────────────
+// ─── ROBUST CSV PARSER ────────────────────────────────────────────────────────
 function parseCSVRobust(text: string): { headers: string[]; rows: Record<string, string>[]; delimiter: string; totalLines: number; skipped: number } {
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
-  log("CSV", `Total lines in file: ${lines.length}`);
+  log("CSV", `Total lines: ${lines.length}`);
 
-  // Detect delimiter from first non-empty line
   const sample = lines.find((l) => l.length > 5) ?? "";
   const scores = { ";": 0, ",": 0, "\t": 0 };
   for (const d of Object.keys(scores) as Array<keyof typeof scores>) {
     scores[d] = (sample.match(new RegExp(`\\${d === "\t" ? "t" : d}`, "g")) ?? []).length;
   }
   const delimiter = (Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0]) as string;
-  log("CSV", `Detected delimiter: ${JSON.stringify(delimiter)}, scores:`, scores);
+  log("CSV", `Delimiter: ${JSON.stringify(delimiter)}`);
 
   const splitLine = (line: string): string[] => {
     const result: string[] = [];
@@ -107,23 +84,16 @@ function parseCSVRobust(text: string): { headers: string[]; rows: Record<string,
     return result;
   };
 
-  // Find header row: first row with >1 non-empty cells
   let headerIdx = -1;
   for (let i = 0; i < Math.min(lines.length, 10); i++) {
     const cells = splitLine(lines[i]);
-    if (cells.filter((c) => c.trim()).length > 1) {
-      headerIdx = i;
-      break;
-    }
+    if (cells.filter((c) => c.trim()).length > 1) { headerIdx = i; break; }
   }
 
-  if (headerIdx === -1) {
-    log("CSV", "Could not find header row");
-    return { headers: [], rows: [], delimiter, totalLines: lines.length, skipped: lines.length };
-  }
+  if (headerIdx === -1) return { headers: [], rows: [], delimiter, totalLines: lines.length, skipped: lines.length };
 
   const headers = splitLine(lines[headerIdx]).map((h) => h.replace(/^["']|["']$/g, "").trim());
-  log("CSV", `Headers found at line ${headerIdx}:`, headers);
+  log("CSV", `Headers at line ${headerIdx}:`, headers);
 
   const rows: Record<string, string>[] = [];
   let skipped = 0;
@@ -134,34 +104,32 @@ function parseCSVRobust(text: string): { headers: string[]; rows: Record<string,
     headers.forEach((h, idx) => { row[h] = (cells[idx] ?? "").trim(); });
     rows.push(row);
   }
-
-  log("CSV", `Parsed ${rows.length} data rows, skipped ${skipped} empty lines`);
+  log("CSV", `Data rows: ${rows.length}, skipped: ${skipped}`);
   return { headers, rows, delimiter, totalLines: lines.length, skipped };
 }
 
 // ─── COLUMN MAPPER ────────────────────────────────────────────────────────────
-const DATE_PATTERNS = /^(data|date|dt|dia|vencimento|competência|competencia|lançamento|lancamento|data\s*lançamento|data do lançamento)$/i;
-const DESC_PATTERNS = /^(descrição|descricao|descrição|historico|histórico|lançamento|lancamento|título|titulo|detalhe|memo|detail|estabelecimento|beneficiário|beneficiario|narration|transaction|favorecido|complemento)$/i;
-const AMOUNT_PATTERNS = /^(valor|value|amount|quantia|montante|vlr|vl|val|valor\s*(r\$|\(r\$\))|valor\s*do\s*lançamento)$/i;
-// Separate credit/debit column patterns (common in Brazilian bank exports)
-const CREDIT_PATTERNS = /^(crédito|credito|entrada|credit|cr\.?|recebido)$/i;
-const DEBIT_PATTERNS = /^(débito|debito|saída|saida|debit|db\.?|pago)$/i;
-const TYPE_PATTERNS = /^(tipo|type|natureza|operação|operacao|dc|cr\/db|débito\/crédito|natureza do lançamento)$/i;
-const INSTALLMENT_PATTERNS = /^(parcela|parcelamento|installment|parc|parc\.|nº\s*parcela)$/i;
+const DATE_PAT = /^(data|date|dt|dia|vencimento|competência|competencia|lançamento|lancamento|data\s*lançamento|data do lançamento)$/i;
+const DESC_PAT = /^(descrição|descricao|historico|histórico|lançamento|lancamento|título|titulo|detalhe|memo|detail|estabelecimento|beneficiário|beneficiario|narration|transaction|favorecido|complemento)$/i;
+const AMOUNT_PAT = /^(valor|value|amount|quantia|montante|vlr|vl|val|valor\s*(r\$|\(r\$\))|valor\s*do\s*lançamento)$/i;
+const CREDIT_PAT = /^(crédito|credito|entrada|credit|cr\.?|recebido)$/i;
+const DEBIT_PAT = /^(débito|debito|saída|saida|debit|db\.?|pago)$/i;
+const TYPE_PAT = /^(tipo|type|natureza|operação|operacao|dc|cr\/db|débito\/crédito|natureza do lançamento)$/i;
+const INSTALLMENT_PAT = /^(parcela|parcelamento|installment|parc|parc\.|nº\s*parcela)$/i;
 
 function mapColumns(headers: string[]): Record<string, string> {
   const map: Record<string, string> = {};
   for (const h of headers) {
-    const clean = h.trim();
-    if (!map.date && DATE_PATTERNS.test(clean)) map.date = h;
-    else if (!map.description && DESC_PATTERNS.test(clean)) map.description = h;
-    else if (!map.amount && AMOUNT_PATTERNS.test(clean)) map.amount = h;
-    else if (!map.credit && CREDIT_PATTERNS.test(clean)) map.credit = h;
-    else if (!map.debit && DEBIT_PATTERNS.test(clean)) map.debit = h;
-    else if (!map.type && TYPE_PATTERNS.test(clean)) map.type = h;
-    else if (!map.installment && INSTALLMENT_PATTERNS.test(clean)) map.installment = h;
+    const c = h.trim();
+    if (!map.date && DATE_PAT.test(c)) map.date = h;
+    else if (!map.description && DESC_PAT.test(c)) map.description = h;
+    else if (!map.amount && AMOUNT_PAT.test(c)) map.amount = h;
+    else if (!map.credit && CREDIT_PAT.test(c)) map.credit = h;
+    else if (!map.debit && DEBIT_PAT.test(c)) map.debit = h;
+    else if (!map.type && TYPE_PAT.test(c)) map.type = h;
+    else if (!map.installment && INSTALLMENT_PAT.test(c)) map.installment = h;
   }
-  log("CSV", "Column mapping:", map);
+  log("CSV", "Column map:", map);
   return map;
 }
 
@@ -178,36 +146,40 @@ function parseInstallment(desc: string): { current: number | null; total: number
   return { current: null, total: null, cleanDesc: desc };
 }
 
-// ─── CSV → TRANSACTIONS (structural, no AI needed for well-structured CSVs) ──
+// ─── CATEGORY SUGGESTION ──────────────────────────────────────────────────────
+function suggestCategory(desc: string, type: "income" | "expense"): string {
+  const d = desc.toLowerCase();
+  if (/netflix|spotify|amazon prime|youtube premium|globoplay|deezer|apple one|microsoft 365|adobe|canva|notion|hbo|disney/.test(d)) return "Assinaturas";
+  if (/uber|99pop|taxi|ifood|rappi|gasolina|combustível|pedágio|estacionamento|shell|posto|petroleo/.test(d)) return "Transporte";
+  if (/mercado|supermercado|padaria|açougue|hortifruti|carrefour|extra|atacadão|assaí|walmart|pão de açúcar|sonda/.test(d)) return "Alimentação";
+  if (/restaurante|lanchonete|mcdonald|burger|pizza|sushi|bar |café|bistro|giraffas|bk |subway|outback/.test(d)) return "Alimentação";
+  if (/farmácia|drogaria|remédio|ultrafarma|pacheco|droga|hospital|clínica|médico|dentista|unimed|amil|sulamerica saude|bradesco saude/.test(d)) return "Saúde";
+  if (/escola|universidade|faculdade|curso|udemy|alura|coursera|livro|saraiva|cultura|educação|colégio/.test(d)) return "Educação";
+  if (/aluguel|condomínio|iptu|enel|cemig|copel|sabesp|comgas|net clarobr|vivo|tim|claro|oi |gás|internet|telefone/.test(d)) return "Moradia";
+  if (/cinema|teatro|show|ingresso|ticketmaster|eventim|viagem|hotel|airbnb|booking|uber eats|delivery/.test(d)) return "Lazer";
+  if (/salário|salario|proventos|vencimento|freelance|ted recebida|pix recebido|depósito|deposito|pagamento recebido|holerite/.test(d)) return "Receita";
+  if (/amazon|magazine|americanas|shopee|aliexpress|mercado livre|lojas|shopping/.test(d)) return "Compras";
+  if (/investimento|cdb|tesouro|fundo|ação|ações|bolsa|corretora|poupança|aplicação/.test(d)) return "Investimentos";
+  if (type === "income") return "Receita";
+  return "Outros";
+}
+
+// ─── CSV → TRANSACTIONS ───────────────────────────────────────────────────────
 function extractFromCSV(text: string): { transactions: any[]; diagnostic: any } {
   const { headers, rows, delimiter, totalLines, skipped } = parseCSVRobust(text);
   const colMap = mapColumns(headers);
 
-  const diagnostic = {
-    totalLines,
-    headerRowFound: headers.length > 0,
-    headers,
-    delimiter,
-    dataRows: rows.length,
-    skippedRows: skipped,
-    columnMapping: colMap,
-    missingColumns: [] as string[],
-    discardedRows: [] as string[],
-  };
+  const diagnostic: any = { totalLines, headerRowFound: headers.length > 0, headers, delimiter, dataRows: rows.length, skippedRows: skipped, columnMapping: colMap, missingColumns: [], discardedRows: [] };
 
   const hasSplitColumns = !colMap.amount && (colMap.credit || colMap.debit);
-  const hasAmountColumn = !!colMap.amount;
 
-  if (!colMap.date || !colMap.description || (!hasAmountColumn && !hasSplitColumns)) {
-    diagnostic.missingColumns = [];
+  if (!colMap.date || !colMap.description || (!colMap.amount && !hasSplitColumns)) {
     if (!colMap.date) diagnostic.missingColumns.push("data");
     if (!colMap.description) diagnostic.missingColumns.push("descrição");
-    if (!hasAmountColumn && !hasSplitColumns) diagnostic.missingColumns.push("valor (crédito/débito)");
-    log("CSV", "Missing critical columns — will fall back to AI", diagnostic.missingColumns);
+    if (!colMap.amount && !hasSplitColumns) diagnostic.missingColumns.push("valor");
+    log("CSV", "Missing columns — fallback to AI", diagnostic.missingColumns);
     return { transactions: [], diagnostic };
   }
-
-  log("CSV", `Column mode: ${hasSplitColumns ? "split credit/debit" : "single amount"}`);
 
   const transactions: any[] = [];
   for (let i = 0; i < rows.length; i++) {
@@ -216,54 +188,25 @@ function extractFromCSV(text: string): { transactions: any[]; diagnostic: any } 
     const rawDesc = row[colMap.description] ?? "";
     const rawType = colMap.type ? row[colMap.type] ?? "" : "";
 
-    // Amount resolution: single column OR split credit/debit
     let rawAmount = "";
     let derivedType: "income" | "expense" | null = null;
 
-    if (hasAmountColumn) {
+    if (colMap.amount) {
       rawAmount = row[colMap.amount] ?? "";
     } else {
-      // Split columns: prefer whichever has a value
       const creditVal = (colMap.credit ? row[colMap.credit] ?? "" : "").trim();
       const debitVal = (colMap.debit ? row[colMap.debit] ?? "" : "").trim();
-
-      if (creditVal && parseBrazilianAmount(creditVal) !== null) {
-        rawAmount = creditVal;
-        derivedType = "income";
-      } else if (debitVal && parseBrazilianAmount(debitVal) !== null) {
-        rawAmount = debitVal;
-        derivedType = "expense";
-      }
+      if (creditVal && parseBrazilianAmount(creditVal) !== null) { rawAmount = creditVal; derivedType = "income"; }
+      else if (debitVal && parseBrazilianAmount(debitVal) !== null) { rawAmount = debitVal; derivedType = "expense"; }
     }
 
-    if (!rawDate && !rawAmount) {
-      diagnostic.discardedRows.push(`linha ${i + 2}: data e valor vazios`);
-      continue;
-    }
-
-    if (!rawDate) {
-      diagnostic.discardedRows.push(`linha ${i + 2}: data vazia`);
-      continue;
-    }
-
+    if (!rawDate) { diagnostic.discardedRows.push(`linha ${i + 2}: data vazia`); continue; }
     const date = parseBrazilianDate(rawDate);
-    if (!date) {
-      diagnostic.discardedRows.push(`linha ${i + 2}: data inválida "${rawDate}"`);
-      continue;
-    }
-
-    if (!rawAmount) {
-      diagnostic.discardedRows.push(`linha ${i + 2}: valor vazio (desc: ${rawDesc})`);
-      continue;
-    }
-
+    if (!date) { diagnostic.discardedRows.push(`linha ${i + 2}: data inválida "${rawDate}"`); continue; }
+    if (!rawAmount) { diagnostic.discardedRows.push(`linha ${i + 2}: valor vazio (${rawDesc})`); continue; }
     const amountRaw = parseBrazilianAmount(rawAmount);
-    if (amountRaw === null) {
-      diagnostic.discardedRows.push(`linha ${i + 2}: valor inválido "${rawAmount}"`);
-      continue;
-    }
+    if (amountRaw === null) { diagnostic.discardedRows.push(`linha ${i + 2}: valor inválido "${rawAmount}"`); continue; }
 
-    // Type detection (priority: derived from split columns > explicit type column > sign)
     let type: "income" | "expense";
     if (derivedType) {
       type = derivedType;
@@ -271,40 +214,25 @@ function extractFromCSV(text: string): { transactions: any[]; diagnostic: any } 
       const t = rawType.toLowerCase();
       if (/créd|credit|recebido|entrada|depósito|deposito|^c$/.test(t)) type = "income";
       else if (/déb|debit|pago|saída|saida|^d$/.test(t)) type = "expense";
-      else type = amountRaw >= 0 ? "expense" : "income";
+      else type = amountRaw < 0 ? "income" : "expense";
     } else {
       type = amountRaw < 0 ? "income" : "expense";
     }
 
-    // Override type based on description keywords for common patterns
-    const descLower2 = rawDesc.toLowerCase();
-    if (/salário|salario|proventos|vencimento|freelance|ted recebida|pix recebido|depósito|deposito/.test(descLower2)) type = "income";
+    const descLower = rawDesc.toLowerCase();
+    if (/salário|salario|proventos|freelance|ted recebida|pix recebido|depósito recebido/.test(descLower)) type = "income";
 
     const { current: installmentCurrent, total: installmentTotal, cleanDesc } = parseInstallment(rawDesc);
 
-    // Suggest category based on description
-    const descLower = rawDesc.toLowerCase();
-    let suggestedCategory = "Outros";
-    if (/netflix|spotify|amazon prime|youtube|globo|deezer|apple|microsoft|adobe|canva|notion/.test(descLower)) suggestedCategory = "Assinaturas";
-    else if (/uber|99|taxi|ifood|rappi|ônibus|metro|gasolina|combustível|pedágio|estacionamento|porto seguro auto/.test(descLower)) suggestedCategory = "Transporte";
-    else if (/mercado|supermercado|padaria|açougue|hortifruti|pão|carrefour|extra|atacadão|assaí|walmart|costco/.test(descLower)) suggestedCategory = "Alimentação";
-    else if (/restaurant|restaurante|lanchonete|fast food|mcdonald|burger|pizza|sushi|ifood|rappi|bar |café/.test(descLower)) suggestedCategory = "Alimentação";
-    else if (/farmácia|drogaria|remédio|hospital|clínica|médico|dentista|plano saúde|unimed|bradesco saude/.test(descLower)) suggestedCategory = "Saúde";
-    else if (/escola|universidade|faculdade|curso|udemy|alura|coursera|livro|educação/.test(descLower)) suggestedCategory = "Educação";
-    else if (/salário|salary|freelance|pagamento|honorário|pro labore/.test(descLower)) suggestedCategory = "Receita";
-    else if (/aluguel|condomínio|iptu|luz|água|gás|internet|telefone|tim|claro|vivo|oi|net|/.test(descLower)) suggestedCategory = "Moradia";
-    else if (/cinema|teatro|show|ingresso|viagem|hotel|airbnb/.test(descLower)) suggestedCategory = "Lazer";
-    else if (type === "income") suggestedCategory = "Receita";
-
     transactions.push({
       _id: crypto.randomUUID(),
-      date,
+      purchaseDate: date,
       description: cleanDesc || rawDesc,
       amount: Math.abs(amountRaw),
       type,
       installmentCurrent,
       installmentTotal,
-      suggestedCategory,
+      suggestedCategory: suggestCategory(rawDesc, type),
       confidence: "high",
       categoryId: null,
       accountId: null,
@@ -312,14 +240,12 @@ function extractFromCSV(text: string): { transactions: any[]; diagnostic: any } 
     });
   }
 
-  log("CSV", `Extracted ${transactions.length} transactions from ${rows.length} rows`);
+  log("CSV", `Extracted ${transactions.length} from ${rows.length} rows`);
   return { transactions, diagnostic };
 }
 
-// ─── PDF TEXT EXTRACTION (pdf-parse v1.x — lib direct import) ────────────────
-// pdf-parse@1.1.1 has a known bug: index.js tries to read a test PDF on module
-// load (relative path ./test/data/...) which fails in non-root CWDs.
-// Fix: import lib/pdf-parse.js directly, bypassing the buggy index.js.
+// ─── PDF TEXT EXTRACTION ──────────────────────────────────────────────────────
+// pdf-parse@1.1.1 index.js runs a test on import — bypass it by requiring lib directly
 async function extractPDFText(buffer: Buffer): Promise<string> {
   const { createRequire } = await import("module");
   const req = createRequire(import.meta.url);
@@ -336,42 +262,106 @@ async function extractXLSXText(buffer: Buffer): Promise<string> {
   const sheets: string[] = [];
   workbook.SheetNames.forEach((name: string) => {
     const ws = workbook.Sheets[name];
-    const csv = mod.utils.sheet_to_csv(ws);
-    sheets.push(`=== Aba: ${name} ===\n${csv}`);
+    sheets.push(`=== Aba: ${name} ===\n${mod.utils.sheet_to_csv(ws)}`);
   });
   return sheets.join("\n\n");
 }
 
+// ─── CARD DETECTION FROM TEXT ─────────────────────────────────────────────────
+type CardDetection = { cardName: string | null; bank: string | null; statementMonth: string | null };
+
+function detectCardFromText(text: string): CardDetection {
+  const t = text.substring(0, 3000).toLowerCase();
+  const result: CardDetection = { cardName: null, bank: null, statementMonth: null };
+
+  // Bank/card detection patterns
+  const cardPatterns: Array<{ pattern: RegExp; name: string; bank: string }> = [
+    { pattern: /nubank|nu\s+pagamentos/, name: "Nubank", bank: "Nubank" },
+    { pattern: /itaucard|itaú card|iataú|itaú\s+personnalité|personnalité/, name: "Itaú", bank: "Itaú" },
+    { pattern: /bradesco|bradesco\s+prime|diners\s+club/, name: "Bradesco", bank: "Bradesco" },
+    { pattern: /santander|santander\s+select/, name: "Santander", bank: "Santander" },
+    { pattern: /c6\s+bank|c6bank/, name: "C6 Bank", bank: "C6 Bank" },
+    { pattern: /inter\s+|banco\s+inter/, name: "Banco Inter", bank: "Inter" },
+    { pattern: /caixa\s+econômica|caixa\s+economica|cef/, name: "Caixa", bank: "Caixa" },
+    { pattern: /bb\s+|banco\s+do\s+brasil|ourocard/, name: "Banco do Brasil", bank: "BB" },
+    { pattern: /american express|amex/, name: "Amex", bank: "Amex" },
+    { pattern: /latam\s+pass|tam|latam\s+black/, name: "Latam Pass", bank: "Latam" },
+    { pattern: /xp\s+|xp\s+investimentos/, name: "XP Visa", bank: "XP" },
+    { pattern: /next\s+bank|next\.me/, name: "Next", bank: "Next" },
+    { pattern: /will\s+bank|willbank/, name: "Will Bank", bank: "Will Bank" },
+    { pattern: /picpay|pic\s+pay/, name: "PicPay", bank: "PicPay" },
+  ];
+
+  for (const { pattern, name, bank } of cardPatterns) {
+    if (pattern.test(t)) {
+      result.cardName = name;
+      result.bank = bank;
+      break;
+    }
+  }
+
+  // Statement month detection
+  // Patterns: "fatura de abril/2026", "abril/2026", "competência: 04/2026", "vencimento: 15/04/2026"
+  const monthNames: Record<string, string> = {
+    janeiro: "01", fevereiro: "02", março: "03", marco: "03", abril: "04",
+    maio: "05", junho: "06", julho: "07", agosto: "08", setembro: "09",
+    outubro: "10", novembro: "11", dezembro: "12",
+  };
+
+  const monthNamePat = new RegExp(`(${Object.keys(monthNames).join("|")})[\\s/]*(\\d{4})`, "i");
+  const monthNameMatch = text.substring(0, 3000).match(monthNamePat);
+  if (monthNameMatch) {
+    const monthKey = monthNameMatch[1].toLowerCase();
+    const year = monthNameMatch[2];
+    const monthNum = monthNames[monthKey];
+    if (monthNum) result.statementMonth = `${year}-${monthNum}`;
+  }
+
+  // Pattern: MM/YYYY or MM/YY after "fatura" or "competência" or "vencimento"
+  if (!result.statementMonth) {
+    const compPat = /(?:fatura|competência|competencia|período|periodo|referência|referencia|vencimento)[^\d]*(\d{2})[\s\/](\d{4})/i;
+    const compMatch = text.substring(0, 3000).match(compPat);
+    if (compMatch) {
+      result.statementMonth = `${compMatch[2]}-${compMatch[1]}`;
+    }
+  }
+
+  log("DETECT", `Card: ${result.cardName ?? "unknown"}, Month: ${result.statementMonth ?? "unknown"}`);
+  return result;
+}
+
 // ─── AI EXTRACTION FALLBACK ────────────────────────────────────────────────────
-async function parseWithAI(text: string, fileName: string): Promise<any[]> {
-  log("AI", `Sending ${text.length} chars to Claude Haiku for file: ${fileName}`);
+async function parseWithAI(text: string, fileName: string): Promise<{ transactions: any[]; detection: CardDetection }> {
+  log("AI", `Sending ${text.length} chars for: ${fileName}`);
 
-  const prompt = `Você é um extrator de dados financeiros para um app brasileiro de finanças pessoais. Analise o texto abaixo extraído de um documento financeiro (fatura de cartão, extrato bancário, CSV ou planilha) e extraia TODOS os lançamentos/transações financeiras visíveis.
+  // Run detection and AI in parallel
+  const detection = detectCardFromText(text);
 
-Para cada transação, extraia:
-- date: data no formato YYYY-MM-DD (se o ano não estiver explícito, use ${new Date().getFullYear()})
-- description: nome limpo do estabelecimento/descrição
+  const prompt = `Você é um extrator de dados financeiros para um app brasileiro. Analise este documento financeiro (fatura, extrato bancário) e extraia TODOS os lançamentos.
+
+Para cada transação, retorne:
+- purchaseDate: data da compra no formato YYYY-MM-DD (se o ano não estiver explícito, use ${new Date().getFullYear()})
+- description: nome limpo do estabelecimento
 - amount: número positivo
-- type: "expense" (despesa/débito/compra) ou "income" (receita/crédito/depósito/estorno/salário)
-- installmentCurrent: número da parcela atual (ex: 3 para "3/12"), null se não parcelado
+- type: "expense" (débito/compra) ou "income" (crédito/depósito/estorno)
+- installmentCurrent: número da parcela (ex: 3 para "3/12"), null se não parcelado
 - installmentTotal: total de parcelas (ex: 12 para "3/12"), null se não parcelado
-- suggestedCategory: uma das opções: Alimentação, Transporte, Saúde, Educação, Lazer, Moradia, Compras, Assinaturas, Investimentos, Receita, Outros
-- confidence: "high", "medium" ou "low"
+- suggestedCategory: Alimentação|Transporte|Saúde|Educação|Lazer|Moradia|Compras|Assinaturas|Investimentos|Receita|Outros
+- confidence: "high"|"medium"|"low"
 
 Regras:
-- Ignore linhas de totais, saldos, cabeçalhos e rodapés
-- Trate valores brasileiros: vírgula como decimal (R$ 1.234,56 → 1234.56)
-- Datas brasileiras: DD/MM/YYYY
-- PGTO/PG = pagamento, SAQ = saque, DEP = depósito, IOF = imposto
-- Netflix, Spotify = Assinaturas; Uber, 99 = Transporte; Mercado, Padaria = Alimentação
-- Salário, transferência recebida = income
-- Parcelas: "AMAZON 03/12" → installmentCurrent=3, installmentTotal=12
+- Ignore totais, saldos, cabeçalhos, rodapés
+- Valores brasileiros: vírgula decimal (R$ 1.234,56 → 1234.56)
+- Datas: DD/MM/YYYY ou DD/MM/AA
+- Parcelamento: "AMAZON 03/12" → installmentCurrent=3, installmentTotal=12
+- Salário, PIX recebido, TED recebida = income; compras, débitos = expense
+- Netflix/Spotify = Assinaturas; Uber/99 = Transporte; Mercado = Alimentação
 
-RETORNE APENAS um array JSON válido, sem markdown, sem texto explicativo.
+APENAS um array JSON válido, sem markdown.
 
 ARQUIVO: ${fileName}
 TEXTO:
-${text.substring(0, 15000)}`;
+${text.substring(0, 14000)}`;
 
   const message = await anthropic.messages.create({
     model: "claude-haiku-4-5",
@@ -380,30 +370,25 @@ ${text.substring(0, 15000)}`;
   });
 
   const responseText = message.content[0].type === "text" ? message.content[0].text : "[]";
-  log("AI", `Response length: ${responseText.length}`);
-
   const jsonMatch = responseText.match(/\[[\s\S]*\]/);
-  if (!jsonMatch) {
-    log("AI", "No JSON array found in response. Raw:", responseText.substring(0, 300));
-    return [];
-  }
+  if (!jsonMatch) { log("AI", "No JSON array found"); return { transactions: [], detection }; }
 
   try {
     const parsed = JSON.parse(jsonMatch[0]);
-    const arr = Array.isArray(parsed) ? parsed : [];
-    log("AI", `Parsed ${arr.length} transactions from AI`);
-    return arr.map((tx: any) => ({
+    const transactions = Array.isArray(parsed) ? parsed.map((tx: any) => ({
       ...tx,
       _id: crypto.randomUUID(),
+      purchaseDate: tx.purchaseDate ?? new Date().toISOString().split("T")[0],
       amount: Math.abs(Number(tx.amount) || 0),
       type: tx.type === "income" ? "income" : "expense",
       categoryId: null,
       accountId: null,
       creditCardId: null,
-    }));
-  } catch (e) {
-    log("AI", "JSON.parse failed:", String(e));
-    return [];
+    })) : [];
+    log("AI", `Parsed ${transactions.length} transactions`);
+    return { transactions, detection };
+  } catch {
+    return { transactions: [], detection };
   }
 }
 
@@ -412,156 +397,135 @@ function detectDuplicates(transactions: any[], existing: any[]): any[] {
   return transactions.map((tx) => {
     const amountNum = Math.abs(Number(tx.amount) || 0);
     const isDuplicate = existing.some((e) => {
-      const sameDate = e.competenceDate === tx.date;
+      const sameDate = (e.movementDate ?? e.competenceDate) === tx.purchaseDate;
       const sameAmount = Math.abs(Number(e.amount) - amountNum) < 0.02;
       const descA = String(e.description ?? "").toLowerCase().replace(/\W+/g, "").substring(0, 8);
       const descB = String(tx.description ?? "").toLowerCase().replace(/\W+/g, "").substring(0, 8);
       return sameDate && sameAmount && descA === descB;
     });
-    return {
-      ...tx,
-      isDuplicate,
-      selected: !isDuplicate,
-    };
+    return { ...tx, isDuplicate, selected: !isDuplicate };
   });
 }
 
 // ─── POST /imports/upload ─────────────────────────────────────────────────────
 router.post("/imports/upload", upload.single("file"), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: "Nenhum arquivo enviado" });
-    }
+    if (!req.file) return res.status(400).json({ error: "Nenhum arquivo enviado" });
 
     const { buffer, originalname, mimetype } = req.file;
     const userId = (req as any).user?.id;
     const ext = (originalname.toLowerCase().split(".").pop() ?? "").trim();
 
-    log("UPLOAD", `File received: ${originalname} (${mimetype}, ${buffer.length} bytes, ext=${ext})`);
+    log("UPLOAD", `File: ${originalname} (${mimetype}, ${buffer.length} bytes)`);
 
     let rawText = "";
-    let usedStructuralParsing = false;
-    let structuralTransactions: any[] = [];
+    let usedStructural = false;
+    let structuralTxs: any[] = [];
     let diagnostic: any = {};
+    let detection: CardDetection = { cardName: null, bank: null, statementMonth: null };
 
-    // ── 1. PDF ────────────────────────────────────────────────────────────────
+    // ── PDF ───────────────────────────────────────────────────────────────────
     if (ext === "pdf" || mimetype === "application/pdf") {
-      log("PDF", "Extracting text using pdf-parse v1.x (lib/pdf-parse.js via createRequire)");
+      log("PDF", "Extracting via pdf-parse/lib (v1.x)");
       try {
         rawText = await extractPDFText(buffer);
-        log("PDF", `Extracted ${rawText.length} characters`);
+        log("PDF", `Extracted ${rawText.length} chars`);
+        detection = detectCardFromText(rawText);
         if (rawText.trim().length < 30) {
-          return res.status(422).json({
-            error: "O PDF parece estar protegido ou não contém texto legível. Tente exportar como CSV do seu banco.",
-            diagnostic: { textLength: rawText.length },
-          });
+          return res.status(422).json({ error: "PDF protegido ou sem texto legível. Exporte como CSV no site do banco." });
         }
       } catch (pdfErr: any) {
-        log("PDF", "pdf-parse error:", pdfErr.message);
+        log("PDF", "Error:", pdfErr.message);
         return res.status(422).json({ error: `Erro ao ler PDF: ${pdfErr.message}` });
       }
     }
 
-    // ── 2. XLSX / XLS ─────────────────────────────────────────────────────────
+    // ── XLSX / XLS ────────────────────────────────────────────────────────────
     else if (ext === "xlsx" || ext === "xls" || mimetype.includes("spreadsheet") || mimetype.includes("excel")) {
       log("XLSX", "Extracting from Excel");
       try {
         rawText = await extractXLSXText(buffer);
-        log("XLSX", `Extracted ${rawText.length} characters`);
-        // Try structural CSV parsing on the extracted CSV text
-        const csvResult = extractFromCSV(rawText);
-        diagnostic = csvResult.diagnostic;
-        if (csvResult.transactions.length > 0) {
-          structuralTransactions = csvResult.transactions;
-          usedStructuralParsing = true;
-          log("XLSX", `Structural parse: ${structuralTransactions.length} transactions`);
-        }
-      } catch (xlsxErr: any) {
-        log("XLSX", "xlsx error:", xlsxErr.message);
-        return res.status(422).json({ error: `Erro ao ler planilha: ${xlsxErr.message}` });
+        detection = detectCardFromText(rawText);
+        const { transactions, diagnostic: d } = extractFromCSV(rawText);
+        diagnostic = d;
+        if (transactions.length > 0) { structuralTxs = transactions; usedStructural = true; }
+      } catch (e: any) {
+        return res.status(422).json({ error: `Erro ao ler planilha: ${e.message}` });
       }
     }
 
-    // ── 3. CSV ────────────────────────────────────────────────────────────────
+    // ── CSV ───────────────────────────────────────────────────────────────────
     else {
       rawText = buffer.toString("utf-8");
-      log("CSV", `Text decoded, ${rawText.length} characters`);
-      // Try structural parsing first
-      const csvResult = extractFromCSV(rawText);
-      diagnostic = csvResult.diagnostic;
-      if (csvResult.transactions.length > 0) {
-        structuralTransactions = csvResult.transactions;
-        usedStructuralParsing = true;
-        log("CSV", `Structural parse: ${structuralTransactions.length} transactions`);
-      } else {
-        log("CSV", "Structural parse returned 0 results — will use AI fallback", diagnostic);
-      }
+      log("CSV", `Decoded ${rawText.length} chars`);
+      detection = detectCardFromText(rawText);
+      const { transactions, diagnostic: d } = extractFromCSV(rawText);
+      diagnostic = d;
+      if (transactions.length > 0) { structuralTxs = transactions; usedStructural = true; }
+      else log("CSV", "Structural parse returned 0 — will use AI fallback");
     }
 
-    // ── 4. Extract transactions ───────────────────────────────────────────────
+    // ── Extract ───────────────────────────────────────────────────────────────
     let rawTransactions: any[];
     let parsingMethod: string;
 
-    if (usedStructuralParsing && structuralTransactions.length > 0) {
-      rawTransactions = structuralTransactions;
+    if (usedStructural && structuralTxs.length > 0) {
+      rawTransactions = structuralTxs;
       parsingMethod = "structural";
     } else {
-      // AI fallback
-      log("AI", "Falling back to AI extraction");
       if (!rawText || rawText.trim().length < 20) {
-        return res.status(422).json({
-          error: "Não foi possível ler o conteúdo do arquivo.",
-          diagnostic,
-        });
+        return res.status(422).json({ error: "Não foi possível ler o conteúdo do arquivo.", diagnostic });
       }
-      rawTransactions = await parseWithAI(rawText, originalname);
+      const result = await parseWithAI(rawText, originalname);
+      rawTransactions = result.transactions;
+      detection = result.detection;
       parsingMethod = "ai";
     }
 
-    log("UPLOAD", `Extraction method: ${parsingMethod}, found ${rawTransactions.length} raw transactions`);
+    log("UPLOAD", `Method: ${parsingMethod}, found ${rawTransactions.length} transactions`);
 
     if (!rawTransactions.length) {
       return res.status(422).json({
-        error: "Nenhum lançamento identificado no arquivo. Verifique se contém transações financeiras.",
-        diagnostic: {
-          ...diagnostic,
-          parsingMethod,
-          textSample: rawText.substring(0, 300),
-          hint: "Tente exportar o extrato como CSV no site do seu banco.",
-        },
+        error: "Nenhum lançamento identificado. Verifique se o arquivo contém transações financeiras.",
+        diagnostic: { ...diagnostic, parsingMethod, textSample: rawText.substring(0, 200) },
       });
     }
 
-    // ── 5. Duplicate detection ────────────────────────────────────────────────
+    // ── Duplicate detection ───────────────────────────────────────────────────
     const existing = await db
-      .select({
-        competenceDate: transactionsTable.competenceDate,
-        amount: transactionsTable.amount,
-        description: transactionsTable.description,
-      })
+      .select({ movementDate: transactionsTable.movementDate, competenceDate: transactionsTable.competenceDate, amount: transactionsTable.amount, description: transactionsTable.description })
       .from(transactionsTable)
       .where(eq(transactionsTable.userId, userId));
 
     const transactions = detectDuplicates(rawTransactions, existing);
     const dupeCount = transactions.filter((t) => t.isDuplicate).length;
-    log("UPLOAD", `Duplicate check: ${dupeCount}/${transactions.length} flagged`);
+
+    // ── Auto-match card from user's cards ─────────────────────────────────────
+    let suggestedCardId: number | null = null;
+    if (detection.cardName || detection.bank) {
+      const userCards = await db.select().from(creditCardsTable).where(eq(creditCardsTable.userId, userId));
+      const needle = (detection.cardName ?? detection.bank ?? "").toLowerCase();
+      const matched = userCards.find((c) => {
+        const haystack = `${c.nomeCartao} ${c.apelidoCartao ?? ""} ${c.banco}`.toLowerCase();
+        return haystack.includes(needle) || needle.includes(c.banco.toLowerCase().substring(0, 4));
+      });
+      if (matched) { suggestedCardId = matched.id; log("DETECT", `Matched card ID ${matched.id}: ${matched.nomeCartao}`); }
+    }
 
     res.json({
       fileName: originalname,
       fileType: mimetype,
       count: transactions.length,
       parsingMethod,
-      diagnostic: {
-        ...diagnostic,
-        parsingMethod,
-        transactionsFound: transactions.length,
-        duplicatesFound: dupeCount,
-      },
+      suggestedCardId,
+      suggestedCardName: detection.cardName,
+      suggestedStatementMonth: detection.statementMonth ?? new Date().toISOString().slice(0, 7),
+      diagnostic: { ...diagnostic, parsingMethod, transactionsFound: transactions.length, duplicatesFound: dupeCount },
       transactions,
     });
   } catch (err: any) {
     console.error("Import upload error:", err);
-    res.status(500).json({ error: err.message ?? "Erro ao processar arquivo", stack: err.stack?.split("\n").slice(0, 5) });
+    res.status(500).json({ error: err.message ?? "Erro ao processar arquivo" });
   }
 });
 
@@ -569,45 +533,46 @@ router.post("/imports/upload", upload.single("file"), async (req, res) => {
 router.post("/imports/confirm", async (req, res) => {
   try {
     const userId = (req as any).user?.id;
-    const { fileName, fileType, transactions } = req.body;
+    const { fileName, fileType, transactions, creditCardId, statementMonth } = req.body;
 
     if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
       return res.status(400).json({ error: "Nenhum lançamento para importar" });
     }
+
+    // statementMonth = "YYYY-MM" → competenceDate = "YYYY-MM-01"
+    const competenceDate = statementMonth ? `${statementMonth}-01` : new Date().toISOString().split("T")[0];
+    const cardId = creditCardId ? Number(creditCardId) : null;
 
     const rows = transactions.map((tx: any) => ({
       description: String(tx.description || "Lançamento importado"),
       amount: Number(tx.amount || 0).toFixed(2),
       type: tx.type === "income" ? ("income" as const) : ("expense" as const),
       status: "paid" as const,
-      competenceDate: String(tx.date || new Date().toISOString().split("T")[0]),
-      movementDate: String(tx.date || new Date().toISOString().split("T")[0]),
+      competenceDate,
+      movementDate: String(tx.purchaseDate || tx.date || competenceDate),
       categoryId: tx.categoryId ? Number(tx.categoryId) : null,
       accountId: tx.accountId ? Number(tx.accountId) : null,
-      creditCardId: tx.creditCardId ? Number(tx.creditCardId) : null,
-      paymentMethod: tx.paymentMethod || null,
+      creditCardId: cardId,
+      paymentMethod: cardId ? "Crédito" : (tx.paymentMethod ?? null),
       creditType: tx.installmentTotal ? "parcelado" : null,
       currentInstallment: tx.installmentCurrent ? Number(tx.installmentCurrent) : null,
       totalInstallments: tx.installmentTotal ? Number(tx.installmentTotal) : null,
-      notes: `Importado de: ${fileName}`,
+      notes: `Importado de: ${fileName}${tx.installmentCurrent ? ` (parcela ${tx.installmentCurrent}/${tx.installmentTotal})` : ""}`,
       userId,
     }));
 
     const inserted = await db.insert(transactionsTable).values(rows).returning({ id: transactionsTable.id });
 
-    const [batch] = await db
-      .insert(importBatchesTable)
-      .values({
-        userId,
-        fileName: String(fileName ?? "arquivo"),
-        fileType: String(fileType ?? "unknown"),
-        totalItems: transactions.length,
-        importedItems: inserted.length,
-        status: "completed",
-      })
-      .returning();
+    const [batch] = await db.insert(importBatchesTable).values({
+      userId,
+      fileName: String(fileName ?? "arquivo"),
+      fileType: String(fileType ?? "unknown"),
+      totalItems: transactions.length,
+      importedItems: inserted.length,
+      status: "completed",
+    }).returning();
 
-    log("CONFIRM", `Imported ${inserted.length} transactions, batch ${batch.id}`);
+    log("CONFIRM", `Imported ${inserted.length} txs, batch ${batch.id}, card ${cardId}, month ${statementMonth}`);
     res.status(201).json({ batchId: batch.id, importedCount: inserted.length });
   } catch (err: any) {
     console.error("Import confirm error:", err);
@@ -619,12 +584,9 @@ router.post("/imports/confirm", async (req, res) => {
 router.get("/imports", async (req, res) => {
   try {
     const userId = (req as any).user?.id;
-    const batches = await db
-      .select()
-      .from(importBatchesTable)
+    const batches = await db.select().from(importBatchesTable)
       .where(eq(importBatchesTable.userId, userId))
-      .orderBy(sql`${importBatchesTable.createdAt} DESC`)
-      .limit(50);
+      .orderBy(sql`${importBatchesTable.createdAt} DESC`).limit(50);
     res.json(batches);
   } catch (err: any) {
     res.status(500).json({ error: err.message ?? "Erro ao listar importações" });
