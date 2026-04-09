@@ -1,0 +1,167 @@
+Quero corrigir de verdade a importação de extrato/fatura no módulo Financeiro > Lançamentos.
+
+PROBLEMA REAL IDENTIFICADO
+Hoje a importação está quebrada:
+
+1. no PDF aparece:
+"pdfParse is not a function"
+
+2. no CSV aparece:
+"Nenhum lançamento identificado no arquivo"
+
+Ou seja:
+- o parser de PDF está errado
+- o parser de CSV/XLSX não está robusto o suficiente
+
+OBJETIVO
+Fazer a importação funcionar de verdade para PDF, CSV e XLSX, com diagnóstico real, correção real e tela de revisão antes de salvar.
+
+IMPORTANTE
+Não quero ajuste superficial.
+Quero que você descubra a causa exata e corrija a importação ponta a ponta.
+
+====================================================
+1) CORRIGIR PDF
+====================================================
+
+Investigar por que está acontecendo:
+"pdfParse is not a function"
+
+Quero que você:
+
+- revise a importação da biblioteca usada para ler PDF
+- valide se a lib está sendo importada corretamente
+- valide se está usando a API certa da biblioteca
+- confirme compatibilidade com o ambiente atual
+
+Depois, corrigir o processamento de PDF para que ele realmente consiga:
+
+- ler o texto do PDF
+- extrair linhas de lançamento
+- identificar descrições, valores, datas e parcelas quando possível
+
+Se a biblioteca atual estiver errada ou inadequada:
+- substituir por uma solução que funcione de verdade no stack atual
+
+====================================================
+2) CORRIGIR CSV
+====================================================
+
+O CSV também não está sendo lido corretamente.
+
+Quero que você:
+
+- revise o parser de CSV
+- trate diferentes delimitadores:
+  - vírgula
+  - ponto e vírgula
+  - tab
+- trate cabeçalhos variados
+- trate valores monetários brasileiros
+- trate datas em formatos diferentes
+
+O sistema deve conseguir mapear colunas mesmo quando o nome variar, por exemplo:
+
+- Data / DATA / Dt / Date
+- Descrição / Histórico / Lançamento / Título
+- Valor / Valor (R$) / Amount
+- Parcela / Installment
+
+====================================================
+3) CRIAR CAMADA DE DIAGNÓSTICO
+====================================================
+
+Antes de falhar silenciosamente, quero diagnóstico claro.
+
+Ao importar, o sistema deve informar exatamente:
+
+- se o arquivo foi lido
+- quantas linhas encontrou
+- quantas linhas válidas identificou
+- por que uma linha foi descartada
+- qual campo está faltando
+
+Se der erro:
+- mostrar mensagem clara para o usuário
+- registrar log útil no console/backend
+
+====================================================
+4) ESTRATÉGIA DE EXTRAÇÃO
+====================================================
+
+Quero separar a lógica assim:
+
+PDF:
+- extrair texto bruto
+- quebrar em linhas
+- identificar padrões de data, valor e descrição
+- detectar parcelas tipo 1/3, 2/12, etc
+
+CSV/XLSX:
+- ler colunas estruturadas
+- mapear automaticamente cabeçalhos
+- padronizar os dados
+- gerar pré-lançamentos
+
+====================================================
+5) TELA DE REVISÃO
+====================================================
+
+Depois da leitura, abrir uma tela de revisão com:
+
+- data
+- descrição
+- valor
+- parcela
+- conta/cartão
+- categoria sugerida
+- checkbox para importar ou ignorar
+
+Mesmo se a leitura não estiver 100% perfeita, quero que ao menos mostre os registros encontrados para revisão.
+
+====================================================
+6) TOLERÂNCIA A FORMATOS REAIS
+====================================================
+
+Quero que a importação funcione com arquivos reais de banco/cartão brasileiro.
+
+Tratar:
+- moeda com vírgula decimal
+- valores negativos
+- datas brasileiras
+- parcelamentos
+- linhas com textos extras
+- cabeçalhos fora do padrão
+
+====================================================
+7) FALLBACK INTELIGENTE
+====================================================
+
+Se o sistema não conseguir identificar automaticamente todas as colunas, quero fallback:
+
+- mostrar amostra das colunas encontradas
+- permitir ao usuário mapear manualmente:
+  - qual coluna é data
+  - qual coluna é descrição
+  - qual coluna é valor
+  - qual coluna é parcela
+
+====================================================
+8) ENTREGAR
+====================================================
+
+Quero que você:
+
+1. corrija o parser de PDF
+2. corrija o parser de CSV/XLSX
+3. crie logs e diagnóstico reais
+4. faça a importação gerar pré-lançamentos
+5. abra tela de revisão antes de salvar
+
+No final, me mostrar:
+
+- qual era a causa do erro do PDF
+- o que foi corrigido
+- por que o CSV não estava sendo lido
+- o que foi ajustado
+- como testar com arquivos reais
