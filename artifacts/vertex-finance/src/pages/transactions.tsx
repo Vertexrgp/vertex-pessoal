@@ -153,16 +153,27 @@ function InlineCategoryCell({
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [flash, setFlash] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const catColor = categories.find(c => c.id === tx.categoryId)?.color;
 
-  async function handleChange(val: string) {
-    setSaving(true);
+  useEffect(() => {
+    if (!editing) return;
+    function onMouseDown(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setEditing(false);
+      }
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [editing]);
+
+  async function handleSelect(catId: number | null, catName: string | null) {
     setEditing(false);
+    setSaving(true);
     try {
-      const cat = val ? categories.find(c => c.id.toString() === val) : null;
-      await onSave(tx.id, { categoryId: cat?.id ?? null, categoryName: cat?.name ?? null });
+      await onSave(tx.id, { categoryId: catId, categoryName: catName });
       setFlash(true);
       setTimeout(() => setFlash(false), 1400);
     } catch {
@@ -172,64 +183,74 @@ function InlineCategoryCell({
     }
   }
 
-  if (saving) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs text-slate-400">
-        <Loader2 className="w-3 h-3 animate-spin" />
-      </span>
-    );
-  }
-
-  if (editing) {
-    return (
-      <Select
-        open
-        value={tx.categoryId?.toString() ?? ""}
-        onValueChange={val => handleChange(val)}
-        onOpenChange={o => { if (!o) setEditing(false); }}
-      >
-        <SelectTrigger className="h-7 text-xs w-36 rounded-full border-indigo-300 focus:ring-indigo-400/20">
-          <SelectValue placeholder="Sem categoria" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="">Sem categoria</SelectItem>
-          {categories.map(c => (
-            <SelectItem key={c.id} value={c.id.toString()}>
-              <span className="flex items-center gap-2">
-                {c.color && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.color }} />}
-                {c.name}
-              </span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    );
-  }
-
   return (
-    <button
-      onClick={() => setEditing(true)}
-      className={cn(
-        "group/cat inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-all duration-150",
-        tx.categoryName
-          ? flash
-            ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-            : "bg-slate-100 text-slate-600 hover:bg-indigo-100 hover:text-indigo-700 hover:border hover:border-indigo-200"
-          : flash
-            ? "bg-emerald-100 text-emerald-700"
-            : "text-slate-300 hover:text-indigo-400 hover:bg-indigo-50"
+    <div ref={wrapRef} className="relative inline-block">
+      {saving ? (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs text-slate-400">
+          <Loader2 className="w-3 h-3 animate-spin" />
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setEditing(v => !v)}
+          className={cn(
+            "group/cat inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-all duration-150",
+            tx.categoryName
+              ? flash
+                ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                : "bg-slate-100 text-slate-600 hover:bg-indigo-100 hover:text-indigo-700 hover:border hover:border-indigo-200"
+              : flash
+                ? "bg-emerald-100 text-emerald-700"
+                : "text-slate-300 hover:text-indigo-400 hover:bg-indigo-50"
+          )}
+          title="Clique para editar categoria"
+        >
+          {tx.categoryName && catColor && !flash && (
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: catColor }} />
+          )}
+          {flash ? <Check className="w-3 h-3" /> : null}
+          <span>{tx.categoryName || "Sem categoria"}</span>
+          {!flash && (
+            <Edit2 className="w-2.5 h-2.5 opacity-0 group-hover/cat:opacity-50 transition-opacity ml-0.5" />
+          )}
+        </button>
       )}
-      title="Clique para editar categoria"
-    >
-      {tx.categoryName && catColor && !flash && (
-        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: catColor }} />
+
+      {editing && (
+        <div className="absolute left-0 top-full mt-1 z-[200] bg-white border border-slate-200 rounded-xl shadow-xl py-1 min-w-[180px] max-h-60 overflow-y-auto">
+          <button
+            type="button"
+            onMouseDown={e => { e.preventDefault(); e.stopPropagation(); handleSelect(null, null); }}
+            className={cn(
+              "w-full text-left px-3 py-1.5 text-xs transition-colors",
+              !tx.categoryId
+                ? "bg-slate-100 text-slate-500 font-medium"
+                : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+            )}
+          >
+            Sem categoria
+          </button>
+          {categories.map(c => (
+            <button
+              key={c.id}
+              type="button"
+              onMouseDown={e => { e.preventDefault(); e.stopPropagation(); handleSelect(c.id, c.name); }}
+              className={cn(
+                "w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors",
+                tx.categoryId === c.id
+                  ? "bg-indigo-50 text-indigo-700 font-semibold"
+                  : "text-slate-700 hover:bg-slate-50"
+              )}
+            >
+              {c.color && (
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
+              )}
+              {c.name}
+            </button>
+          ))}
+        </div>
       )}
-      {flash ? <Check className="w-3 h-3" /> : null}
-      <span>{tx.categoryName || "Sem categoria"}</span>
-      {!flash && (
-        <Edit2 className="w-2.5 h-2.5 opacity-0 group-hover/cat:opacity-50 transition-opacity ml-0.5" />
-      )}
-    </button>
+    </div>
   );
 }
 
@@ -674,6 +695,7 @@ export default function TransactionsPage() {
           {MONTHS.map((m, i) => (
             <button
               key={i}
+              type="button"
               onClick={() => setFilterMonth(i + 1)}
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",

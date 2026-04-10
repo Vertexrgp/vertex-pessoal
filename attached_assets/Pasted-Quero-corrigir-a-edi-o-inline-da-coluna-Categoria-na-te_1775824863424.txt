@@ -1,0 +1,100 @@
+Quero corrigir a edição inline da coluna Categoria na tela de Lançamentos.
+
+PROBLEMA
+Quando clico para alterar a categoria, o sistema está abrindo outra página/rota e ficando em branco.
+
+ISSO ESTÁ ERRADO.
+
+OBJETIVO
+Ao clicar na categoria, quero que abra imediatamente um dropdown/select inline na própria célula da tabela, sem navegar para outra página.
+
+====================================================
+1) COMPORTAMENTO CORRETO
+====================================================
+
+Na coluna Categoria:
+
+- ao clicar na categoria atual
+- ou no campo vazio
+
+O sistema deve:
+
+- abrir um select/dropdown inline
+- mostrar a lista de categorias cadastradas
+- permitir selecionar uma categoria
+- salvar automaticamente ao selecionar
+- atualizar a linha sem reload
+
+====================================================
+2) O QUE NÃO DEVE ACONTECER
+====================================================
+
+- não navegar para outra rota
+- não abrir página em branco
+- não abrir tela separada
+- não sair da tabela
+
+====================================================
+3) UX ESPERADA
+====================================================
+
+Quero comportamento parecido com edição inline profissional:
+
+- clique no campo
+- abre dropdown na hora
+- seleciona categoria
+- salva
+- feedback visual leve
+
+Opcional:
+- ícone de seta ou hover indicando que é editável
+
+====================================================
+4) IMPLEMENTAÇÃO
+====================================================
+
+Revisar a célula da categoria e corrigir para que ela use:
+
+- estado local de edição inline
+- select/dropdown renderizado dentro da célula
+- onChange para salvar
+- onBlur ou fechamento após seleção
+
+Não usar link, navigate ou rota.
+
+====================================================
+5) BACKEND
+====================================================
+
+Ao selecionar nova categoria:
+
+- enviar PATCH para o lançamento
+- atualizar categoryId
+- persistir no banco
+- atualizar apenas a linha alterada
+
+====================================================
+6) ERRO E FALLBACK
+====================================================
+
+Se der erro ao salvar:
+
+- manter valor anterior
+- mostrar toast simples
+- não travar a tela
+
+====================================================
+7) ENTREGAR
+====================================================
+
+Quero que você corrija isso para:
+
+1. clique abrir dropdown inline
+2. selecionar categoria na própria tabela
+3. salvar automaticamente
+4. não navegar para outra página
+
+No final, me mostrar:
+- qual era o erro
+- por que estava abrindo outra página
+- como a edição inline foi corrigida
