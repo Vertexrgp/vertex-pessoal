@@ -218,6 +218,7 @@ router.put("/transactions/:id", async (req, res) => {
     if ("creditType" in body) data.creditType = body.creditType ? String(body.creditType) : null;
     if ("modoUsoCartao" in body) data.modoUsoCartao = body.modoUsoCartao ? String(body.modoUsoCartao) : null;
     if ("notes" in body) data.notes = body.notes ? String(body.notes) : null;
+    if ("totalInstallments" in body) data.totalInstallments = body.totalInstallments != null ? Number(body.totalInstallments) : null;
 
     const [tx] = await db
       .update(transactionsTable)
@@ -246,6 +247,7 @@ router.put("/transactions/group/:groupId", async (req, res) => {
     if ("creditCardId" in body) patch.creditCardId = body.creditCardId != null ? Number(body.creditCardId) : null;
     if ("modoUsoCartao" in body) patch.modoUsoCartao = body.modoUsoCartao ? String(body.modoUsoCartao) : null;
     if ("notes" in body) patch.notes = body.notes ? String(body.notes) : null;
+    if ("totalInstallments" in body) patch.totalInstallments = body.totalInstallments != null ? Number(body.totalInstallments) : null;
 
     if (Object.keys(patch).length === 0) {
       return res.status(400).json({ error: "Nenhum campo para atualizar" });

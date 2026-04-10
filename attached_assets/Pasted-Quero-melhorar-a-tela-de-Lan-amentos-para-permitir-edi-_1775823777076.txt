@@ -1,0 +1,113 @@
+Quero melhorar a tela de Lançamentos para permitir edição inline direta na tabela, sem precisar abrir modal.
+
+OBJETIVO
+Permitir edição rápida de:
+- categoria
+- número de parcelas
+
+====================================================
+1) COLUNA CATEGORIA (EDIÇÃO INLINE)
+====================================================
+
+Hoje:
+- apenas exibe texto
+
+Quero:
+
+- transformar em dropdown clicável
+- ao clicar:
+  - abrir select com categorias existentes
+- ao selecionar:
+  - salvar automaticamente (auto-save)
+  - atualizar backend via API
+  - atualizar UI sem reload
+
+UX:
+- hover com indicação de edição (cursor pointer)
+- loading pequeno ao salvar
+- feedback visual (check ou fade)
+
+====================================================
+2) COLUNA PARCELAS (EDIÇÃO INLINE)
+====================================================
+
+Hoje:
+- mostra algo tipo: 2/12
+
+Quero:
+
+- ao clicar:
+  - transformar em input editável
+
+Exemplo:
+- editar apenas o total de parcelas (12)
+
+Regras:
+- manter número atual da parcela (ex: 2)
+- permitir editar total (ex: 12 → 10)
+- validar:
+  - total >= parcela atual
+
+Salvar:
+- onBlur ou Enter
+- atualizar backend
+- atualizar UI
+
+====================================================
+3) ATUALIZAÇÃO NO BACKEND
+====================================================
+
+Criar endpoint PATCH:
+
+/api/transactions/:id
+
+Campos atualizáveis:
+- categoryId
+- installmentsTotal
+
+Garantir:
+- validação
+- persistência correta
+
+====================================================
+4) UX PREMIUM
+====================================================
+
+Quero comportamento fluido:
+
+- edição sem travar tela
+- sem reload
+- feedback leve (fade ou highlight)
+- animação suave ao salvar
+
+====================================================
+5) ERROS
+====================================================
+
+Se erro:
+- reverter valor anterior
+- mostrar toast simples
+
+====================================================
+6) PERFORMANCE
+====================================================
+
+- evitar re-render completo da tabela
+- atualizar apenas linha alterada
+
+====================================================
+7) ENTREGAR
+====================================================
+
+Quero:
+
+1. categoria editável inline
+2. parcelas editável inline
+3. salvamento automático
+4. integração com backend
+5. UX fluida
+
+No final, me mostrar:
+- onde foi implementado no frontend
+- endpoint usado
+- como funciona o save automático

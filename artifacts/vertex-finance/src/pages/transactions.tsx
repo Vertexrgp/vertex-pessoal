@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ import {
   useDeleteTransaction,
   useDeleteInstallmentGroup,
 } from "@workspace/api-client-react";
-import { Plus, Search, Trash2, Edit2, FileText, CheckCircle2, Clock, CreditCard, Layers, Tag, Landmark, Upload, Zap } from "lucide-react";
+import { Plus, Search, Trash2, Edit2, FileText, CheckCircle2, Clock, CreditCard, Layers, Tag, Landmark, Upload, Zap, Check, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -140,6 +140,196 @@ function PaymentBadge({
   );
 }
 
+// ─── InlineCategoryCell ───────────────────────────────────────────────────────
+function InlineCategoryCell({
+  tx,
+  categories,
+  onSave,
+}: {
+  tx: any;
+  categories: { id: number; name: string; type: string; color?: string }[];
+  onSave: (txId: number, fields: any) => Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [flash, setFlash] = useState(false);
+  const { toast } = useToast();
+
+  const catColor = categories.find(c => c.id === tx.categoryId)?.color;
+
+  async function handleChange(val: string) {
+    setSaving(true);
+    setEditing(false);
+    try {
+      const cat = val ? categories.find(c => c.id.toString() === val) : null;
+      await onSave(tx.id, { categoryId: cat?.id ?? null, categoryName: cat?.name ?? null });
+      setFlash(true);
+      setTimeout(() => setFlash(false), 1400);
+    } catch {
+      toast({ title: "Erro ao salvar categoria", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (saving) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs text-slate-400">
+        <Loader2 className="w-3 h-3 animate-spin" />
+      </span>
+    );
+  }
+
+  if (editing) {
+    return (
+      <Select
+        open
+        value={tx.categoryId?.toString() ?? ""}
+        onValueChange={val => handleChange(val)}
+        onOpenChange={o => { if (!o) setEditing(false); }}
+      >
+        <SelectTrigger className="h-7 text-xs w-36 rounded-full border-indigo-300 focus:ring-indigo-400/20">
+          <SelectValue placeholder="Sem categoria" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">Sem categoria</SelectItem>
+          {categories.map(c => (
+            <SelectItem key={c.id} value={c.id.toString()}>
+              <span className="flex items-center gap-2">
+                {c.color && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.color }} />}
+                {c.name}
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setEditing(true)}
+      className={cn(
+        "group/cat inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-all duration-150",
+        tx.categoryName
+          ? flash
+            ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+            : "bg-slate-100 text-slate-600 hover:bg-indigo-100 hover:text-indigo-700 hover:border hover:border-indigo-200"
+          : flash
+            ? "bg-emerald-100 text-emerald-700"
+            : "text-slate-300 hover:text-indigo-400 hover:bg-indigo-50"
+      )}
+      title="Clique para editar categoria"
+    >
+      {tx.categoryName && catColor && !flash && (
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: catColor }} />
+      )}
+      {flash ? <Check className="w-3 h-3" /> : null}
+      <span>{tx.categoryName || "Sem categoria"}</span>
+      {!flash && (
+        <Edit2 className="w-2.5 h-2.5 opacity-0 group-hover/cat:opacity-50 transition-opacity ml-0.5" />
+      )}
+    </button>
+  );
+}
+
+// ─── InlineParcelaCell ────────────────────────────────────────────────────────
+function InlineParcelaCell({
+  tx,
+  onSave,
+}: {
+  tx: any;
+  onSave: (txId: number, fields: any, groupId?: string | null) => Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(tx.totalInstallments?.toString() ?? "");
+  const [saving, setSaving] = useState(false);
+  const [flash, setFlash] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    setValue(tx.totalInstallments?.toString() ?? "");
+  }, [tx.totalInstallments]);
+
+  if (!tx.totalInstallments || tx.creditType !== "parcelado") {
+    return <ParcelaBadge tx={tx} />;
+  }
+
+  async function save() {
+    const newTotal = parseInt(value);
+    if (isNaN(newTotal) || newTotal < (tx.currentInstallment ?? 1)) {
+      toast({ title: "Total deve ser ≥ parcela atual", variant: "destructive" });
+      setValue(tx.totalInstallments.toString());
+      setEditing(false);
+      return;
+    }
+    if (newTotal === tx.totalInstallments) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave(tx.id, { totalInstallments: newTotal }, tx.installmentGroupId ?? null);
+      setFlash(true);
+      setTimeout(() => setFlash(false), 1400);
+    } catch {
+      toast({ title: "Erro ao salvar parcelas", variant: "destructive" });
+      setValue(tx.totalInstallments.toString());
+    } finally {
+      setSaving(false);
+      setEditing(false);
+    }
+  }
+
+  if (saving) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs text-violet-400">
+        <Loader2 className="w-3 h-3 animate-spin" />
+      </span>
+    );
+  }
+
+  if (editing) {
+    return (
+      <div className="inline-flex items-center gap-0.5">
+        <span className="text-xs font-semibold text-violet-700">{tx.currentInstallment}/</span>
+        <input
+          ref={inputRef}
+          value={value}
+          onChange={e => setValue(e.target.value.replace(/\D/g, ""))}
+          onBlur={save}
+          onKeyDown={e => {
+            if (e.key === "Enter") { e.preventDefault(); save(); }
+            if (e.key === "Escape") { setValue(tx.totalInstallments.toString()); setEditing(false); }
+          }}
+          className="w-9 h-5 text-xs text-center border border-indigo-300 rounded bg-white outline-none focus:ring-1 focus:ring-indigo-400 font-semibold text-indigo-700"
+          autoFocus
+        />
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setEditing(true)}
+      className={cn(
+        "group/parc inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold border cursor-pointer transition-all duration-150",
+        flash
+          ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+          : "bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100 hover:border-violet-300"
+      )}
+      title="Clique para editar total de parcelas"
+    >
+      {flash ? <Check className="w-3 h-3" /> : <Layers className="w-3 h-3" />}
+      {tx.currentInstallment}/{tx.totalInstallments}
+      {!flash && (
+        <Edit2 className="w-2.5 h-2.5 opacity-0 group-hover/parc:opacity-50 transition-opacity ml-0.5" />
+      )}
+    </button>
+  );
+}
+
 export default function TransactionsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -161,6 +351,39 @@ export default function TransactionsPage() {
   const { data: categories } = useListCategories();
   const { data: accounts } = useListAccounts();
   const { data: creditCards } = useListCreditCards();
+
+  // ── Inline-edit optimistic overrides ──────────────────────────────────────
+  const [txOverrides, setTxOverrides] = useState<Record<number, any>>({});
+
+  function patchInlineLocal(txId: number, fields: Record<string, any>, groupId?: string | null) {
+    setTxOverrides(prev => {
+      const next = { ...prev };
+      if (groupId) {
+        (transactions ?? []).forEach(t => {
+          if ((t as any).installmentGroupId === groupId) {
+            next[t.id] = { ...next[t.id], ...fields };
+          }
+        });
+      } else {
+        next[txId] = { ...next[txId], ...fields };
+      }
+      return next;
+    });
+  }
+
+  async function patchInline(txId: number, fields: Record<string, any>, groupId?: string | null) {
+    const url = groupId
+      ? `/api/transactions/group/${groupId}`
+      : `/api/transactions/${txId}`;
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(fields),
+    });
+    if (!res.ok) throw new Error("Erro ao salvar");
+    patchInlineLocal(txId, fields, groupId);
+  }
 
   const createMutation = useCreateTransaction({
     mutation: {
@@ -502,13 +725,20 @@ export default function TransactionsPage() {
                       <span className="font-medium text-slate-900 text-sm">{tx.description}</span>
                     </td>
                     <td className="px-5 py-3.5">
-                      {tx.categoryName ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
-                          {tx.categoryName}
-                        </span>
-                      ) : (
-                        <span className="text-slate-300 text-xs">—</span>
-                      )}
+                      <InlineCategoryCell
+                        tx={{ ...tx, ...(txOverrides[tx.id] ?? {}) }}
+                        categories={categories ?? []}
+                        onSave={async (txId, fields) => {
+                          const res = await fetch(`/api/transactions/${txId}`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({ categoryId: fields.categoryId }),
+                          });
+                          if (!res.ok) throw new Error("Erro ao salvar");
+                          patchInlineLocal(txId, fields, null);
+                        }}
+                      />
                     </td>
                     <td className="px-5 py-3.5">
                       <PaymentBadge
@@ -521,7 +751,12 @@ export default function TransactionsPage() {
                       />
                     </td>
                     <td className="px-5 py-3.5 text-center">
-                      <ParcelaBadge tx={tx} />
+                      <InlineParcelaCell
+                        tx={{ ...tx, ...(txOverrides[tx.id] ?? {}) }}
+                        onSave={async (txId, fields, groupId) => {
+                          await patchInline(txId, fields, groupId);
+                        }}
+                      />
                     </td>
                     <td className={cn(
                       "px-5 py-3.5 text-right font-bold tracking-tight tabular-nums",
