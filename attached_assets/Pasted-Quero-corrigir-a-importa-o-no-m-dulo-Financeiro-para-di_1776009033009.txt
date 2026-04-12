@@ -1,0 +1,157 @@
+Quero corrigir a importação no módulo Financeiro para diferenciar corretamente entre:
+
+1. fatura de cartão de crédito
+2. extrato de conta corrente
+
+PROBLEMA
+Hoje o sistema exige "Cartão da fatura" para qualquer importação, inclusive extrato bancário, o que está errado.
+
+OBJETIVO
+Separar claramente os dois tipos de importação e adaptar o comportamento para cada um.
+
+====================================================
+1) DETECTAR TIPO DE ARQUIVO
+====================================================
+
+Ao importar arquivo, o sistema deve identificar:
+
+- se é fatura de cartão
+ou
+- se é extrato bancário
+
+Critérios:
+- presença de parcelas → cartão
+- padrão de extrato (Pix, saldo, transferência) → conta
+- nome do arquivo
+- conteúdo
+
+Se não conseguir identificar:
+- permitir seleção manual:
+  - "Fatura de cartão"
+  - "Extrato de conta"
+
+====================================================
+2) FLUXO PARA FATURA DE CARTÃO
+====================================================
+
+Manter:
+
+- campo obrigatório: Cartão da fatura
+- campo: competência da fatura
+
+====================================================
+3) FLUXO PARA EXTRATO BANCÁRIO
+====================================================
+
+SUBSTITUIR o campo de cartão por:
+
+Conta do extrato
+
+Dropdown com:
+- contas correntes cadastradas
+- carteira
+- conta digital
+
+====================================================
+4) FORMA DE PAGAMENTO NO EXTRATO
+====================================================
+
+Adicionar coluna editável na revisão:
+
+Forma de pagamento
+
+Opções:
+- Pix
+- Débito
+- Transferência
+- Boleto
+- TED/DOC
+- Outros
+
+O sistema pode tentar sugerir com base na descrição:
+
+Exemplo:
+- "PIX TRANSF" → Pix
+- "DEB" → Débito
+- "BOLETO" → Boleto
+
+Mas sempre permitir ajuste manual.
+
+====================================================
+5) TIPO DE TRANSAÇÃO
+====================================================
+
+Detectar automaticamente:
+
+- entrada (receita)
+- saída (despesa)
+
+Baseado em:
+- valor positivo/negativo
+- texto (ex: "RECEBIDO", "PIX", etc)
+
+====================================================
+6) COMPETÊNCIA NO EXTRATO
+====================================================
+
+Diferente da fatura:
+
+- usar a data do próprio lançamento
+- não usar lógica de competência mensal
+
+====================================================
+7) UX NA TELA DE REVISÃO
+====================================================
+
+Para extrato, mostrar:
+
+- conta selecionada
+- tipo de transação
+- forma de pagamento
+- valor
+- categoria
+
+Para fatura:
+- manter modelo atual
+
+====================================================
+8) IMPORTAÇÃO FINAL
+====================================================
+
+Se for extrato:
+
+Salvar:
+- accountId (conta)
+- paymentMethod
+- tipo (entrada/saída)
+- valor
+- data original
+
+Se for fatura:
+- manter lógica atual
+
+====================================================
+9) IMPORTANTE
+====================================================
+
+Nunca exigir cartão quando for extrato
+
+Nunca misturar lógica de fatura com extrato
+
+====================================================
+10) ENTREGAR
+====================================================
+
+Quero:
+
+1. detecção ou seleção de tipo de arquivo
+2. fluxo separado para cartão vs conta
+3. campo de conta no extrato
+4. campo de forma de pagamento
+5. detecção de entrada/saída
+6. salvamento correto
+
+No final, me mostrar:
+- como o sistema diferencia os dois
+- como funciona cada fluxo
+- como os dados são salvos

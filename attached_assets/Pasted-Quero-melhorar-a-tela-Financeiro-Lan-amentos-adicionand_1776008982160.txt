@@ -1,0 +1,161 @@
+Quero melhorar a tela Financeiro > Lançamentos adicionando filtros realmente úteis para análise rápida.
+
+OBJETIVO
+Permitir filtrar os lançamentos por diferentes critérios, para que eu consiga visualizar rapidamente, por exemplo:
+
+- todos os gastos de um cartão específico
+- todos os lançamentos de uma categoria
+- todos os pagamentos por uma forma específica
+- combinações entre esses filtros
+
+IMPORTANTE
+Quero filtros práticos, rápidos e bonitos, sem poluir a tela.
+
+====================================================
+1) FILTROS QUE QUERO ADICIONAR
+====================================================
+
+Adicionar filtros para:
+
+- Cartão / Conta
+- Categoria
+- Forma de pagamento
+- Status
+- Tipo (despesa / receita / transferência)
+- Parcelados / à vista (se fizer sentido)
+- Busca por texto já existente deve continuar funcionando
+
+Exemplos de uso:
+- ver só lançamentos do cartão Latam Pass Black
+- ver só categoria Viagens
+- ver só pagamentos em crédito
+- ver só status Previsto
+- combinar cartão + categoria
+
+====================================================
+2) COMPORTAMENTO DOS FILTROS
+====================================================
+
+Quero que os filtros:
+
+- funcionem sem recarregar a página
+- atualizem a tabela em tempo real
+- possam ser combinados entre si
+- tenham opção clara de limpar filtros
+- mostrem visualmente quando estão ativos
+
+====================================================
+3) FILTRO DE CARTÃO / CONTA
+====================================================
+
+O filtro deve listar:
+
+- contas correntes
+- cartões cadastrados
+- carteiras / dinheiro, se existirem
+
+Quero poder filtrar por:
+- um item específico
+ou
+- todos
+
+====================================================
+4) FILTRO DE CATEGORIA
+====================================================
+
+Listar todas as categorias cadastradas e permitir selecionar uma.
+
+Se fizer sentido de UX:
+- permitir busca no filtro
+- ou dropdown com scroll bom
+
+====================================================
+5) FILTRO DE FORMA DE PAGAMENTO
+====================================================
+
+Permitir filtrar por:
+
+- Crédito
+- Débito
+- Pix
+- Transferência
+- Dinheiro
+- outros que existirem no sistema
+
+====================================================
+6) FILTRO DE STATUS
+====================================================
+
+Permitir filtrar por:
+
+- Efetivado
+- Previsto
+- Pago
+- Pendente
+- outros status existentes
+
+====================================================
+7) FILTRO DE TIPO
+====================================================
+
+Permitir filtrar por:
+
+- Despesa
+- Receita
+- Transferência
+
+====================================================
+8) UX / VISUAL
+====================================================
+
+Quero uma área de filtros premium e leve, sem deixar a tela pesada.
+
+Sugestão:
+- filtros em linha acima da tabela
+- dropdowns limpos
+- botão "Limpar filtros"
+- mostrar quantidade de resultados filtrados
+
+====================================================
+9) RESULTADO E RESUMO
+====================================================
+
+Quando houver filtros aplicados, quero que a tela mostre:
+
+- quantidade de lançamentos encontrados
+- total filtrado (se possível)
+- por exemplo:
+  "23 lançamentos encontrados"
+  "Total filtrado: R$ X"
+
+====================================================
+10) PERFORMANCE
+====================================================
+
+Quero que os filtros sejam rápidos e não travem a tabela.
+
+Se possível:
+- filtrar no frontend quando os dados já estiverem carregados
+ou
+- usar query params / backend filtering se for melhor para escala
+
+====================================================
+11) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. filtro por cartão/conta
+2. filtro por categoria
+3. filtro por forma de pagamento
+4. filtro por status
+5. filtro por tipo
+6. botão para limpar filtros
+7. atualização em tempo real da tabela
+8. contador de resultados
+
+No final, me mostrar:
+- como os filtros foram implementados
+- como combinar filtros
+- como limpar todos
+- se o total filtrado está sendo calculado

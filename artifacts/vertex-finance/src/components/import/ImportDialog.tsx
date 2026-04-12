@@ -1,14 +1,15 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useListCategories, useListCreditCards } from "@workspace/api-client-react";
+import { useListCategories, useListCreditCards, useListAccounts } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 import {
   Upload, FileText, CheckCircle2, X, Loader2, ArrowRight,
-  TriangleAlert, CreditCard, Sparkles, Calendar,
+  TriangleAlert, CreditCard, Sparkles, Calendar, ChevronDown, Landmark, Layers,
 } from "lucide-react";
 
 type ImportTx = {
@@ -24,11 +25,13 @@ type ImportTx = {
   categoryId: number | null;
   accountId: number | null;
   creditCardId: number | null;
+  paymentMethod: string | null;
   isDuplicate: boolean;
   selected: boolean;
 };
 
 type Step = "upload" | "processing" | "review" | "importing" | "done";
+type ImportType = "card" | "account";
 
 interface ImportDialogProps {
   open: boolean;
@@ -39,6 +42,7 @@ interface ImportDialogProps {
 const ACCEPTED_TYPES = ".pdf,.csv,.xlsx,.xls";
 const MAX_SIZE_MB = 10;
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+const PAYMENT_METHODS_ACCOUNT = ["Pix", "Débito", "Transferência", "Boleto", "TED/DOC", "Dinheiro", "Outros"];
 
 function currentYYYYMM() {
   const d = new Date();
@@ -61,6 +65,224 @@ function generateMonthOptions() {
   return options;
 }
 
+// ─── CategoryPickerCell ────────────────────────────────────────────────────────
+// Portal-based dropdown with search — bypasses any overflow/scroll constraints
+function CategoryPickerCell({
+  tx,
+  categories,
+  onUpdate,
+}: {
+  tx: ImportTx;
+  categories: { id: number; name: string; isActive?: boolean; color?: string }[];
+  onUpdate: (categoryId: number | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 180 });
+
+  function handleOpen() {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const dropdownH = 220;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const top = spaceBelow >= dropdownH ? rect.bottom + 2 : rect.top - dropdownH - 2;
+      setPos({ top, left: rect.left, width: Math.max(rect.width, 180) });
+    }
+    setSearch("");
+    setOpen(v => !v);
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (
+        triggerRef.current && !triggerRef.current.contains(e.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const filtered = (categories ?? []).filter(c =>
+    (c.isActive !== false) &&
+    (!search || c.name.toLowerCase().includes(search.toLowerCase()))
+  );
+  const selectedCat = (categories ?? []).find(c => c.id === tx.categoryId);
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={handleOpen}
+        className="h-7 text-xs w-full flex items-center justify-between px-2 rounded border border-slate-200 bg-white hover:border-indigo-300 transition-colors"
+      >
+        <span className="flex items-center gap-1.5 min-w-0 truncate">
+          {selectedCat ? (
+            <>
+              {selectedCat.color && (
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedCat.color }} />
+              )}
+              <span className="truncate">{selectedCat.name}</span>
+            </>
+          ) : (
+            <span className="text-slate-400 italic truncate">{tx.suggestedCategory || "Categoria"}</span>
+          )}
+        </span>
+        <ChevronDown className="w-3 h-3 text-slate-400 shrink-0 ml-1" />
+      </button>
+
+      {open && createPortal(
+        <div
+          ref={dropdownRef}
+          style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width, zIndex: 99999 }}
+          className="bg-white border border-slate-200 rounded-xl shadow-xl flex flex-col overflow-hidden"
+        >
+          <div className="px-2.5 py-2 border-b border-slate-100 bg-white">
+            <input
+              autoFocus
+              className="w-full text-xs outline-none placeholder:text-slate-400 bg-transparent"
+              placeholder="Buscar categoria..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => { if (e.key === "Escape") setOpen(false); }}
+            />
+          </div>
+          <div className="overflow-y-auto max-h-52">
+            <button
+              type="button"
+              onMouseDown={e => { e.preventDefault(); onUpdate(null); setOpen(false); }}
+              className={cn(
+                "w-full text-left px-3 py-1.5 text-xs transition-colors",
+                !tx.categoryId ? "bg-slate-50 text-slate-500 font-medium" : "text-slate-400 hover:bg-slate-50"
+              )}
+            >
+              Sem categoria
+            </button>
+            {filtered.map(c => (
+              <button
+                key={c.id}
+                type="button"
+                onMouseDown={e => { e.preventDefault(); onUpdate(c.id); setOpen(false); }}
+                className={cn(
+                  "w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors",
+                  tx.categoryId === c.id
+                    ? "bg-indigo-50 text-indigo-700 font-medium"
+                    : "text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                {c.color && (
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
+                )}
+                {c.name}
+              </button>
+            ))}
+            {filtered.length === 0 && (
+              <p className="px-3 py-2 text-xs text-slate-400 italic">Nenhuma encontrada</p>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
+// ─── InstallmentCell ───────────────────────────────────────────────────────────
+// Editable "X/Y" installment cell for the import review table
+function InstallmentCell({
+  tx,
+  onUpdate,
+}: {
+  tx: ImportTx;
+  onUpdate: (current: number | null, total: number | null) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function handleOpen() {
+    const cur = tx.installmentCurrent ?? 1;
+    const tot = tx.installmentTotal ?? 1;
+    setValue(tx.installmentCurrent && tx.installmentTotal ? `${cur}/${tot}` : "");
+    setError(null);
+    setEditing(true);
+    setTimeout(() => { inputRef.current?.focus(); inputRef.current?.select(); }, 0);
+  }
+
+  function handleSave() {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      onUpdate(null, null);
+      setEditing(false);
+      return;
+    }
+    const match = trimmed.match(/^(\d+)\/(\d+)$/);
+    if (!match) { setError("Use formato: X/Y"); return; }
+    const cur = parseInt(match[1]);
+    const tot = parseInt(match[2]);
+    if (tot === 0) { setError("Total não pode ser 0"); return; }
+    if (cur > tot) { setError(`${cur} > ${tot}`); return; }
+    if (cur < 1) { setError("Parcela inválida"); return; }
+    onUpdate(cur, tot);
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div className="flex flex-col items-center gap-0.5">
+        <input
+          ref={inputRef}
+          value={value}
+          onChange={e => { setValue(e.target.value); setError(null); }}
+          onBlur={handleSave}
+          onKeyDown={e => {
+            if (e.key === "Enter") { e.preventDefault(); handleSave(); }
+            if (e.key === "Escape") { setEditing(false); setError(null); }
+          }}
+          placeholder="ex: 2/12"
+          className={cn(
+            "w-16 h-6 text-xs text-center border rounded outline-none focus:ring-1 focus:ring-indigo-400",
+            error ? "border-rose-400 text-rose-600" : "border-indigo-300 text-indigo-700 bg-white"
+          )}
+        />
+        {error && <span className="text-[10px] text-rose-500 whitespace-nowrap">{error}</span>}
+      </div>
+    );
+  }
+
+  if (tx.installmentCurrent && tx.installmentTotal) {
+    return (
+      <button
+        type="button"
+        onClick={handleOpen}
+        className="text-xs font-semibold text-violet-700 bg-violet-50 px-2 py-0.5 rounded-full hover:bg-violet-100 transition-colors border border-violet-200 cursor-pointer"
+        title="Clique para editar parcelas"
+      >
+        {tx.installmentCurrent}/{tx.installmentTotal}
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleOpen}
+      className="text-xs text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 px-2 py-0.5 rounded transition-colors"
+      title="Clique para adicionar parcelamento"
+    >
+      + parc.
+    </button>
+  );
+}
+
+// ─── ImportDialog ──────────────────────────────────────────────────────────────
 export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogProps) {
   const { toast } = useToast();
   const [step, setStep] = useState<Step>("upload");
@@ -71,14 +293,21 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
   const [isDragging, setIsDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Card & competence state
+  // Import type: card invoice or bank account statement
+  const [importType, setImportType] = useState<ImportType>("card");
+
+  // Card & competence
   const [selectedCardId, setSelectedCardId] = useState<string>("");
   const [statementMonth, setStatementMonth] = useState<string>(currentYYYYMM());
   const [suggestedCardId, setSuggestedCardId] = useState<number | null>(null);
   const [suggestedCardName, setSuggestedCardName] = useState<string | null>(null);
 
+  // Account
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
+
   const { data: categories } = useListCategories();
   const { data: creditCards } = useListCreditCards();
+  const { data: accounts } = useListAccounts();
 
   const monthOptions = generateMonthOptions();
 
@@ -88,7 +317,9 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
     setFileType("");
     setTransactions([]);
     setImportedCount(0);
+    setImportType("card");
     setSelectedCardId("");
+    setSelectedAccountId("");
     setStatementMonth(currentYYYYMM());
     setSuggestedCardId(null);
     setSuggestedCardName(null);
@@ -120,7 +351,11 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
 
       setTransactions(data.transactions ?? []);
 
-      // Auto-detect suggestions from backend
+      // Auto-detect import type from backend hints or file name
+      const nameLower = file.name.toLowerCase();
+      const isLikelyAccount = nameLower.includes("extrato") || nameLower.includes("conta") || !data.suggestedCardId;
+      setImportType(isLikelyAccount && !data.suggestedCardId ? "account" : "card");
+
       if (data.suggestedCardId) {
         setSelectedCardId(String(data.suggestedCardId));
         setSuggestedCardId(data.suggestedCardId);
@@ -162,8 +397,12 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
     setTransactions((prev) => prev.filter((tx) => tx._id !== id));
 
   const handleImport = async () => {
-    if (!selectedCardId) {
+    if (importType === "card" && !selectedCardId) {
       toast({ title: "Selecione o cartão desta fatura", description: "Campo obrigatório antes de importar.", variant: "destructive" });
+      return;
+    }
+    if (importType === "account" && !selectedAccountId) {
+      toast({ title: "Selecione a conta do extrato", description: "Campo obrigatório antes de importar.", variant: "destructive" });
       return;
     }
     const selected = transactions.filter((tx) => tx.selected);
@@ -174,17 +413,24 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
     setStep("importing");
 
     try {
+      const body: any = {
+        fileName,
+        fileType,
+        transactions: selected,
+      };
+
+      if (importType === "card") {
+        body.creditCardId = Number(selectedCardId);
+        body.statementMonth = statementMonth;
+      } else {
+        body.accountId = Number(selectedAccountId);
+      }
+
       const res = await fetch("/api/imports/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          fileName,
-          fileType,
-          creditCardId: Number(selectedCardId),
-          statementMonth,
-          transactions: selected,
-        }),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
@@ -206,13 +452,14 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
   const selectedCount = transactions.filter((tx) => tx.selected).length;
   const duplicateCount = transactions.filter((tx) => tx.isDuplicate).length;
   const selectedCard = creditCards?.find((c) => c.id === Number(selectedCardId));
+  const selectedAccount = accounts?.find((a) => a.id === Number(selectedAccountId));
   const autoDetected = suggestedCardId !== null && selectedCardId === String(suggestedCardId);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className={cn(
         "bg-white border-slate-200",
-        step === "review" ? "sm:max-w-[960px] max-h-[92vh]" : "sm:max-w-[500px]"
+        step === "review" ? "sm:max-w-[980px] max-h-[92vh]" : "sm:max-w-[500px]"
       )}>
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
@@ -247,9 +494,9 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
             <div className="bg-slate-50 rounded-xl p-4 space-y-2.5">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Como funciona</p>
               {[
-                "Envie a fatura ou extrato (PDF, CSV, XLSX)",
-                "A IA detecta o cartão e lê os lançamentos automaticamente",
-                "Você define a competência e revisa antes de salvar",
+                "Envie a fatura de cartão ou extrato bancário (PDF, CSV, XLSX)",
+                "A IA detecta o tipo e lê os lançamentos automaticamente",
+                "Você revisa, edita categorias e parcelas, depois importa",
               ].map((s, i) => (
                 <div key={i} className="flex items-center gap-3 text-sm text-slate-600">
                   <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
@@ -278,64 +525,138 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
         {step === "review" && (
           <div className="flex flex-col gap-3 min-h-0">
 
-            {/* ── Config bar: Cartão + Competência ── */}
-            <div className="grid grid-cols-2 gap-3 bg-slate-50 rounded-xl p-3 border border-slate-200">
-              {/* Cartão */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-                  <CreditCard className="w-3.5 h-3.5" />
-                  Cartão desta fatura
-                  <span className="text-rose-500">*</span>
-                </label>
-                <Select value={selectedCardId} onValueChange={setSelectedCardId}>
-                  <SelectTrigger className={cn(
-                    "h-9 text-sm border-slate-200 bg-white",
-                    !selectedCardId && "border-rose-300 bg-rose-50"
-                  )}>
-                    <SelectValue placeholder="Selecione o cartão…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {creditCards?.filter((c) => c.ativo).map((c) => (
-                      <SelectItem key={c.id} value={c.id.toString()}>
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: c.cor }} />
-                          <span>{c.apelidoCartao || c.nomeCartao}</span>
-                          <span className="text-slate-400 text-xs">{c.banco}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {autoDetected && suggestedCardName && (
-                  <p className="text-xs text-indigo-600 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" />
-                    Detectado automaticamente: {suggestedCardName}
-                  </p>
-                )}
-                {!selectedCardId && (
-                  <p className="text-xs text-rose-500">Obrigatório para importar</p>
-                )}
+            {/* ── Config bar ── */}
+            <div className="space-y-3 bg-slate-50 rounded-xl p-3 border border-slate-200">
+
+              {/* Type toggle */}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setImportType("card")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                    importType === "card"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-white border border-slate-200 text-slate-500 hover:bg-slate-100"
+                  )}
+                >
+                  <CreditCard className="w-3.5 h-3.5" /> Fatura de cartão
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImportType("account")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                    importType === "account"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-white border border-slate-200 text-slate-500 hover:bg-slate-100"
+                  )}
+                >
+                  <Landmark className="w-3.5 h-3.5" /> Extrato de conta
+                </button>
               </div>
 
-              {/* Competência */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" />
-                  Mês da fatura (competência)
-                </label>
-                <Select value={statementMonth} onValueChange={setStatementMonth}>
-                  <SelectTrigger className="h-9 text-sm border-slate-200 bg-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {monthOptions.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-slate-400">
-                  Usada nos relatórios financeiros. Data da compra é registrada separado.
-                </p>
+              <div className="grid grid-cols-2 gap-3">
+                {/* Card OR Account selector */}
+                {importType === "card" ? (
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                      <CreditCard className="w-3.5 h-3.5" />
+                      Cartão desta fatura
+                      <span className="text-rose-500">*</span>
+                    </label>
+                    <Select value={selectedCardId} onValueChange={setSelectedCardId}>
+                      <SelectTrigger className={cn(
+                        "h-9 text-sm border-slate-200 bg-white",
+                        !selectedCardId && "border-rose-300 bg-rose-50"
+                      )}>
+                        <SelectValue placeholder="Selecione o cartão…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {creditCards?.filter((c) => c.ativo).map((c) => (
+                          <SelectItem key={c.id} value={c.id.toString()}>
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: c.cor }} />
+                              <span>{c.apelidoCartao || c.nomeCartao}</span>
+                              <span className="text-slate-400 text-xs">{c.banco}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {autoDetected && suggestedCardName && (
+                      <p className="text-xs text-indigo-600 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        Detectado automaticamente: {suggestedCardName}
+                      </p>
+                    )}
+                    {!selectedCardId && (
+                      <p className="text-xs text-rose-500">Obrigatório para importar</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                      <Landmark className="w-3.5 h-3.5" />
+                      Conta do extrato
+                      <span className="text-rose-500">*</span>
+                    </label>
+                    <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                      <SelectTrigger className={cn(
+                        "h-9 text-sm border-slate-200 bg-white",
+                        !selectedAccountId && "border-rose-300 bg-rose-50"
+                      )}>
+                        <SelectValue placeholder="Selecione a conta…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(accounts ?? []).map((a) => (
+                          <SelectItem key={a.id} value={a.id.toString()}>
+                            <div className="flex items-center gap-2">
+                              {(a as any).color && <span className="w-2 h-2 rounded-full" style={{ backgroundColor: (a as any).color }} />}
+                              <span>{a.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {!selectedAccountId && (
+                      <p className="text-xs text-rose-500">Obrigatório para importar</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Competência (only for card) */}
+                {importType === "card" ? (
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5" />
+                      Mês da fatura (competência)
+                    </label>
+                    <Select value={statementMonth} onValueChange={setStatementMonth}>
+                      <SelectTrigger className="h-9 text-sm border-slate-200 bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {monthOptions.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-slate-400">
+                      Usada nos relatórios. Data da compra é registrada separado.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5" />
+                      Competência
+                    </label>
+                    <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                      Para extrato, a competência de cada lançamento é a própria data da transação.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -350,10 +671,16 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
                   {duplicateCount} possíve{duplicateCount > 1 ? "is duplicatas" : "l duplicata"} — desmarcada{duplicateCount > 1 ? "s" : ""}
                 </span>
               )}
-              {selectedCard && (
+              {importType === "card" && selectedCard && (
                 <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium border border-indigo-200">
                   <CreditCard className="w-3.5 h-3.5" />
                   {selectedCard.apelidoCartao || selectedCard.nomeCartao}
+                </span>
+              )}
+              {importType === "account" && selectedAccount && (
+                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
+                  <Landmark className="w-3.5 h-3.5" />
+                  {selectedAccount.name}
                 </span>
               )}
               <span className="ml-auto text-sm text-slate-500">
@@ -362,8 +689,8 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
             </div>
 
             {/* ── Table ── */}
-            <div className="overflow-auto border border-slate-200 rounded-xl" style={{ maxHeight: "48vh" }}>
-              <table className="w-full text-sm min-w-[780px]">
+            <div className="overflow-auto border border-slate-200 rounded-xl" style={{ maxHeight: "46vh" }}>
+              <table className="w-full text-sm min-w-[820px]">
                 <thead className="bg-slate-50 border-b border-slate-200 text-xs text-slate-400 uppercase tracking-wide sticky top-0 z-10">
                   <tr>
                     <th className="px-3 py-2.5 w-8">
@@ -374,8 +701,11 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
                     <th className="px-3 py-2.5 text-left w-28">Data compra</th>
                     <th className="px-3 py-2.5 text-left">Descrição</th>
                     <th className="px-3 py-2.5 text-right w-32">Valor</th>
-                    <th className="px-3 py-2.5 text-center w-16">Parc.</th>
-                    <th className="px-3 py-2.5 text-left w-36">Categoria</th>
+                    <th className="px-3 py-2.5 text-center w-20">Parc.</th>
+                    {importType === "account" && (
+                      <th className="px-3 py-2.5 text-left w-32">Pagamento</th>
+                    )}
+                    <th className="px-3 py-2.5 text-left w-40">Categoria</th>
                     <th className="px-3 py-2.5 w-8" />
                   </tr>
                 </thead>
@@ -427,43 +757,37 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
                         </div>
                       </td>
 
-                      {/* Parcelas */}
-                      <td className="px-3 py-2 text-center whitespace-nowrap">
-                        {tx.installmentCurrent && tx.installmentTotal ? (
-                          <span className="text-xs font-semibold text-violet-700 bg-violet-50 px-2 py-0.5 rounded-full">
-                            {tx.installmentCurrent}/{tx.installmentTotal}
-                          </span>
-                        ) : (
-                          <span className="text-slate-300 text-xs">—</span>
-                        )}
+                      {/* Parcelas — editável */}
+                      <td className="px-3 py-2 text-center">
+                        <InstallmentCell
+                          tx={tx}
+                          onUpdate={(cur, tot) => updateTx(tx._id, { installmentCurrent: cur, installmentTotal: tot })}
+                        />
                       </td>
 
-                      {/* Categoria */}
-                      <td className="px-3 py-2">
-                        <Select
-                          value={tx.categoryId?.toString() ?? "__suggested"}
-                          onValueChange={(v) => updateTx(tx._id, { categoryId: v === "__suggested" ? null : Number(v) })}>
-                          <SelectTrigger className="h-7 text-xs border-slate-200 w-full">
-                            <SelectValue>
-                              {tx.categoryId
-                                ? categories?.find((c) => c.id === tx.categoryId)?.name ?? "Categoria"
-                                : <span className="text-slate-400">{tx.suggestedCategory}</span>}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__suggested">
-                              <span className="text-slate-400 italic">{tx.suggestedCategory} (sugerida)</span>
-                            </SelectItem>
-                            {categories?.filter((c) => c.isActive).map((c) => (
-                              <SelectItem key={c.id} value={c.id.toString()}>
-                                <span className="flex items-center gap-2">
-                                  {c.color && <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: c.color }} />}
-                                  {c.name}
-                                </span>
-                              </SelectItem>
+                      {/* Forma de pagamento (só extrato) */}
+                      {importType === "account" && (
+                        <td className="px-3 py-2">
+                          <select
+                            value={tx.paymentMethod ?? ""}
+                            onChange={e => updateTx(tx._id, { paymentMethod: e.target.value || null })}
+                            className="h-7 text-xs border border-slate-200 rounded bg-white px-1.5 w-full"
+                          >
+                            <option value="">—</option>
+                            {PAYMENT_METHODS_ACCOUNT.map(m => (
+                              <option key={m} value={m}>{m}</option>
                             ))}
-                          </SelectContent>
-                        </Select>
+                          </select>
+                        </td>
+                      )}
+
+                      {/* Categoria — portal dropdown com busca */}
+                      <td className="px-3 py-2">
+                        <CategoryPickerCell
+                          tx={tx}
+                          categories={(categories ?? []).filter(c => c.isActive !== false)}
+                          onUpdate={(catId) => updateTx(tx._id, { categoryId: catId })}
+                        />
                       </td>
 
                       <td className="px-3 py-2">
@@ -484,17 +808,22 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
                 ← Novo arquivo
               </Button>
               <div className="flex items-center gap-3">
-                {!selectedCardId && (
+                {importType === "card" && !selectedCardId && (
                   <span className="text-xs text-rose-500 font-medium">Selecione o cartão para continuar</span>
+                )}
+                {importType === "account" && !selectedAccountId && (
+                  <span className="text-xs text-rose-500 font-medium">Selecione a conta para continuar</span>
                 )}
                 <Button
                   onClick={handleImport}
-                  disabled={selectedCount === 0 || !selectedCardId}
+                  disabled={selectedCount === 0 || (importType === "card" && !selectedCardId) || (importType === "account" && !selectedAccountId)}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
                 >
                   <ArrowRight className="w-4 h-4" />
                   Importar {selectedCount} lançamento{selectedCount !== 1 ? "s" : ""}
-                  {statementMonth && <span className="opacity-70 text-xs">— {formatStatementMonth(statementMonth)}</span>}
+                  {importType === "card" && statementMonth && (
+                    <span className="opacity-70 text-xs">— {formatStatementMonth(statementMonth)}</span>
+                  )}
                 </Button>
               </div>
             </div>
@@ -507,7 +836,10 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
             <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center">
               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
             </div>
-            <p className="text-slate-600 text-sm">Salvando {selectedCount} lançamentos em {formatStatementMonth(statementMonth)}...</p>
+            <p className="text-slate-600 text-sm">
+              Salvando {selectedCount} lançamentos
+              {importType === "card" ? ` em ${formatStatementMonth(statementMonth)}` : ""}...
+            </p>
           </div>
         )}
 
@@ -520,7 +852,9 @@ export function ImportDialog({ open, onOpenChange, onImported }: ImportDialogPro
             <div>
               <p className="text-xl font-bold text-slate-900">{importedCount} lançamentos importados!</p>
               <p className="text-slate-500 text-sm mt-1">
-                Fatura de {formatStatementMonth(statementMonth)} • {selectedCard?.apelidoCartao ?? selectedCard?.nomeCartao ?? "Cartão"}
+                {importType === "card"
+                  ? `Fatura de ${formatStatementMonth(statementMonth)} • ${selectedCard?.apelidoCartao ?? selectedCard?.nomeCartao ?? "Cartão"}`
+                  : `Extrato • ${selectedAccount?.name ?? "Conta"}`}
               </p>
             </div>
             <div className="flex gap-3">

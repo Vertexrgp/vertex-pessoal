@@ -1,0 +1,112 @@
+Quero corrigir a tela de revisão da importação de fatura/extrato no módulo Financeiro.
+
+PROBLEMA 1
+No dropdown de categoria, não estou conseguindo acessar todas as categorias.
+O menu abre, mas a rolagem está ruim ou travada, então não consigo subir/descer corretamente e selecionar qualquer categoria.
+
+PROBLEMA 2
+Preciso poder editar o número de parcelas na própria tela de revisão da importação, porque às vezes o sistema não identifica corretamente o parcelamento da fatura.
+
+OBJETIVO
+Melhorar a UX da tela de revisão para permitir:
+- scroll correto na lista de categorias
+- edição manual do campo de parcelas antes de importar
+
+====================================================
+1) DROPDOWN DE CATEGORIA COM SCROLL CORRETO
+====================================================
+
+Corrigir o select/dropdown de categoria para que:
+
+- permita rolagem normal com mouse/trackpad
+- permita acessar todas as categorias cadastradas
+- não fique cortado pela área do modal
+- não trave ao chegar no fim ou no começo
+- funcione bem mesmo com muitas categorias
+
+Se necessário:
+- usar portal/popover fora do container do modal
+- ajustar z-index
+- ajustar max-height
+- permitir overflow-y auto
+- evitar que o modal “engula” o scroll do dropdown
+
+Quero comportamento parecido com dropdown profissional.
+
+====================================================
+2) EDIÇÃO MANUAL DE PARCELAS NA REVISÃO
+====================================================
+
+Hoje o sistema mostra a parcela identificada, mas preciso poder corrigir isso manualmente antes de importar.
+
+Quero que a coluna PARC. seja editável na própria tabela de revisão.
+
+Exemplo:
+- se vier vazio, eu posso preencher
+- se vier 2/6 mas o correto for 2/12, eu posso corrigir
+- se vier errado, eu posso ajustar
+
+====================================================
+3) FORMATO DA PARCELA
+====================================================
+
+Permitir editar no formato:
+
+- 1/3
+- 2/12
+- 4/10
+
+Ou, se tecnicamente for melhor, separar internamente em:
+- parcela atual
+- total de parcelas
+
+Mas na interface quero algo simples e rápido.
+
+====================================================
+4) VALIDAÇÃO DE PARCELAS
+====================================================
+
+Validar:
+- parcela atual não pode ser maior que total
+- total não pode ser zero
+- se estiver vazio, permitir salvar como compra à vista
+- se o usuário preencher corretamente, salvar parcelamento no lançamento importado
+
+====================================================
+5) UX DA TABELA DE REVISÃO
+====================================================
+
+Quero que a experiência fique fluida:
+
+- categoria com dropdown funcional
+- parcelas editáveis inline
+- sem abrir outra tela
+- sem travar a navegação
+- sem necessidade de ir para modal extra
+
+====================================================
+6) IMPORTAÇÃO FINAL
+====================================================
+
+Ao importar:
+
+- salvar a categoria escolhida
+- salvar a parcela corrigida manualmente
+- manter o restante do lançamento
+
+====================================================
+7) ENTREGAR
+====================================================
+
+Quero que você corrija:
+
+1. o scroll do dropdown de categorias
+2. a edição manual do campo parcelas
+3. a validação de parcelas
+4. a persistência correta na importação final
+
+No final, me mostrar:
+- por que o dropdown estava ruim
+- como foi corrigido
+- como editar parcelas na revisão
+- como isso é salvo no lançamento final

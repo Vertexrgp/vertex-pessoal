@@ -21,7 +21,7 @@ import {
   useDeleteTransaction,
   useDeleteInstallmentGroup,
 } from "@workspace/api-client-react";
-import { Plus, Search, Trash2, Edit2, FileText, CheckCircle2, Clock, CreditCard, Layers, Tag, Landmark, Upload, Zap, Check, Loader2 } from "lucide-react";
+import { Plus, Search, Trash2, Edit2, FileText, CheckCircle2, Clock, CreditCard, Layers, Tag, Landmark, Upload, Zap, Check, Loader2, X } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -364,6 +364,19 @@ export default function TransactionsPage() {
   const [isQuickEntryOpen, setIsQuickEntryOpen] = useState(false);
   const { toast } = useToast();
 
+  // ── Advanced filters (client-side) ────────────────────────────────────────
+  const [fCategory, setFCategory] = useState<string>("");
+  const [fPayment, setFPayment] = useState<string>("");
+  const [fStatus, setFStatus] = useState<string>("");
+  const [fType, setFType] = useState<string>("");
+  const [fCard, setFCard] = useState<string>("");
+
+  const hasActiveFilters = !!(fCategory || fPayment || fStatus || fType || fCard);
+
+  function clearFilters() {
+    setFCategory(""); setFPayment(""); setFStatus(""); setFType(""); setFCard("");
+  }
+
   const { data: transactions, isLoading, refetch } = useListTransactions({
     month: filterMonth,
     year: filterYear,
@@ -405,6 +418,30 @@ export default function TransactionsPage() {
     if (!res.ok) throw new Error("Erro ao salvar");
     patchInlineLocal(txId, fields, groupId);
   }
+
+  // ── Client-side filtered transactions ────────────────────────────────────
+  const filteredTransactions = (transactions ?? []).filter(tx => {
+    const merged = { ...tx, ...(txOverrides[tx.id] ?? {}) };
+    if (fCategory && String(merged.categoryId ?? "") !== fCategory) return false;
+    if (fPayment && (merged.paymentMethod ?? "") !== fPayment) return false;
+    if (fStatus && (merged.status ?? "") !== fStatus) return false;
+    if (fType && (merged.type ?? "") !== fType) return false;
+    if (fCard) {
+      const cardMatch = String(merged.creditCardId ?? "") === fCard;
+      const accMatch = String(merged.accountId ?? "") === fCard;
+      if (!cardMatch && !accMatch) return false;
+    }
+    return true;
+  });
+
+  const filteredTotal = filteredTransactions.reduce((sum, tx) => {
+    const merged = { ...tx, ...(txOverrides[tx.id] ?? {}) };
+    const amt = Number(merged.amount ?? 0);
+    return sum + (merged.type === "expense" ? -amt : merged.type === "income" ? amt : 0);
+  }, 0);
+
+  // Payment methods found in current data
+  const uniquePaymentMethods = [...new Set((transactions ?? []).map(tx => tx.paymentMethod).filter(Boolean))].sort();
 
   const createMutation = useCreateTransaction({
     mutation: {
@@ -680,8 +717,8 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-5">
+      {/* ── Month + Search row ── */}
+      <div className="flex flex-wrap gap-3 mb-3">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
@@ -710,6 +747,118 @@ export default function TransactionsPage() {
         </div>
       </div>
 
+      {/* ── Advanced filters row ── */}
+      <div className="flex flex-wrap gap-2 mb-4 items-center">
+        {/* Tipo */}
+        <select
+          value={fType}
+          onChange={e => setFType(e.target.value)}
+          className={cn(
+            "h-8 text-xs border rounded-lg px-2 bg-white transition-colors",
+            fType ? "border-indigo-400 text-indigo-700 bg-indigo-50" : "border-slate-200 text-slate-500"
+          )}
+        >
+          <option value="">Tipo</option>
+          <option value="expense">Despesa</option>
+          <option value="income">Receita</option>
+          <option value="transfer">Transferência</option>
+        </select>
+
+        {/* Status */}
+        <select
+          value={fStatus}
+          onChange={e => setFStatus(e.target.value)}
+          className={cn(
+            "h-8 text-xs border rounded-lg px-2 bg-white transition-colors",
+            fStatus ? "border-indigo-400 text-indigo-700 bg-indigo-50" : "border-slate-200 text-slate-500"
+          )}
+        >
+          <option value="">Status</option>
+          <option value="paid">Pago</option>
+          <option value="planned">Previsto</option>
+          <option value="received">Recebido</option>
+        </select>
+
+        {/* Categoria */}
+        <select
+          value={fCategory}
+          onChange={e => setFCategory(e.target.value)}
+          className={cn(
+            "h-8 text-xs border rounded-lg px-2 bg-white transition-colors max-w-[160px]",
+            fCategory ? "border-indigo-400 text-indigo-700 bg-indigo-50" : "border-slate-200 text-slate-500"
+          )}
+        >
+          <option value="">Categoria</option>
+          {(categories ?? []).filter(c => c.isActive !== false).map(c => (
+            <option key={c.id} value={c.id.toString()}>{c.name}</option>
+          ))}
+        </select>
+
+        {/* Cartão / Conta */}
+        <select
+          value={fCard}
+          onChange={e => setFCard(e.target.value)}
+          className={cn(
+            "h-8 text-xs border rounded-lg px-2 bg-white transition-colors max-w-[180px]",
+            fCard ? "border-indigo-400 text-indigo-700 bg-indigo-50" : "border-slate-200 text-slate-500"
+          )}
+        >
+          <option value="">Cartão / Conta</option>
+          {(creditCards ?? []).map(c => (
+            <option key={`card-${c.id}`} value={c.id.toString()}>
+              💳 {c.apelidoCartao || c.nomeCartao}
+            </option>
+          ))}
+          {(accounts ?? []).map(a => (
+            <option key={`acc-${a.id}`} value={a.id.toString()}>
+              🏦 {a.name}
+            </option>
+          ))}
+        </select>
+
+        {/* Pagamento */}
+        <select
+          value={fPayment}
+          onChange={e => setFPayment(e.target.value)}
+          className={cn(
+            "h-8 text-xs border rounded-lg px-2 bg-white transition-colors",
+            fPayment ? "border-indigo-400 text-indigo-700 bg-indigo-50" : "border-slate-200 text-slate-500"
+          )}
+        >
+          <option value="">Pagamento</option>
+          {PAYMENT_METHODS.map(m => (
+            <option key={m} value={m}>{m}</option>
+          ))}
+          {uniquePaymentMethods.filter(m => !PAYMENT_METHODS.includes(m as any)).map(m => (
+            <option key={m} value={m!}>{m}</option>
+          ))}
+        </select>
+
+        {/* Limpar filtros */}
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="h-8 px-3 text-xs rounded-lg border border-rose-200 text-rose-500 hover:bg-rose-50 transition-colors font-medium flex items-center gap-1"
+          >
+            <X className="w-3 h-3" /> Limpar filtros
+          </button>
+        )}
+
+        {/* Resultado */}
+        {(hasActiveFilters || searchTerm) && (
+          <span className="ml-auto text-xs text-slate-500">
+            <span className="font-semibold text-slate-700">{filteredTransactions.length}</span> lançamento{filteredTransactions.length !== 1 ? "s" : ""}
+            {" "}
+            {filteredTotal !== 0 && (
+              <span className={cn("font-semibold", filteredTotal >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                · {filteredTotal >= 0 ? "+" : ""}{filteredTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              </span>
+            )}
+          </span>
+        )}
+      </div>
+
       {/* Table */}
       <Card className="border-slate-200 shadow-sm overflow-hidden bg-white rounded-2xl">
         <div className="overflow-x-auto">
@@ -729,16 +878,22 @@ export default function TransactionsPage() {
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr><td colSpan={8} className="p-8 text-center text-slate-400">Carregando...</td></tr>
-              ) : !transactions?.length ? (
+              ) : !filteredTransactions.length ? (
                 <tr>
                   <td colSpan={8} className="p-14 text-center">
                     <FileText className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-                    <p className="text-slate-500 font-medium">Nenhum lançamento encontrado.</p>
-                    <p className="text-slate-400 text-xs mt-1">Clique em "Novo Lançamento" para começar.</p>
+                    <p className="text-slate-500 font-medium">
+                      {hasActiveFilters || searchTerm ? "Nenhum lançamento com esses filtros." : "Nenhum lançamento encontrado."}
+                    </p>
+                    <p className="text-slate-400 text-xs mt-1">
+                      {hasActiveFilters ? (
+                        <button type="button" onClick={clearFilters} className="text-indigo-500 hover:underline">Limpar filtros</button>
+                      ) : "Clique em \"Novo Lançamento\" para começar."}
+                    </p>
                   </td>
                 </tr>
               ) : (
-                transactions.map((tx) => (
+                filteredTransactions.map((tx) => (
                   <tr key={tx.id} className="hover:bg-slate-50/60 transition-colors group">
                     <td className="px-5 py-3.5 text-slate-400 text-xs font-medium whitespace-nowrap">
                       {formatDate(tx.competenceDate)}

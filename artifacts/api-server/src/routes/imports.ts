@@ -533,33 +533,41 @@ router.post("/imports/upload", upload.single("file"), async (req, res) => {
 router.post("/imports/confirm", async (req, res) => {
   try {
     const userId = (req as any).user?.id;
-    const { fileName, fileType, transactions, creditCardId, statementMonth } = req.body;
+    const { fileName, fileType, transactions, creditCardId, accountId: bodyAccountId, statementMonth } = req.body;
 
     if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
       return res.status(400).json({ error: "Nenhum lançamento para importar" });
     }
 
-    // statementMonth = "YYYY-MM" → competenceDate = "YYYY-MM-01"
-    const competenceDate = statementMonth ? `${statementMonth}-01` : new Date().toISOString().split("T")[0];
+    const isCardImport = !!creditCardId;
     const cardId = creditCardId ? Number(creditCardId) : null;
+    const globalAccountId = bodyAccountId ? Number(bodyAccountId) : null;
 
-    const rows = transactions.map((tx: any) => ({
-      description: String(tx.description || "Lançamento importado"),
-      amount: Number(tx.amount || 0).toFixed(2),
-      type: tx.type === "income" ? ("income" as const) : ("expense" as const),
-      status: "paid" as const,
-      competenceDate,
-      movementDate: String(tx.purchaseDate || tx.date || competenceDate),
-      categoryId: tx.categoryId ? Number(tx.categoryId) : null,
-      accountId: tx.accountId ? Number(tx.accountId) : null,
-      creditCardId: cardId,
-      paymentMethod: cardId ? "Crédito" : (tx.paymentMethod ?? null),
-      creditType: tx.installmentTotal ? "parcelado" : null,
-      currentInstallment: tx.installmentCurrent ? Number(tx.installmentCurrent) : null,
-      totalInstallments: tx.installmentTotal ? Number(tx.installmentTotal) : null,
-      notes: `Importado de: ${fileName}${tx.installmentCurrent ? ` (parcela ${tx.installmentCurrent}/${tx.installmentTotal})` : ""}`,
-      userId,
-    }));
+    // statementMonth = "YYYY-MM" → competenceDate = "YYYY-MM-01"
+    // For account imports, each tx uses its own purchaseDate as competenceDate
+    const fallbackCompetence = statementMonth ? `${statementMonth}-01` : new Date().toISOString().split("T")[0];
+
+    const rows = transactions.map((tx: any) => {
+      const txDate = String(tx.purchaseDate || tx.date || fallbackCompetence);
+      const competenceDate = isCardImport ? fallbackCompetence : txDate;
+      return {
+        description: String(tx.description || "Lançamento importado"),
+        amount: Number(tx.amount || 0).toFixed(2),
+        type: tx.type === "income" ? ("income" as const) : ("expense" as const),
+        status: "paid" as const,
+        competenceDate,
+        movementDate: txDate,
+        categoryId: tx.categoryId ? Number(tx.categoryId) : null,
+        accountId: tx.accountId ? Number(tx.accountId) : (isCardImport ? null : globalAccountId),
+        creditCardId: isCardImport ? cardId : null,
+        paymentMethod: isCardImport ? "Crédito" : (tx.paymentMethod ?? null),
+        creditType: tx.installmentTotal ? "parcelado" : null,
+        currentInstallment: tx.installmentCurrent ? Number(tx.installmentCurrent) : null,
+        totalInstallments: tx.installmentTotal ? Number(tx.installmentTotal) : null,
+        notes: `Importado de: ${fileName}${tx.installmentCurrent ? ` (parcela ${tx.installmentCurrent}/${tx.installmentTotal})` : ""}`,
+        userId,
+      };
+    });
 
     const inserted = await db.insert(transactionsTable).values(rows).returning({ id: transactionsTable.id });
 

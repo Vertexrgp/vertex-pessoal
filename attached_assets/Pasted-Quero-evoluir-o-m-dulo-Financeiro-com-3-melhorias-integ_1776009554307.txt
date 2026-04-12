@@ -1,0 +1,222 @@
+Quero evoluir o módulo Financeiro com 3 melhorias integradas:
+
+1. recálculo automático da competência de parcelas quando eu editar manualmente o parcelamento
+2. salvar visualizações de filtro
+3. conciliação automática entre extrato e fatura para evitar duplicidade
+
+OBJETIVO
+Deixar o módulo financeiro muito mais inteligente, rápido de usar e seguro contra lançamentos duplicados.
+
+IMPORTANTE
+Quero solução real de produto, não paliativa.
+
+====================================================
+1) RECÁLCULO AUTOMÁTICO DE PARCELAS
+====================================================
+
+PROBLEMA
+Hoje eu posso corrigir manualmente o parcelamento na revisão da importação, mas o sistema ainda precisa ficar inteligente depois disso.
+
+QUERO
+Quando eu editar manualmente a parcela de um lançamento, o sistema deve recalcular automaticamente a competência das próximas parcelas.
+
+Exemplo:
+- compra parcelada em 1/10 com competência abril/2026
+- se o sistema ajustar ou eu corrigir a estrutura da compra parcelada
+- ele deve distribuir corretamente:
+  - 1/10 → abril/2026
+  - 2/10 → maio/2026
+  - 3/10 → junho/2026
+  - etc
+
+====================================================
+2) REGRAS DE RECÁLCULO
+====================================================
+
+Quando o parcelamento for alterado manualmente, o sistema deve:
+
+- manter a competência inicial da parcela atual
+- recalcular as competências futuras mês a mês
+- manter vínculo entre as parcelas da mesma compra
+- atualizar projeções mensais
+- refletir isso nos relatórios
+
+Se for tecnicamente melhor, usar:
+- currentInstallment
+- totalInstallments
+- installmentGroupId
+- statementCompetence
+
+====================================================
+3) SALVAR VISUALIZAÇÕES DE FILTRO
+====================================================
+
+QUERO
+Permitir salvar filtros prontos na tela de Lançamentos, para acessar rapidamente no dia a dia.
+
+Exemplos:
+- Viagens no cartão Latam
+- Assinaturas
+- Cuidados pessoais
+- Saúde no Personnalité
+- Pix da conta corrente
+
+====================================================
+4) COMO FUNCIONA A VISUALIZAÇÃO SALVA
+====================================================
+
+Na tela de lançamentos, quero:
+
+- aplicar filtros normalmente
+- clicar em “Salvar visualização”
+- dar um nome
+- salvar aquela combinação
+
+Depois disso, quero poder:
+- abrir rapidamente essa visualização
+- editar o nome
+- sobrescrever
+- excluir
+
+====================================================
+5) FILTROS QUE DEVEM ENTRAR NAS VISUALIZAÇÕES
+====================================================
+
+Salvar combinação de:
+- cartão/conta
+- categoria
+- forma de pagamento
+- status
+- tipo
+- parcelado/à vista
+- busca por texto, se fizer sentido
+
+====================================================
+6) UX DAS VISUALIZAÇÕES SALVAS
+====================================================
+
+Quero uma UX simples e premium.
+
+Sugestão:
+- botão “Visualizações”
+- dropdown/lista com filtros salvos
+- opção “Salvar visualização atual”
+- opção “Limpar filtros”
+
+====================================================
+7) CONCILIAÇÃO AUTOMÁTICA
+====================================================
+
+QUERO
+Criar uma lógica de conciliação para evitar duplicidade entre:
+
+- extrato bancário
+- fatura de cartão
+- lançamentos manuais
+
+====================================================
+8) DETECÇÃO DE DUPLICIDADE
+====================================================
+
+O sistema deve tentar identificar possíveis duplicados com base em:
+
+- valor igual ou muito próximo
+- datas próximas
+- descrição semelhante
+- mesmo cartão/conta
+- mesma parcela, quando houver
+
+Exemplos:
+- item lançado manualmente e depois importado
+- extrato da conta mostrando pagamento/cartão já registrado
+- mesma compra aparecendo em mais de uma importação
+
+====================================================
+9) COMPORTAMENTO DA CONCILIAÇÃO
+====================================================
+
+Quando detectar possível duplicidade, o sistema deve:
+
+- não importar automaticamente sem alertar
+- marcar como “possível duplicado”
+- permitir ao usuário:
+  - ignorar duplicidade
+  - manter separado
+  - mesclar
+  - substituir
+
+====================================================
+10) MERGE / MESCLAGEM
+====================================================
+
+Se o usuário optar por mesclar, o sistema deve:
+
+- manter um lançamento principal
+- preservar dados úteis do outro
+- unir informações complementares
+
+Exemplo:
+- um lançamento tem categoria correta
+- outro tem parcela correta
+- o merge combina isso
+
+====================================================
+11) TELA DE REVISÃO DE CONCILIAÇÃO
+====================================================
+
+Criar uma interface clara para revisão de duplicados/conciliação, mostrando:
+
+- lançamento A
+- lançamento B
+- motivo da suspeita
+- ações possíveis
+
+====================================================
+12) IMPACTO NOS RELATÓRIOS
+====================================================
+
+Depois da conciliação:
+- não contar duplicado duas vezes
+- manter totais corretos
+- manter histórico auditável
+
+====================================================
+13) AUDITORIA / HISTÓRICO
+====================================================
+
+Registrar:
+- quando uma conciliação aconteceu
+- quais lançamentos foram afetados
+- se foi merge, ignorado ou mantido separado
+
+====================================================
+14) UX GERAL
+====================================================
+
+Quero tudo isso com experiência premium:
+
+- fluida
+- clara
+- sem poluir a tela
+- sem risco de confusão
+
+====================================================
+15) ENTREGAR
+====================================================
+
+Quero que você implemente:
+
+1. recálculo automático de competências futuras ao editar parcelamento
+2. salvar visualizações de filtro
+3. abrir/editar/excluir visualizações salvas
+4. detecção automática de possíveis duplicados
+5. tela de conciliação
+6. opção de merge
+7. prevenção de lançamentos duplicados nos relatórios
+
+No final, me mostrar:
+- como o recálculo de parcelas funciona
+- como as visualizações salvas foram implementadas
+- como a conciliação detecta duplicados
+- como funciona o merge
+- como isso afeta relatórios e totais
