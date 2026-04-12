@@ -1,0 +1,81 @@
+Quero corrigir a lógica de conciliação automática no módulo Financeiro.
+
+PROBLEMA
+O sistema está marcando muitos lançamentos como duplicados apenas por valor e data, mesmo com descrições totalmente diferentes.
+
+Isso está gerando muitos falsos positivos.
+
+OBJETIVO
+Tornar a detecção de duplicados muito mais precisa, considerando principalmente a similaridade do nome/descrição.
+
+====================================================
+1) NOVA REGRA DE DUPLICIDADE
+====================================================
+
+Só considerar duplicado quando:
+
+- valor igual ou com pequena variação (ex: até 1%)
+- data próxima (ex: até 3–5 dias)
+- descrição muito semelhante
+
+Se a descrição for diferente:
+- NÃO marcar como duplicado
+
+====================================================
+2) COMPARAÇÃO DE DESCRIÇÃO
+====================================================
+
+Implementar comparação de similaridade entre textos.
+
+Exemplo:
+
+"Plástica Fe" ≈ "Plastica Fe" → similar  
+"Netflix" ≈ "NETFLIX.COM" → similar  
+"Padaria" ≠ "Uber" → NÃO similar  
+
+Pode usar:
+- normalização de texto
+- comparação por similaridade (string similarity)
+
+====================================================
+3) NÍVEL DE CONFIANÇA
+====================================================
+
+Criar níveis:
+
+- Alta confiança → mostrar como duplicado
+- Média → mostrar como sugestão leve
+- Baixa → ignorar
+
+====================================================
+4) UX
+====================================================
+
+Mostrar claramente:
+
+- por que foi considerado duplicado
+- quais critérios bateram
+
+Exemplo:
+"Mesmo valor + nome semelhante + data próxima"
+
+====================================================
+5) REDUZIR RUÍDO
+====================================================
+
+Se a similaridade de nome for baixa:
+- não mostrar na lista de duplicados
+
+====================================================
+6) ENTREGAR
+====================================================
+
+Quero:
+
+1. redução drástica de falsos positivos
+2. comparação por nome implementada
+3. critérios mais inteligentes
+
+No final, me mostrar:
+- como está calculando similaridade
+- quais critérios estão sendo usados

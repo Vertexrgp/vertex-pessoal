@@ -1655,19 +1655,38 @@ export default function TransactionsPage() {
                   <p className="text-slate-400 text-xs mt-1">Todos os lançamentos estão devidamente conciliados.</p>
                 </div>
               ) : (
-                conciliationCandidates.map((pair, idx) => (
-                  <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                    <div className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-3 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
-                      Possível duplicata
+                conciliationCandidates.map((pair, idx) => {
+                  const isHigh = pair.confidence === "high";
+                  return (
+                  <div
+                    key={idx}
+                    className={cn(
+                      "bg-white border rounded-xl p-4 shadow-sm",
+                      isHigh ? "border-amber-200" : "border-slate-200"
+                    )}
+                  >
+                    {/* Confidence badge + reason */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className={cn(
+                        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold",
+                        isHigh
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-slate-100 text-slate-600"
+                      )}>
+                        <span className={cn("w-1.5 h-1.5 rounded-full", isHigh ? "bg-amber-500" : "bg-slate-400")} />
+                        {isHigh ? "Alta confiança" : "Sugestão"}
+                      </div>
+                      <span className="text-[10px] text-slate-400 italic text-right max-w-[55%] leading-tight">
+                        {pair.reason}
+                      </span>
                     </div>
 
-                    {/* Side A */}
-                    <div className="flex gap-3 mb-2">
+                    {/* Side A / Side B */}
+                    <div className="flex gap-3 mb-3">
                       <div className="flex-1 bg-slate-50 rounded-lg p-3">
                         <div className="text-[10px] text-slate-400 font-medium uppercase mb-1">Lançamento A</div>
                         <div className="font-medium text-slate-800 text-sm leading-tight">{pair.a.description}</div>
-                        <div className="flex gap-3 mt-1.5 text-xs text-slate-500">
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-xs text-slate-500">
                           <span>{new Date(pair.a.competenceDate).toLocaleDateString("pt-BR")}</span>
                           <span className="font-semibold text-slate-700">
                             {Number(pair.a.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
@@ -1678,7 +1697,7 @@ export default function TransactionsPage() {
                       <div className="flex-1 bg-slate-50 rounded-lg p-3">
                         <div className="text-[10px] text-slate-400 font-medium uppercase mb-1">Lançamento B</div>
                         <div className="font-medium text-slate-800 text-sm leading-tight">{pair.b.description}</div>
-                        <div className="flex gap-3 mt-1.5 text-xs text-slate-500">
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-xs text-slate-500">
                           <span>{new Date(pair.b.competenceDate).toLocaleDateString("pt-BR")}</span>
                           <span className="font-semibold text-slate-700">
                             {Number(pair.b.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
@@ -1689,7 +1708,7 @@ export default function TransactionsPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-2 mt-3">
+                    <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={() => conciliationMerge(pair.a.id, pair.b.id)}
@@ -1714,7 +1733,8 @@ export default function TransactionsPage() {
                       </button>
                     </div>
                   </div>
-                ))
+                  );
+                })
               )}
             </div>
 

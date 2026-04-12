@@ -1,0 +1,116 @@
+Quero corrigir o problema de scroll e seleção do dropdown de categoria na tela de revisão de importação.
+
+PROBLEMA
+O dropdown abre, mas:
+
+- não consigo rolar corretamente
+- não consigo selecionar itens no final da lista
+- o scroll fica travado
+- parece que o modal está bloqueando a interação
+
+OBJETIVO
+Fazer o dropdown funcionar de forma totalmente fluida, como um componente profissional.
+
+====================================================
+1) CAUSA PROVÁVEL
+====================================================
+
+O dropdown está sendo renderizado dentro do container do modal.
+
+Isso está causando:
+- conflito de scroll (overflow hidden no modal)
+- bloqueio de eventos
+- clipping da lista
+- problema de z-index
+
+====================================================
+2) SOLUÇÃO OBRIGATÓRIA
+====================================================
+
+Implementar o dropdown usando PORTAL.
+
+Ou seja:
+
+- renderizar o menu do dropdown fora do modal
+- anexar no body (ou root portal)
+- manter posição relativa ao input
+
+====================================================
+3) SCROLL CORRETO
+====================================================
+
+O dropdown deve:
+
+- ter max-height (ex: 240px)
+- usar overflow-y: auto
+- permitir rolagem com mouse e trackpad
+- não travar no topo ou no final
+
+====================================================
+4) INTERAÇÃO
+====================================================
+
+Garantir:
+
+- clique funcionando em todos os itens
+- hover funcionando
+- seleção funcionando
+- fechamento após seleção
+
+====================================================
+5) Z-INDEX
+====================================================
+
+Garantir que o dropdown:
+
+- fique acima do modal
+- não seja cortado
+- não fique escondido
+
+====================================================
+6) EVENTOS
+====================================================
+
+Corrigir:
+
+- evitar que o modal capture o scroll do dropdown
+- evitar que clickOutside feche antes da seleção
+- garantir que eventos do dropdown não sejam bloqueados
+
+====================================================
+7) COMPONENTE
+====================================================
+
+Se estiver usando:
+
+- Radix UI → usar Portal corretamente
+- Headless UI → usar portal/popover corretamente
+- custom → implementar portal manual
+
+====================================================
+8) TESTE
+====================================================
+
+Quero que funcione:
+
+- com 5 categorias
+- com 50 categorias
+- com scroll longo
+- com trackpad e mouse
+
+====================================================
+9) ENTREGAR
+====================================================
+
+Quero que você:
+
+1. corrija o dropdown usando portal
+2. corrija o scroll
+3. corrija o clique
+4. corrija o z-index
+
+No final, me mostrar:
+
+- qual era o problema técnico
+- como foi resolvido
+- onde está sendo renderizado o dropdown agora

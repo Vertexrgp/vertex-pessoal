@@ -66,7 +66,8 @@ function generateMonthOptions() {
 }
 
 // ─── CategoryPickerCell ────────────────────────────────────────────────────────
-// Portal-based dropdown with search — bypasses any overflow/scroll constraints
+// Portal-based dropdown mounted INSIDE the Radix dialog portal so that Radix's
+// FocusTrap and scroll-lock do not interfere with the dropdown interaction.
 function CategoryPickerCell({
   tx,
   categories,
@@ -80,39 +81,129 @@ function CategoryPickerCell({
   const [search, setSearch] = useState("");
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 180 });
+
+  // Find the Radix portal container so we can mount our dropdown inside it.
+  // This prevents Radix's FocusTrap from treating our dropdown as "outside" the dialog.
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const radixPortal = document.querySelector("[data-radix-portal]") as HTMLElement | null;
+    const mount = radixPortal ?? document.body;
+    const div = document.createElement("div");
+    div.setAttribute("data-category-picker-portal", "true");
+    mount.appendChild(div);
+    setPortalRoot(div);
+    return () => { try { mount.removeChild(div); } catch { /* ignore */ } };
+  }, []);
 
   function handleOpen() {
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      const dropdownH = 220;
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const top = spaceBelow >= dropdownH ? rect.bottom + 2 : rect.top - dropdownH - 2;
-      setPos({ top, left: rect.left, width: Math.max(rect.width, 180) });
+      const DROPDOWN_H = 264;
+      const spaceBelow = window.innerHeight - rect.bottom - 8;
+      const top = spaceBelow >= DROPDOWN_H ? rect.bottom + 4 : rect.top - DROPDOWN_H - 4;
+      setPos({ top, left: rect.left, width: Math.max(rect.width, 200) });
     }
     setSearch("");
     setOpen(v => !v);
   }
 
+  // Focus search input after open (using ref instead of autoFocus to avoid
+  // triggering Radix's FocusTrap interception on the first render)
+  useEffect(() => {
+    if (open) {
+      requestAnimationFrame(() => { searchRef.current?.focus(); });
+    }
+  }, [open]);
+
+  // Close on outside click
   useEffect(() => {
     if (!open) return;
     function handler(e: MouseEvent) {
       if (
-        triggerRef.current && !triggerRef.current.contains(e.target as Node) &&
-        dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-      }
+        triggerRef.current?.contains(e.target as Node) ||
+        dropdownRef.current?.contains(e.target as Node)
+      ) return;
+      setOpen(false);
     }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("mousedown", handler, true);
+    return () => document.removeEventListener("mousedown", handler, true);
   }, [open]);
 
   const filtered = (categories ?? []).filter(c =>
-    (c.isActive !== false) &&
+    c.isActive !== false &&
     (!search || c.name.toLowerCase().includes(search.toLowerCase()))
   );
-  const selectedCat = (categories ?? []).find(c => c.id === tx.categoryId);
+  const selectedCat = categories.find(c => c.id === tx.categoryId);
+
+  const dropdown = (
+    <div
+      ref={dropdownRef}
+      style={{
+        position: "fixed",
+        top: pos.top,
+        left: pos.left,
+        width: pos.width,
+        zIndex: 99999,
+      }}
+      className="bg-white border border-slate-200 rounded-xl shadow-2xl flex flex-col overflow-hidden"
+      // Prevent any pointer event from bubbling out of the dropdown
+      onMouseDown={e => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
+    >
+      {/* Search input */}
+      <div className="px-2.5 py-2 border-b border-slate-100">
+        <input
+          ref={searchRef}
+          className="w-full text-xs outline-none placeholder:text-slate-400 bg-transparent"
+          placeholder="Buscar categoria..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          onKeyDown={e => { if (e.key === "Escape") { e.stopPropagation(); setOpen(false); } }}
+        />
+      </div>
+
+      {/* Scrollable list — onWheel stops propagation so Radix scroll-lock is bypassed */}
+      <div
+        style={{ overflowY: "scroll", maxHeight: "220px", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+        onWheel={e => e.stopPropagation()}
+      >
+        {/* "Sem categoria" option */}
+        <button
+          type="button"
+          onMouseDown={e => { e.preventDefault(); e.stopPropagation(); onUpdate(null); setOpen(false); }}
+          className={cn(
+            "w-full text-left px-3 py-2 text-xs transition-colors",
+            !tx.categoryId ? "bg-slate-50 text-slate-500 font-medium" : "text-slate-400 hover:bg-slate-50"
+          )}
+        >
+          Sem categoria
+        </button>
+
+        {filtered.map(c => (
+          <button
+            key={c.id}
+            type="button"
+            onMouseDown={e => { e.preventDefault(); e.stopPropagation(); onUpdate(c.id); setOpen(false); }}
+            className={cn(
+              "w-full text-left px-3 py-2 text-xs flex items-center gap-2 transition-colors",
+              tx.categoryId === c.id
+                ? "bg-indigo-50 text-indigo-700 font-medium"
+                : "text-slate-700 hover:bg-slate-50"
+            )}
+          >
+            {c.color && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />}
+            {c.name}
+          </button>
+        ))}
+
+        {filtered.length === 0 && (
+          <p className="px-3 py-3 text-xs text-slate-400 italic">Nenhuma encontrada</p>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -137,58 +228,7 @@ function CategoryPickerCell({
         <ChevronDown className="w-3 h-3 text-slate-400 shrink-0 ml-1" />
       </button>
 
-      {open && createPortal(
-        <div
-          ref={dropdownRef}
-          style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width, zIndex: 99999 }}
-          className="bg-white border border-slate-200 rounded-xl shadow-xl flex flex-col overflow-hidden"
-        >
-          <div className="px-2.5 py-2 border-b border-slate-100 bg-white">
-            <input
-              autoFocus
-              className="w-full text-xs outline-none placeholder:text-slate-400 bg-transparent"
-              placeholder="Buscar categoria..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              onKeyDown={e => { if (e.key === "Escape") setOpen(false); }}
-            />
-          </div>
-          <div className="overflow-y-auto max-h-52">
-            <button
-              type="button"
-              onMouseDown={e => { e.preventDefault(); onUpdate(null); setOpen(false); }}
-              className={cn(
-                "w-full text-left px-3 py-1.5 text-xs transition-colors",
-                !tx.categoryId ? "bg-slate-50 text-slate-500 font-medium" : "text-slate-400 hover:bg-slate-50"
-              )}
-            >
-              Sem categoria
-            </button>
-            {filtered.map(c => (
-              <button
-                key={c.id}
-                type="button"
-                onMouseDown={e => { e.preventDefault(); onUpdate(c.id); setOpen(false); }}
-                className={cn(
-                  "w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors",
-                  tx.categoryId === c.id
-                    ? "bg-indigo-50 text-indigo-700 font-medium"
-                    : "text-slate-700 hover:bg-slate-50"
-                )}
-              >
-                {c.color && (
-                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
-                )}
-                {c.name}
-              </button>
-            ))}
-            {filtered.length === 0 && (
-              <p className="px-3 py-2 text-xs text-slate-400 italic">Nenhuma encontrada</p>
-            )}
-          </div>
-        </div>,
-        document.body
-      )}
+      {open && portalRoot && createPortal(dropdown, portalRoot)}
     </>
   );
 }
