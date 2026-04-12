@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,8 +65,11 @@ function generateMonthOptions() {
 }
 
 // ─── CategoryPickerCell ────────────────────────────────────────────────────────
-// Portal-based dropdown mounted INSIDE the Radix dialog portal so that Radix's
-// FocusTrap and scroll-lock do not interfere with the dropdown interaction.
+// KEY INSIGHT: render the dropdown INLINE (no portal) with position:fixed.
+// - position:fixed escapes the table's overflow:hidden visually
+// - Remaining in the dialog's DOM tree means Radix DismissableLayer does NOT
+//   close the dialog when the user clicks a category item (it checks DOM ancestry)
+// - Simple onClick handlers — no onMouseDown hacks that interfere with focus
 function CategoryPickerCell({
   tx,
   categories,
@@ -79,136 +81,58 @@ function CategoryPickerCell({
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 180 });
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 200 });
 
-  // Find the Radix portal container so we can mount our dropdown inside it.
-  // This prevents Radix's FocusTrap from treating our dropdown as "outside" the dialog.
-  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
-  useEffect(() => {
-    const radixPortal = document.querySelector("[data-radix-portal]") as HTMLElement | null;
-    const mount = radixPortal ?? document.body;
-    const div = document.createElement("div");
-    div.setAttribute("data-category-picker-portal", "true");
-    mount.appendChild(div);
-    setPortalRoot(div);
-    return () => { try { mount.removeChild(div); } catch { /* ignore */ } };
-  }, []);
-
-  function handleOpen() {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      const DROPDOWN_H = 264;
-      const spaceBelow = window.innerHeight - rect.bottom - 8;
-      const top = spaceBelow >= DROPDOWN_H ? rect.bottom + 4 : rect.top - DROPDOWN_H - 4;
-      setPos({ top, left: rect.left, width: Math.max(rect.width, 200) });
-    }
+  function handleOpen(e: React.MouseEvent) {
+    e.stopPropagation();
+    const trigger = (e.currentTarget as HTMLElement).closest("button") ?? (e.currentTarget as HTMLElement);
+    const rect = trigger.getBoundingClientRect();
+    const DROPDOWN_H = 272;
+    const spaceBelow = window.innerHeight - rect.bottom - 8;
+    const top = spaceBelow >= DROPDOWN_H ? rect.bottom + 4 : rect.top - DROPDOWN_H - 4;
+    setPos({ top, left: rect.left, width: Math.max(rect.width, 210) });
     setSearch("");
-    setOpen(v => !v);
+    setOpen(prev => !prev);
   }
 
-  // Focus search input after open (using ref instead of autoFocus to avoid
-  // triggering Radix's FocusTrap interception on the first render)
+  // Auto-focus search when opened
   useEffect(() => {
     if (open) {
-      requestAnimationFrame(() => { searchRef.current?.focus(); });
+      requestAnimationFrame(() => searchRef.current?.focus());
     }
   }, [open]);
 
-  // Close on outside click
+  // Close on click outside the wrapper (trigger + dropdown)
   useEffect(() => {
     if (!open) return;
-    function handler(e: MouseEvent) {
-      if (
-        triggerRef.current?.contains(e.target as Node) ||
-        dropdownRef.current?.contains(e.target as Node)
-      ) return;
-      setOpen(false);
+    function handleOutside(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     }
-    document.addEventListener("mousedown", handler, true);
-    return () => document.removeEventListener("mousedown", handler, true);
+    // Use capture:false so item onClick fires FIRST, then this fires and closes
+    document.addEventListener("click", handleOutside, false);
+    return () => document.removeEventListener("click", handleOutside, false);
   }, [open]);
 
-  const filtered = (categories ?? []).filter(c =>
+  const filtered = categories.filter(c =>
     c.isActive !== false &&
     (!search || c.name.toLowerCase().includes(search.toLowerCase()))
   );
   const selectedCat = categories.find(c => c.id === tx.categoryId);
 
-  const dropdown = (
-    <div
-      ref={dropdownRef}
-      style={{
-        position: "fixed",
-        top: pos.top,
-        left: pos.left,
-        width: pos.width,
-        zIndex: 99999,
-      }}
-      className="bg-white border border-slate-200 rounded-xl shadow-2xl flex flex-col overflow-hidden"
-      // Prevent any pointer event from bubbling out of the dropdown
-      onMouseDown={e => e.stopPropagation()}
-      onClick={e => e.stopPropagation()}
-    >
-      {/* Search input */}
-      <div className="px-2.5 py-2 border-b border-slate-100">
-        <input
-          ref={searchRef}
-          className="w-full text-xs outline-none placeholder:text-slate-400 bg-transparent"
-          placeholder="Buscar categoria..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          onKeyDown={e => { if (e.key === "Escape") { e.stopPropagation(); setOpen(false); } }}
-        />
-      </div>
-
-      {/* Scrollable list — onWheel stops propagation so Radix scroll-lock is bypassed */}
-      <div
-        style={{ overflowY: "scroll", maxHeight: "220px", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
-        onWheel={e => e.stopPropagation()}
-      >
-        {/* "Sem categoria" option */}
-        <button
-          type="button"
-          onMouseDown={e => { e.preventDefault(); e.stopPropagation(); onUpdate(null); setOpen(false); }}
-          className={cn(
-            "w-full text-left px-3 py-2 text-xs transition-colors",
-            !tx.categoryId ? "bg-slate-50 text-slate-500 font-medium" : "text-slate-400 hover:bg-slate-50"
-          )}
-        >
-          Sem categoria
-        </button>
-
-        {filtered.map(c => (
-          <button
-            key={c.id}
-            type="button"
-            onMouseDown={e => { e.preventDefault(); e.stopPropagation(); onUpdate(c.id); setOpen(false); }}
-            className={cn(
-              "w-full text-left px-3 py-2 text-xs flex items-center gap-2 transition-colors",
-              tx.categoryId === c.id
-                ? "bg-indigo-50 text-indigo-700 font-medium"
-                : "text-slate-700 hover:bg-slate-50"
-            )}
-          >
-            {c.color && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />}
-            {c.name}
-          </button>
-        ))}
-
-        {filtered.length === 0 && (
-          <p className="px-3 py-3 text-xs text-slate-400 italic">Nenhuma encontrada</p>
-        )}
-      </div>
-    </div>
-  );
+  function selectCategory(catId: number | null) {
+    onUpdate(catId);
+    setOpen(false);
+  }
 
   return (
-    <>
+    // wrapperRef wraps BOTH trigger and dropdown so outside-click detection works
+    <div ref={wrapperRef} style={{ position: "relative" }}>
+      {/* Trigger button */}
       <button
-        ref={triggerRef}
         type="button"
         onClick={handleOpen}
         className="h-7 text-xs w-full flex items-center justify-between px-2 rounded border border-slate-200 bg-white hover:border-indigo-300 transition-colors"
@@ -228,8 +152,73 @@ function CategoryPickerCell({
         <ChevronDown className="w-3 h-3 text-slate-400 shrink-0 ml-1" />
       </button>
 
-      {open && portalRoot && createPortal(dropdown, portalRoot)}
-    </>
+      {/* Dropdown — position:fixed so it escapes table overflow, but stays in dialog DOM */}
+      {open && (
+        <div
+          style={{
+            position: "fixed",
+            top: pos.top,
+            left: pos.left,
+            width: pos.width,
+            zIndex: 99999,
+          }}
+          className="bg-white border border-slate-200 rounded-xl shadow-2xl flex flex-col overflow-hidden"
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Search */}
+          <div className="px-2.5 py-2 border-b border-slate-100">
+            <input
+              ref={searchRef}
+              className="w-full text-xs outline-none placeholder:text-slate-400 bg-transparent"
+              placeholder="Buscar categoria..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => { if (e.key === "Escape") { e.stopPropagation(); setOpen(false); } }}
+            />
+          </div>
+
+          {/* List */}
+          <div
+            style={{ overflowY: "auto", maxHeight: "220px" }}
+            onWheel={e => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => selectCategory(null)}
+              className={cn(
+                "w-full text-left px-3 py-2 text-xs transition-colors",
+                !tx.categoryId ? "bg-slate-50 text-slate-500 font-medium" : "text-slate-400 hover:bg-slate-50"
+              )}
+            >
+              Sem categoria
+            </button>
+
+            {filtered.map(c => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => selectCategory(c.id)}
+                className={cn(
+                  "w-full text-left px-3 py-2 text-xs flex items-center gap-2 transition-colors",
+                  tx.categoryId === c.id
+                    ? "bg-indigo-50 text-indigo-700 font-medium"
+                    : "text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                {c.color && (
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
+                )}
+                {c.name}
+              </button>
+            ))}
+
+            {filtered.length === 0 && (
+              <p className="px-3 py-3 text-xs text-slate-400 italic">Nenhuma encontrada</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

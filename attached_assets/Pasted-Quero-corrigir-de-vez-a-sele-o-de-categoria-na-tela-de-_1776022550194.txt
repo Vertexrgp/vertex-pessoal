@@ -1,0 +1,108 @@
+Quero corrigir de vez a seleção de categoria na tela de revisão da importação.
+
+PROBLEMA REAL
+O dropdown de categoria abre e mostra a lista, mas eu continuo não conseguindo selecionar a categoria.
+
+Ou seja:
+- a lista aparece
+- mas o clique no item não está funcionando corretamente
+- a categoria não é aplicada na linha
+
+OBJETIVO
+Fazer a seleção de categoria funcionar de verdade, linha por linha, dentro da revisão da importação.
+
+====================================================
+1) DIAGNÓSTICO REAL
+====================================================
+
+Quero que você investigue exatamente por que o clique não está funcionando.
+
+Verificar:
+- se o item da lista tem handler de seleção funcionando
+- se o clique está sendo interceptado pelo modal/overlay
+- se o valor selecionado está ligado ao estado correto da linha
+- se há problema de z-index / pointer-events / stopPropagation
+- se o select abre visualmente mas não atualiza o state
+
+====================================================
+2) COMPORTAMENTO CORRETO
+====================================================
+
+Quando eu clicar em uma categoria da lista:
+
+- a categoria deve ser aplicada imediatamente à linha correta
+- o dropdown deve fechar
+- a UI da célula deve atualizar mostrando a nova categoria
+- a seleção precisa ficar persistida até a importação final
+
+====================================================
+3) ESTADO POR LINHA
+====================================================
+
+Cada linha da revisão precisa ter estado próprio.
+
+Exemplo:
+- row.categoryId
+- row.categoryName
+
+Ao selecionar uma categoria:
+- atualizar somente aquela linha
+- não afetar as outras
+
+====================================================
+4) EVENTOS
+====================================================
+
+Quero que você revise e corrija:
+
+- onClick / onSelect dos itens
+- stopPropagation se necessário
+- pointer-events
+- foco do dropdown
+- conflito com o modal
+
+Se o componente atual estiver instável:
+- substitua por um select/popover confiável
+
+====================================================
+5) TESTE VISUAL
+====================================================
+
+Depois de corrigir, quero este fluxo funcionando:
+
+1. clico na categoria da linha
+2. lista abre
+3. clico em uma categoria
+4. a categoria muda na linha na hora
+5. o menu fecha
+
+====================================================
+6) SEM NAVEGAÇÃO E SEM MODAL EXTRA
+====================================================
+
+Importante:
+- não abrir outra página
+- não abrir outro modal
+- tudo inline na própria tabela
+
+====================================================
+7) PERSISTÊNCIA NA IMPORTAÇÃO
+====================================================
+
+Ao clicar em “Importar lançamentos”:
+- salvar exatamente a categoria escolhida em cada linha
+
+====================================================
+8) ENTREGAR
+====================================================
+
+Quero que você:
+1. descubra a causa exata do clique não funcionar
+2. corrija a seleção de categoria
+3. garanta atualização da linha
+4. garanta persistência até a importação
+
+No final, me mostrar:
+- o que estava quebrado
+- por que a lista abria mas não selecionava
+- como foi corrigido
