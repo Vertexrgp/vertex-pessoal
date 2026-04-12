@@ -377,6 +377,114 @@ export default function TransactionsPage() {
     setFCategory(""); setFPayment(""); setFStatus(""); setFType(""); setFCard("");
   }
 
+  // ── Saved filter views ────────────────────────────────────────────────────
+  const [savedViews, setSavedViews] = useState<any[]>([]);
+  const [showSaveInput, setShowSaveInput] = useState(false);
+  const [newViewName, setNewViewName] = useState("");
+  const [savingView, setSavingView] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/filter-views", { credentials: "include" })
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setSavedViews(data); })
+      .catch(() => {});
+  }, []);
+
+  async function saveFilterView() {
+    if (!newViewName.trim()) return;
+    setSavingView(true);
+    try {
+      const res = await fetch("/api/filter-views", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          name: newViewName.trim(),
+          filters: { fCategory, fPayment, fStatus, fType, fCard },
+        }),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        setSavedViews(v => [...v, created]);
+        toast({ title: `Visualização "${newViewName.trim()}" salva` });
+        setNewViewName("");
+        setShowSaveInput(false);
+      }
+    } catch { /* ignore */ } finally { setSavingView(false); }
+  }
+
+  async function deleteFilterView(id: number) {
+    await fetch(`/api/filter-views/${id}`, { method: "DELETE", credentials: "include" });
+    setSavedViews(v => v.filter(fv => fv.id !== id));
+  }
+
+  function applyFilterView(view: any) {
+    const f = view.filters ?? {};
+    setFCategory(f.fCategory ?? "");
+    setFPayment(f.fPayment ?? "");
+    setFStatus(f.fStatus ?? "");
+    setFType(f.fType ?? "");
+    setFCard(f.fCard ?? "");
+  }
+
+  // ── Conciliation ──────────────────────────────────────────────────────────
+  const [conciliationOpen, setConciliationOpen] = useState(false);
+  const [conciliationCandidates, setConciliationCandidates] = useState<any[]>([]);
+  const [conciliationLoading, setConciliationLoading] = useState(false);
+  const [conciliationCount, setConciliationCount] = useState<number | null>(null);
+
+  async function loadConciliationCandidates() {
+    setConciliationLoading(true);
+    try {
+      const res = await fetch("/api/conciliation/candidates", { credentials: "include" });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setConciliationCandidates(data);
+        setConciliationCount(data.length);
+      }
+    } catch { /* ignore */ } finally { setConciliationLoading(false); }
+  }
+
+  function openConciliation() {
+    setConciliationOpen(true);
+    loadConciliationCandidates();
+  }
+
+  async function conciliationMerge(keepId: number, deleteId: number) {
+    await fetch("/api/conciliation/merge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ keepId, deleteId }),
+    });
+    setConciliationCandidates(cs => cs.filter(p => p.a.id !== keepId && p.a.id !== deleteId && p.b.id !== keepId && p.b.id !== deleteId));
+    setConciliationCount(c => (c ?? 1) - 1);
+    refetch();
+    toast({ title: "Lançamento duplicado removido e conciliado." });
+  }
+
+  async function conciliationDismiss(id1: number, id2: number) {
+    await fetch("/api/conciliation/dismiss", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ id1, id2 }),
+    });
+    setConciliationCandidates(cs => cs.filter(p => !(
+      (p.a.id === id1 && p.b.id === id2) || (p.a.id === id2 && p.b.id === id1)
+    )));
+    setConciliationCount(c => (c ?? 1) - 1);
+    toast({ title: "Par ignorado — tratado como lançamentos distintos." });
+  }
+
+  // Load conciliation count on mount (silently)
+  useEffect(() => {
+    fetch("/api/conciliation/candidates", { credentials: "include" })
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setConciliationCount(data.length); })
+      .catch(() => {});
+  }, []);
+
   const { data: transactions, isLoading, refetch } = useListTransactions({
     month: filterMonth,
     year: filterYear,
@@ -416,6 +524,24 @@ export default function TransactionsPage() {
       body: JSON.stringify(fields),
     });
     if (!res.ok) throw new Error("Erro ao salvar");
+
+    // When totalInstallments changes on a group, the backend may create/delete rows
+    // so we must refetch the full list instead of just patching local state
+    if (groupId && "totalInstallments" in fields) {
+      const data = await res.json().catch(() => ({}));
+      await refetch();
+      const n = data.totalInstallments ?? fields.totalInstallments;
+      const total = data.totalAmount;
+      const perParc = total ? (total / n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : null;
+      toast({
+        title: `Série recalculada: ${n} parcelas`,
+        description: perParc
+          ? `${perParc} por parcela · competências redistribuídas`
+          : "Competências redistribuídas",
+      });
+      return;
+    }
+
     patchInlineLocal(txId, fields, groupId);
   }
 
@@ -703,6 +829,18 @@ export default function TransactionsPage() {
           </Button>
           <Button
             variant="outline"
+            className="relative border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 rounded-xl font-medium gap-1.5"
+            onClick={openConciliation}
+          >
+            <CheckCircle2 className="w-4 h-4" /> Conciliação
+            {conciliationCount !== null && conciliationCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] text-[10px] font-bold bg-amber-500 text-white rounded-full flex items-center justify-center px-1">
+                {conciliationCount}
+              </span>
+            )}
+          </Button>
+          <Button
+            variant="outline"
             className="border-indigo-200 text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50 rounded-xl font-medium gap-1.5"
             onClick={() => setIsQuickEntryOpen(true)}
           >
@@ -841,8 +979,51 @@ export default function TransactionsPage() {
             onClick={clearFilters}
             className="h-8 px-3 text-xs rounded-lg border border-rose-200 text-rose-500 hover:bg-rose-50 transition-colors font-medium flex items-center gap-1"
           >
-            <X className="w-3 h-3" /> Limpar filtros
+            <X className="w-3 h-3" /> Limpar
           </button>
+        )}
+
+        {/* Salvar como visualização */}
+        {hasActiveFilters && !showSaveInput && (
+          <button
+            type="button"
+            onClick={() => { setShowSaveInput(true); setNewViewName(""); }}
+            className="h-8 px-3 text-xs rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors font-medium flex items-center gap-1"
+          >
+            <Tag className="w-3 h-3" /> Salvar
+          </button>
+        )}
+
+        {/* Save name input */}
+        {showSaveInput && (
+          <div className="flex items-center gap-1">
+            <input
+              autoFocus
+              value={newViewName}
+              onChange={e => setNewViewName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === "Enter") saveFilterView();
+                if (e.key === "Escape") { setShowSaveInput(false); setNewViewName(""); }
+              }}
+              placeholder="Nome da visualização..."
+              className="h-8 text-xs border border-indigo-300 rounded-lg px-2 w-44 outline-none focus:ring-1 focus:ring-indigo-400"
+            />
+            <button
+              type="button"
+              onClick={saveFilterView}
+              disabled={savingView || !newViewName.trim()}
+              className="h-8 px-2 text-xs rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium"
+            >
+              {savingView ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowSaveInput(false); setNewViewName(""); }}
+              className="h-8 px-2 text-xs rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 transition-colors"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
         )}
 
         {/* Resultado */}
@@ -858,6 +1039,32 @@ export default function TransactionsPage() {
           </span>
         )}
       </div>
+
+      {/* ── Saved views chips row ── */}
+      {savedViews.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-3 items-center">
+          <span className="text-xs text-slate-400 font-medium">Visualizações:</span>
+          {savedViews.map(view => (
+            <div
+              key={view.id}
+              className="group/chip inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded-full text-xs font-medium bg-slate-100 border border-slate-200 text-slate-600 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 transition-colors cursor-pointer"
+              onClick={() => applyFilterView(view)}
+              title="Clique para aplicar este filtro"
+            >
+              <Tag className="w-3 h-3 opacity-60" />
+              {view.name}
+              <button
+                type="button"
+                onClick={e => { e.stopPropagation(); deleteFilterView(view.id); }}
+                className="ml-0.5 opacity-0 group-hover/chip:opacity-100 transition-opacity text-rose-400 hover:text-rose-600"
+                title="Excluir visualização"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Table */}
       <Card className="border-slate-200 shadow-sm overflow-hidden bg-white rounded-2xl">
@@ -1406,6 +1613,120 @@ export default function TransactionsPage() {
         creditCards={creditCards ?? []}
         onSaved={() => { refetch(); toast({ title: "Lançamento salvo!", description: "Registrado com sucesso." }); }}
       />
+
+      {/* ── Conciliation Side Panel ── */}
+      {conciliationOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div
+            className="flex-1 bg-black/30 backdrop-blur-sm"
+            onClick={() => setConciliationOpen(false)}
+          />
+          {/* Panel */}
+          <div className="w-full max-w-xl bg-white shadow-2xl flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+              <div>
+                <h2 className="text-base font-semibold text-slate-800">Conciliação automática</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Pares de lançamentos possivelmente duplicados encontrados automaticamente.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setConciliationOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-slate-200 transition-colors text-slate-400"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {conciliationLoading ? (
+                <div className="flex items-center justify-center py-16 text-slate-400 gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span className="text-sm">Analisando lançamentos...</span>
+                </div>
+              ) : conciliationCandidates.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <CheckCircle2 className="w-12 h-12 text-emerald-400 mb-3" />
+                  <p className="text-slate-600 font-medium">Nenhum duplicado detectado</p>
+                  <p className="text-slate-400 text-xs mt-1">Todos os lançamentos estão devidamente conciliados.</p>
+                </div>
+              ) : (
+                conciliationCandidates.map((pair, idx) => (
+                  <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <div className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
+                      Possível duplicata
+                    </div>
+
+                    {/* Side A */}
+                    <div className="flex gap-3 mb-2">
+                      <div className="flex-1 bg-slate-50 rounded-lg p-3">
+                        <div className="text-[10px] text-slate-400 font-medium uppercase mb-1">Lançamento A</div>
+                        <div className="font-medium text-slate-800 text-sm leading-tight">{pair.a.description}</div>
+                        <div className="flex gap-3 mt-1.5 text-xs text-slate-500">
+                          <span>{new Date(pair.a.competenceDate).toLocaleDateString("pt-BR")}</span>
+                          <span className="font-semibold text-slate-700">
+                            {Number(pair.a.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                          </span>
+                          {pair.a.categoryName && <span className="text-indigo-500">{pair.a.categoryName}</span>}
+                        </div>
+                      </div>
+                      <div className="flex-1 bg-slate-50 rounded-lg p-3">
+                        <div className="text-[10px] text-slate-400 font-medium uppercase mb-1">Lançamento B</div>
+                        <div className="font-medium text-slate-800 text-sm leading-tight">{pair.b.description}</div>
+                        <div className="flex gap-3 mt-1.5 text-xs text-slate-500">
+                          <span>{new Date(pair.b.competenceDate).toLocaleDateString("pt-BR")}</span>
+                          <span className="font-semibold text-slate-700">
+                            {Number(pair.b.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                          </span>
+                          {pair.b.categoryName && <span className="text-indigo-500">{pair.b.categoryName}</span>}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        type="button"
+                        onClick={() => conciliationMerge(pair.a.id, pair.b.id)}
+                        className="flex-1 text-xs py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 font-medium transition-colors"
+                      >
+                        Manter A, excluir B
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => conciliationMerge(pair.b.id, pair.a.id)}
+                        className="flex-1 text-xs py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 font-medium transition-colors"
+                      >
+                        Manter B, excluir A
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => conciliationDismiss(pair.a.id, pair.b.id)}
+                        className="px-3 text-xs py-1.5 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 transition-colors"
+                        title="São lançamentos distintos — não é duplicata"
+                      >
+                        Ignorar
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer */}
+            {!conciliationLoading && conciliationCandidates.length > 0 && (
+              <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 text-xs text-slate-500">
+                {conciliationCandidates.length} par{conciliationCandidates.length !== 1 ? "es" : ""} para revisar · Critérios: mesmo tipo, valor ±2%, data ±7 dias
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }

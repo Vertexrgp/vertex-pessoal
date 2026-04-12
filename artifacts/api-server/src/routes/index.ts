@@ -29,6 +29,8 @@ import corpoAnaliseRouter from "./corpo-analise";
 import treinoSistemaRouter from "./treino-sistema";
 import stripeRouter from "./stripe";
 import importsRouter from "./imports";
+import filterViewsRouter from "./filter-views";
+import conciliationRouter from "./conciliation";
 
 const router: IRouter = Router();
 
@@ -66,5 +68,7 @@ router.use(corpoAnaliseRouter);
 router.use(treinoSistemaRouter);
 router.use(stripeRouter);
 router.use(importsRouter);
+router.use("/filter-views", filterViewsRouter);
+router.use("/conciliation", conciliationRouter);
 
 export default router;

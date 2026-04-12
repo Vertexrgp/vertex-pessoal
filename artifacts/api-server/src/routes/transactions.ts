@@ -239,23 +239,104 @@ router.put("/transactions/group/:groupId", async (req, res) => {
     const groupId = req.params.groupId;
     const body = req.body;
 
-    const patch: any = {};
-    if ("description" in body) patch.description = String(body.description);
-    if ("categoryId" in body) patch.categoryId = body.categoryId != null ? Number(body.categoryId) : null;
-    if ("subcategoryId" in body) patch.subcategoryId = body.subcategoryId != null ? Number(body.subcategoryId) : null;
-    if ("accountId" in body) patch.accountId = body.accountId != null ? Number(body.accountId) : null;
-    if ("creditCardId" in body) patch.creditCardId = body.creditCardId != null ? Number(body.creditCardId) : null;
-    if ("modoUsoCartao" in body) patch.modoUsoCartao = body.modoUsoCartao ? String(body.modoUsoCartao) : null;
-    if ("notes" in body) patch.notes = body.notes ? String(body.notes) : null;
-    if ("totalInstallments" in body) patch.totalInstallments = body.totalInstallments != null ? Number(body.totalInstallments) : null;
+    // Fields that apply to every row in the group
+    const sharedPatch: any = {};
+    if ("description" in body) sharedPatch.description = String(body.description);
+    if ("categoryId" in body) sharedPatch.categoryId = body.categoryId != null ? Number(body.categoryId) : null;
+    if ("subcategoryId" in body) sharedPatch.subcategoryId = body.subcategoryId != null ? Number(body.subcategoryId) : null;
+    if ("accountId" in body) sharedPatch.accountId = body.accountId != null ? Number(body.accountId) : null;
+    if ("creditCardId" in body) sharedPatch.creditCardId = body.creditCardId != null ? Number(body.creditCardId) : null;
+    if ("modoUsoCartao" in body) sharedPatch.modoUsoCartao = body.modoUsoCartao ? String(body.modoUsoCartao) : null;
+    if ("notes" in body) sharedPatch.notes = body.notes ? String(body.notes) : null;
 
-    if (Object.keys(patch).length === 0) {
+    // ── Recalculation when totalInstallments changes ──────────────────────────
+    if ("totalInstallments" in body && body.totalInstallments != null) {
+      const newTotal = Number(body.totalInstallments);
+      if (newTotal < 1) return res.status(400).json({ error: "Total de parcelas deve ser >= 1" });
+
+      // Fetch all existing rows ordered by currentInstallment
+      const existing = await db
+        .select()
+        .from(transactionsTable)
+        .where(and(eq(transactionsTable.installmentGroupId, groupId), eq(transactionsTable.userId, userId)))
+        .orderBy(transactionsTable.currentInstallment);
+
+      if (existing.length === 0) return res.status(404).json({ error: "Grupo não encontrado" });
+
+      const currentCount = existing.length;
+      const totalAmount = existing.reduce((sum, tx) => sum + Number(tx.amount), 0);
+
+      // Base date: first installment's competence date
+      const baseDate = new Date(existing[0].competenceDate + "T12:00:00Z");
+
+      // Per-installment amounts (spread remainder on last)
+      const baseAmountCents = Math.floor((totalAmount / newTotal) * 100);
+      const lastAmountCents = Math.round(totalAmount * 100) - baseAmountCents * (newTotal - 1);
+
+      const amountFor = (i: number) =>
+        ((i === newTotal - 1 ? lastAmountCents : baseAmountCents) / 100).toFixed(2);
+
+      const dateFor = (i: number) => {
+        const d = new Date(baseDate);
+        d.setMonth(d.getMonth() + i);
+        return d.toISOString().split("T")[0];
+      };
+
+      // Delete excess rows if shrinking
+      if (newTotal < currentCount) {
+        const toDelete = existing.filter(tx => (tx.currentInstallment ?? 0) > newTotal);
+        for (const tx of toDelete) {
+          await db.delete(transactionsTable).where(eq(transactionsTable.id, tx.id));
+        }
+      }
+
+      // Update existing rows (those that stay)
+      const keepCount = Math.min(currentCount, newTotal);
+      for (let i = 0; i < keepCount; i++) {
+        await db
+          .update(transactionsTable)
+          .set({
+            ...sharedPatch,
+            totalInstallments: newTotal,
+            currentInstallment: i + 1,
+            competenceDate: dateFor(i),
+            movementDate: dateFor(i),
+            amount: amountFor(i),
+          })
+          .where(eq(transactionsTable.id, existing[i].id));
+      }
+
+      // Insert new rows if expanding
+      if (newTotal > currentCount) {
+        const template = existing[currentCount - 1];
+        const newRows = [];
+        for (let i = currentCount; i < newTotal; i++) {
+          const { id: _id, createdAt: _ca, ...rest } = template as any;
+          newRows.push({
+            ...rest,
+            ...sharedPatch,
+            currentInstallment: i + 1,
+            totalInstallments: newTotal,
+            competenceDate: dateFor(i),
+            movementDate: dateFor(i),
+            amount: amountFor(i),
+            status: "planned",
+          });
+        }
+        await db.insert(transactionsTable).values(newRows);
+      }
+
+      return res.json({ ok: true, totalInstallments: newTotal, totalAmount: Number(totalAmount.toFixed(2)) });
+    }
+
+    // ── No totalInstallments change — just apply shared patch to all rows ─────
+    if (Object.keys(sharedPatch).length === 0) {
       return res.status(400).json({ error: "Nenhum campo para atualizar" });
     }
 
     await db
       .update(transactionsTable)
-      .set(patch)
+      .set(sharedPatch)
       .where(and(eq(transactionsTable.installmentGroupId, groupId), eq(transactionsTable.userId, userId)));
 
     res.json({ ok: true });

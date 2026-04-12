@@ -25,6 +25,7 @@ export const transactionsTable = pgTable("transactions", {
   totalInstallments: integer("total_installments"),
   currentInstallment: integer("current_installment"),
   installmentGroupId: text("installment_group_id"),
+  conciliationStatus: text("conciliation_status"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
