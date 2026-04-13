@@ -49,6 +49,7 @@ import {
   LogOut,
   Zap,
   Crown,
+  Terminal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActivityFeed, useUnreadEventCount } from "@/components/ActivityFeed";
@@ -224,6 +225,17 @@ const modules: Module[] = [
     prefixes: ["/vida"],
     items: [
       { name: "Projetos de Vida", path: "/vida", icon: Compass },
+    ],
+  },
+  {
+    id: "vertex-company",
+    label: "Vertex Company",
+    icon: Building2,
+    color: "text-slate-300",
+    accentClass: "text-slate-300",
+    prefixes: ["/centro-comando"],
+    items: [
+      { name: "Centro de Comando", path: "/centro-comando", icon: Terminal },
     ],
   },
 ];

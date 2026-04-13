@@ -31,6 +31,7 @@ import stripeRouter from "./stripe";
 import importsRouter from "./imports";
 import filterViewsRouter from "./filter-views";
 import conciliationRouter from "./conciliation";
+import centroComandoRouter from "./centro-comando";
 
 const router: IRouter = Router();
 
@@ -70,5 +71,6 @@ router.use(stripeRouter);
 router.use(importsRouter);
 router.use("/filter-views", filterViewsRouter);
 router.use("/conciliation", conciliationRouter);
+router.use(centroComandoRouter);
 
 export default router;

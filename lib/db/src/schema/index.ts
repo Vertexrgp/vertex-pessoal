@@ -19,3 +19,4 @@ export * from "./sugestoes";
 export * from "./idiomas";
 export * from "./vida";
 export * from "./filter-views";
+export * from "./centro-comando";
