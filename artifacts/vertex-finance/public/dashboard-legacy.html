@@ -1,0 +1,1858 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#FAFAFA">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Vertex CMD">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <title>VERTEX — Centro de Comando</title>
+  <style>
+    /* ── Reset & Variables ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #000; --white: #FFF;
+      --g1: #F5F5F5; --g2: #D9D9D9; --g3: #7A7A7A; --g4: #1a1a1a;
+      --blue: #3A8DFF; --violet: #7B61FF; --green: #1A7A4A;
+      --red: #E53935; --yellow: #FFC107; --orange: #FF9800;
+      --card-bg: #000; --hover: #1a1a1a;
+      /* Apple-like page surface */
+      --page-bg: #FAFAFA; --page-text: #111;
+      --page-muted: #6E6E73; --page-border: #E5E5E7;
+      --radius: 16px; --radius-sm: 10px;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 10px 30px rgba(0,0,0,0.06);
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    body {
+      font-family: var(--font); background: var(--page-bg); color: var(--page-text);
+      min-height: 100vh; line-height: 1.5; overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Layout ────────────────────────────────────────────── */
+    .app { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 28px 32px; margin: -20px -20px 28px; background: #000; color: var(--white);
+      border-radius: 0 0 var(--radius) var(--radius); box-shadow: var(--shadow-card);
+    }
+    .header-left { display: flex; align-items: center; gap: 28px; }
+    .logo-img { height: 110px; width: auto; display: block; }
+    .header-divider { width: 1px; height: 72px; background: rgba(255,255,255,0.15); }
+    .header-title { font-size: 26px; font-weight: 400; color: var(--white); letter-spacing: -0.3px; line-height: 1.1; }
+    .header-subtitle { font-size: 11px; color: #A0A0A0; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; margin-top: 6px; }
+    .header-right { display: flex; gap: 14px; align-items: center; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); display: inline-block; box-shadow: 0 0 0 3px rgba(26,122,74,0.25); }
+    .status-text { font-size: 11px; color: var(--white); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
+    .datetime { font-size: 12px; color: #A0A0A0; font-weight: 500; letter-spacing: 0.3px; }
+
+    /* ── KPI Bar ───────────────────────────────────────────── */
+    .kpi-bar {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px; margin-bottom: 24px;
+    }
+    .kpi {
+      background: var(--card-bg); border: 1px solid var(--card-bg); border-radius: var(--radius);
+      padding: 18px; text-align: center; transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: var(--shadow-card); color: var(--g1);
+    }
+    .kpi:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1), 0 16px 40px rgba(0,0,0,0.12); }
+    .kpi-value { font-size: 32px; font-weight: 500; color: var(--white); letter-spacing: -0.5px; }
+    .kpi-label { font-size: 11px; color: #B8B8B8; text-transform: uppercase; letter-spacing: 1.2px; margin-top: 8px; font-weight: 600; }
+    .kpi-sub { font-size: 11px; color: #8E8E8E; margin-top: 4px; font-weight: 500; }
+
+    /* ── Tabs ──────────────────────────────────────────────── */
+    .tabs {
+      display: flex; gap: 4px; border-bottom: 1px solid var(--page-border);
+      margin-bottom: 24px; overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tab {
+      padding: 12px 18px; font-size: 13px; color: var(--page-muted); cursor: pointer;
+      border-bottom: 2px solid transparent; transition: all 0.2s;
+      white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none;
+      font-family: var(--font); font-weight: 500;
+    }
+    .tab:hover { color: var(--page-text); }
+    .tab.active { color: var(--page-text); border-bottom-color: var(--page-text); }
+
+    /* ── Cards Grid ────────────────────────────────────────── */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-full { grid-column: 1 / -1; }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--card-bg); color: var(--g1);
+      border-radius: var(--radius); padding: 22px; transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: var(--shadow-card);
+    }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1), 0 16px 40px rgba(0,0,0,0.14); }
+    .card-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .card-title { font-size: 14px; font-weight: 600; color: var(--white); letter-spacing: 0.1px; }
+    .card-badge {
+      font-size: 10px; padding: 3px 8px; border-radius: 4px;
+      text-transform: uppercase; letter-spacing: 1px; font-weight: 500;
+    }
+    .badge-green { background: rgba(26,122,74,0.2); color: var(--green); }
+    .badge-blue { background: rgba(58,141,255,0.2); color: var(--blue); }
+    .badge-yellow { background: rgba(255,193,7,0.2); color: var(--yellow); }
+    .badge-red { background: rgba(229,57,53,0.2); color: var(--red); }
+
+    /* ── Tasks ─────────────────────────────────────────────── */
+    .task-list { list-style: none; }
+    .task-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    .task-item:last-child { border-bottom: none; }
+    .task-item:hover { opacity: 0.8; }
+    .task-check {
+      width: 18px; height: 18px; border: 1.5px solid var(--g3);
+      border-radius: 4px; flex-shrink: 0; display: flex;
+      align-items: center; justify-content: center; transition: all 0.2s;
+    }
+    .task-check.done { background: var(--green); border-color: var(--green); }
+    .task-check.done::after { content: '✓'; color: var(--white); font-size: 12px; }
+    .task-text { font-size: 13.5px; color: var(--g1); font-weight: 400; }
+    .task-text.done { text-decoration: line-through; color: #7A7A7A; }
+    .task-section-title { font-size: 11px; color: #B8B8B8; text-transform: uppercase; letter-spacing: 1.2px; margin: 18px 0 10px; font-weight: 700; }
+    .task-section-title:first-child { margin-top: 0; }
+
+    /* ── Add Task ──────────────────────────────────────────── */
+    .add-task {
+      display: flex; gap: 8px; margin-top: 12px; padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .add-task input {
+      flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px; padding: 9px 14px; color: var(--g1);
+      font-size: 13px; font-family: var(--font); outline: none;
+    }
+    .add-task input:focus { border-color: var(--blue); background: rgba(255,255,255,0.1); }
+    .add-task input::placeholder { color: var(--g3); }
+
+    /* ── Buttons ───────────────────────────────────────────── */
+    .btn {
+      padding: 8px 16px; border-radius: 999px; font-size: 12px;
+      font-family: var(--font); font-weight: 500; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.06);
+      color: var(--g1); transition: all 0.2s; white-space: nowrap;
+    }
+    .btn:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.24); color: var(--white); }
+    .btn-sm { padding: 6px 12px; font-size: 11px; }
+    .btn-primary { background: var(--white); color: var(--black); border-color: var(--white); font-weight: 600; }
+    .btn-primary:hover { background: var(--g2); color: var(--black); }
+    .btn-icon { display: flex; align-items: center; gap: 6px; }
+
+    /* ── Actions Grid ──────────────────────────────────────── */
+    .actions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+    .action-btn {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius-sm); padding: 16px 12px;
+      text-align: center; cursor: pointer; transition: all 0.2s;
+      font-family: var(--font); color: var(--g1);
+    }
+    .action-btn:hover { border-color: var(--blue); background: rgba(58,141,255,0.12); transform: translateY(-1px); }
+    .action-icon { font-size: 26px; margin-bottom: 8px; }
+    .action-label { font-size: 12px; color: var(--g1); font-weight: 500; }
+
+    /* ── Videos Table ──────────────────────────────────────── */
+    .videos-table { width: 100%; border-collapse: collapse; }
+    .videos-table th {
+      font-size: 11px; color: #B8B8B8; text-transform: uppercase;
+      letter-spacing: 1.2px; text-align: left; padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.15); font-weight: 700;
+    }
+    .videos-table td {
+      padding: 11px 12px; font-size: 13.5px; color: var(--white);
+      border-bottom: 1px solid rgba(255,255,255,0.06); font-weight: 400;
+    }
+    .videos-table tr:hover td { background: rgba(255,255,255,0.04); }
+    .status-icon { font-size: 14px; }
+
+    /* ── Memory Editor ─────────────────────────────────────── */
+    .memory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+    .memory-card {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius-sm); padding: 14px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .memory-card:hover { border-color: var(--blue); background: rgba(58,141,255,0.08); }
+    .memory-card.active { border-color: var(--white); background: rgba(255,255,255,0.1); }
+    .memory-name { font-size: 13.5px; font-weight: 600; color: var(--white); }
+    .memory-meta { font-size: 11.5px; color: #B0B0B0; margin-top: 6px; font-weight: 500; }
+
+    .editor-area {
+      width: 100%; min-height: 400px; background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm);
+      padding: 16px; color: var(--g1); font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 13px; line-height: 1.6; resize: vertical; outline: none;
+      margin-top: 12px;
+    }
+    .editor-area:focus { border-color: var(--blue); }
+    .editor-toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 8px;
+    }
+    .save-status { font-size: 11px; color: var(--g3); }
+
+    /* ── Toast ─────────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--black); color: var(--white);
+      padding: 12px 20px; border-radius: var(--radius-sm);
+      font-size: 13px; z-index: 1000;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.25);
+      transform: translateY(100px); opacity: 0;
+      transition: all 0.3s ease;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ── Activity Log ──────────────────────────────────────── */
+    .log-entry {
+      display: flex; gap: 12px; align-items: baseline;
+      padding: 6px 0; font-size: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .log-time { color: var(--g3); font-family: monospace; white-space: nowrap; }
+    .log-action { color: var(--blue); }
+    .log-status { color: var(--green); }
+
+    /* ── Comments ──────────────────────────────────────────── */
+    .cm-item { padding: 14px; border: 1px solid var(--g4); border-radius: 6px; margin-bottom: 12px; background: rgba(255,255,255,0.02); }
+    .cm-meta { display:flex; justify-content:space-between; gap:12px; font-size:11px; color:var(--g3); margin-bottom:8px; flex-wrap:wrap; }
+    .cm-badge { display:inline-block; padding:2px 8px; border-radius:3px; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600; }
+    .cm-badge.positive { background: #1A7A4A; color: #fff; }
+    .cm-badge.negative { background: #8B2020; color: #fff; }
+    .cm-badge.neutral  { background: var(--g4); color: var(--g1); }
+    .cm-badge.question { background: #3A8DFF; color: #fff; }
+    .cm-badge.content-request { background: #7B61FF; color: #fff; }
+    .cm-author { font-weight:600; color:var(--white); }
+    .cm-video { color: var(--g2); font-style: italic; }
+    .cm-text { color: var(--g1); margin: 8px 0 12px; padding: 10px 12px; background: rgba(0,0,0,0.3); border-left: 2px solid var(--g4); border-radius: 3px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+    .cm-reply-label { font-size: 10px; color: var(--g3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+    .cm-reply-input { width:100%; background: rgba(255,255,255,0.03); border: 1px solid var(--g4); color: var(--white); padding: 10px 12px; border-radius: 4px; font-family: inherit; font-size: 13px; resize: vertical; min-height: 60px; box-sizing: border-box; }
+    .cm-reply-input:focus { border-color: var(--g2); outline: none; }
+    .cm-actions { display:flex; gap:8px; margin-top: 10px; flex-wrap: wrap; }
+    .cm-btn-approve { background: #1A7A4A; color: #fff; border-color: #1A7A4A; }
+    .cm-btn-approve:hover { background: #2a9a6a; }
+    .cm-btn-reject { background: transparent; color: #ff6b6b; border-color: #ff6b6b; }
+    .cm-btn-reject:hover { background: rgba(255,107,107,0.1); }
+
+    /* ── Hidden sections ───────────────────────────────────── */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ── Project Cards ─────────────────────────────────────── */
+    .project-card { cursor: pointer; transition: all 0.2s; }
+    .project-card:hover { border-color: var(--blue); transform: translateY(-2px); }
+    .project-tag {
+      display: inline-block; padding: 3px 8px; border-radius: 4px;
+      font-size: 11px; background: rgba(255,255,255,0.06); color: var(--g3);
+    }
+    .project-actions {
+      display: flex; gap: 8px; margin-top: 14px; padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    /* ── Responsive ────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .app { padding: 12px; }
+      .grid { grid-template-columns: 1fr; }
+      .kpi-bar { grid-template-columns: repeat(2, 1fr); }
+      .header { flex-direction: column; gap: 16px; align-items: flex-start; padding: 22px 18px; margin: -12px -12px 20px; }
+      .header-title { font-size: 18px; }
+      .logo-img { height: 72px; }
+      .header-divider { display: none; }
+      .actions-grid { grid-template-columns: repeat(2, 1fr); }
+      .memory-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .kpi-bar { grid-template-columns: 1fr 1fr; }
+      .kpi-value { font-size: 22px; }
+      .tabs { gap: 0; }
+      .tab { padding: 10px 14px; font-size: 12px; }
+    }
+
+    /* ── YouTube Bars ──────────────────────────────────────── */
+    .yt-bar-container { margin-bottom: 8px; }
+    .yt-bar-label {
+      display: flex; justify-content: space-between;
+      font-size: 12px; color: var(--g1); margin-bottom: 4px;
+    }
+    .yt-bar-label span:last-child { color: var(--g3); font-family: monospace; }
+    .yt-bar-track {
+      width: 100%; height: 6px; background: rgba(255,255,255,0.08);
+      border-radius: 3px; overflow: hidden;
+    }
+    .yt-bar-fill {
+      height: 100%; border-radius: 3px;
+      background: var(--blue); transition: width 0.6s ease;
+    }
+    .yt-rank { color: var(--g3); font-size: 11px; font-weight: 500; min-width: 20px; display: inline-block; }
+    .yt-filter-btn.active { background: var(--white); color: var(--black); border-color: var(--white); }
+    .yt-subtab {
+      background: transparent; border: none; color: var(--g3);
+      padding: 10px 16px; font-size: 13px; font-family: 'Inter', sans-serif;
+      cursor: pointer; border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s; margin-bottom: -1px;
+    }
+    .yt-subtab:hover { color: var(--g1); }
+    .yt-subtab.active { color: var(--white); border-bottom-color: var(--white); }
+    .yt-type-badge {
+      display: inline-block; padding: 2px 6px; border-radius: 3px;
+      font-size: 10px; font-weight: 500; margin-right: 6px; font-family: 'Inter', sans-serif;
+    }
+    .yt-type-long { background: rgba(58,141,255,0.15); color: var(--blue); }
+    .yt-type-short { background: rgba(26,122,74,0.2); color: var(--green); }
+
+    /* ── Loading ───────────────────────────────────────────── */
+    .loading {
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px; color: var(--g3); font-size: 13px;
+    }
+    .spinner {
+      width: 20px; height: 20px; border: 2px solid var(--g4);
+      border-top-color: var(--white); border-radius: 50%;
+      animation: spin 0.6s linear infinite; margin-right: 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Empty State ───────────────────────────────────────── */
+    .empty { text-align: center; padding: 40px; color: var(--g3); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <img src="/assets/vertex-logo-vertical-white.png" alt="Vertex Company" class="logo-img">
+        <div class="header-divider"></div>
+        <div>
+          <div class="header-title">Centro de Comando</div>
+          <div class="header-subtitle">Vertex Company · OS</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <span class="status-dot"></span>
+        <span class="status-text">Online</span>
+        <span class="datetime" id="datetime"></span>
+      </div>
+    </header>
+
+    <!-- KPI Bar -->
+    <div class="kpi-bar" id="kpi-bar">
+      <div class="kpi" style="border-color:var(--green)">
+        <div class="kpi-value" id="kpi-revenue" style="color:var(--green)">R$0</div>
+        <div class="kpi-label">Receita/mês</div>
+        <div class="kpi-sub">Meta: R$40.000</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value" id="kpi-subs">—</div>
+        <div class="kpi-label">Inscritos</div>
+        <div class="kpi-sub">Meta: 1.000</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value" id="kpi-views">—</div>
+        <div class="kpi-label">Views 28d</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value" id="kpi-tasks-pending">—</div>
+        <div class="kpi-label">Tarefas</div>
+        <div class="kpi-sub" id="kpi-tasks-done">— concluídas</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value" id="kpi-videos">—</div>
+        <div class="kpi-label">Vídeos</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value" id="kpi-memory">—</div>
+        <div class="kpi-label">Memória</div>
+        <div class="kpi-sub" id="kpi-memory-sub">— preenchidos</div>
+      </div>
+    </div>
+
+    <!-- Revenue Progress Bar -->
+    <div style="margin-bottom:24px;background:var(--card-bg);color:var(--g1);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow-card);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <span style="font-size:12px;color:#B8B8B8;text-transform:uppercase;letter-spacing:1.2px;font-weight:700;">Progresso Meta R$40K/mês</span>
+        <span style="font-size:14px;color:var(--white);font-weight:600;" id="revenue-pct">0%</span>
+      </div>
+      <div style="height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;">
+        <div id="revenue-bar" style="height:100%;background:var(--green);border-radius:4px;width:0%;transition:width 0.5s;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:12px;">
+        <span style="font-size:11px;color:#A0A0A0;font-weight:500;">5 departamentos: Content, Products, Finance, Growth, R&D</span>
+        <span style="font-size:11px;color:#A0A0A0;font-weight:500;">Dez/2026</span>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="youtube">YouTube</button>
+      <button class="tab" data-tab="projects">Projetos</button>
+      <button class="tab" data-tab="tasks">Tarefas</button>
+      <button class="tab" data-tab="videos">Vídeos</button>
+      <button class="tab" data-tab="memory">Memória</button>
+      <button class="tab" data-tab="actions">Ações</button>
+    </nav>
+
+    <!-- ═══ Dashboard Tab ═══ -->
+    <div class="section active" id="sec-dashboard">
+      <div class="grid">
+        <!-- YouTube Tasks -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🎬 YouTube — Esta Semana</span>
+            <span class="card-badge badge-blue">Semana 4</span>
+          </div>
+          <ul class="task-list" id="yt-tasks"></ul>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">⚡ Ações Rápidas</span>
+          </div>
+          <div class="actions-grid">
+            <div class="action-btn" onclick="triggerAction('open-cowork')">
+              <div class="action-icon">🤖</div>
+              <div class="action-label">Abrir Claude</div>
+            </div>
+            <div class="action-btn" onclick="triggerAction('open-youtube-studio')">
+              <div class="action-icon">📺</div>
+              <div class="action-label">YouTube Studio</div>
+            </div>
+            <div class="action-btn" onclick="triggerAction('open-leonardo')">
+              <div class="action-icon">🎨</div>
+              <div class="action-label">Leonardo AI</div>
+            </div>
+            <div class="action-btn" onclick="triggerAction('open-elevenlabs')">
+              <div class="action-icon">🎙️</div>
+              <div class="action-label">ElevenLabs</div>
+            </div>
+            <div class="action-btn" onclick="triggerAction('open-instagram')">
+              <div class="action-icon">📱</div>
+              <div class="action-label">Instagram</div>
+            </div>
+            <div class="action-btn" onclick="triggerAction('backup-system')">
+              <div class="action-icon">💾</div>
+              <div class="action-label">Backup</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending Tasks (other areas) -->
+        <div class="card grid-full">
+          <div class="card-header">
+            <span class="card-title">📋 Outras Áreas</span>
+          </div>
+          <ul class="task-list" id="other-tasks"></ul>
+        </div>
+
+        <!-- Alerta de Deptos Estagnados -->
+        <div id="stale-alert" class="grid-full" style="display:none;margin-bottom:-4px;">
+          <div style="background:linear-gradient(90deg,rgba(229,57,53,0.12),rgba(255,152,0,0.08));border:1px solid rgba(229,57,53,0.35);border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow-card);">
+            <div style="font-size:22px;">⚠️</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:700;color:#111;letter-spacing:0.2px;" id="stale-title">Departamentos sem update há mais de 7 dias</div>
+              <div style="font-size:12px;color:#6E6E73;margin-top:2px;" id="stale-body">—</div>
+            </div>
+            <button onclick="switchTab('memory')" style="background:#000;color:#fff;border:none;border-radius:999px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);">Revisar →</button>
+          </div>
+        </div>
+
+        <!-- Atividade por Departamento (Sessões Claude cross-tracking) -->
+        <div class="card grid-full">
+          <div class="card-header">
+            <span class="card-title">🧠 Atividade por Departamento</span>
+            <span class="card-badge badge-blue" id="sessions-fresh-count">—</span>
+          </div>
+
+          <!-- Timeline 30d -->
+          <div style="margin-bottom:18px;padding:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <span style="font-size:11px;color:#B8B8B8;text-transform:uppercase;letter-spacing:1.2px;font-weight:700;">Timeline · Últimos 30 dias</span>
+              <span style="font-size:10px;color:#A0A0A0;">cada barra = 1 dia</span>
+            </div>
+            <div id="sessions-timeline" style="display:grid;grid-template-columns:repeat(30,1fr);gap:2px;height:36px;"></div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:#8E8E8E;margin-top:6px;">
+              <span>30d atrás</span><span>15d</span><span>Hoje</span>
+            </div>
+          </div>
+
+          <div id="sessions-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;"></div>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);font-size:11px;color:#A0A0A0;display:flex;justify-content:space-between;align-items:center;">
+            <span>🟢 ≤ 3 dias · 🟡 ≤ 7 dias · 🔴 > 7 dias · hover p/ preview</span>
+            <span id="sessions-last-sync" style="font-size:10px;color:#8E8E8E;">—</span>
+          </div>
+        </div>
+
+        <!-- Tooltip flutuante (preview de memory file) -->
+        <div id="sessions-tooltip" style="position:fixed;display:none;max-width:420px;background:#1a1a1a;color:#F5F5F5;border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:14px 16px;font-size:12px;line-height:1.55;box-shadow:0 20px 60px rgba(0,0,0,0.4);z-index:10000;pointer-events:none;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;"></div>
+      </div>
+    </div>
+
+    <!-- ═══ YouTube Tab ═══ -->
+    <div class="section" id="sec-youtube">
+      <!-- Sub-navigation YouTube -->
+      <div class="yt-subnav" style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--g4);padding:0 4px;">
+        <button class="yt-subtab active" data-subtab="performance" onclick="setYtSubtab('performance')">📊 Performance</button>
+        <button class="yt-subtab" data-subtab="comments" onclick="setYtSubtab('comments')">💬 Comentários</button>
+        <button class="yt-subtab" data-subtab="links" onclick="setYtSubtab('links')">🔗 Links Amazon</button>
+      </div>
+
+      <!-- Sub-view: Performance -->
+      <div id="yt-sub-performance">
+        <div class="kpi-bar" id="yt-kpi-bar">
+          <div class="kpi">
+            <div class="kpi-value" id="yt-subs">—</div>
+            <div class="kpi-label">Inscritos</div>
+            <div class="kpi-sub" id="yt-subs-meta">tempo real</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-value" id="yt-total-views">—</div>
+            <div class="kpi-label">Views Total</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-value" id="yt-longform-count">—</div>
+            <div class="kpi-label">Vídeos Long</div>
+            <div class="kpi-sub" id="yt-longform-views">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-value" id="yt-shorts-count">—</div>
+            <div class="kpi-label">Shorts</div>
+            <div class="kpi-sub" id="yt-shorts-views">—</div>
+          </div>
+        </div>
+
+        <!-- Filtro Long/Shorts/Todos -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;padding:0 4px;">
+          <button class="btn btn-sm yt-filter-btn active" data-filter="longform" onclick="setYtFilter('longform')">📹 Long-form</button>
+          <button class="btn btn-sm yt-filter-btn" data-filter="shorts" onclick="setYtFilter('shorts')">⚡ Shorts</button>
+          <button class="btn btn-sm yt-filter-btn" data-filter="all" onclick="setYtFilter('all')">Todos</button>
+        </div>
+
+        <div class="grid">
+          <div class="card grid-full">
+            <div class="card-header">
+              <span class="card-title" id="yt-table-title">📊 Performance Long-form (Tempo Real)</span>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <span class="status-text" id="yt-last-update">—</span>
+                <button class="btn btn-sm" onclick="refreshYouTube()">↻ Atualizar</button>
+              </div>
+            </div>
+            <div id="yt-videos-table" class="loading"><div class="spinner"></div>Carregando dados YouTube...</div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">🏆 Top 5 Long-form</span>
+            </div>
+            <div id="yt-top5"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">⚡ Top 5 Shorts</span>
+            </div>
+            <div id="yt-top5-shorts"></div>
+          </div>
+          <div class="card grid-full">
+            <div class="card-header">
+              <span class="card-title">📈 Últimos Publicados</span>
+            </div>
+            <div id="yt-recent"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-view: Comments -->
+      <div id="yt-sub-comments" style="display:none;">
+        <div class="grid" style="grid-template-columns: 1fr;">
+          <div class="card">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+              <div>
+                <span class="card-title">💬 Fila de Aprovação</span>
+                <span id="cm-stats" style="margin-left:12px; font-size:12px; color:var(--g3);"></span>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-sm" onclick="cmScan()" id="cm-btn-scan">🔄 Escanear agora</button>
+                <button class="btn btn-sm" onclick="cmApproveCategory('positive')" id="cm-btn-pos">✅ Aprovar positivos</button>
+                <button class="btn btn-sm" onclick="cmApproveCategory('neutral')" id="cm-btn-neu">✅ Aprovar neutros</button>
+                <button class="btn btn-sm" onclick="cmLoadReplied()">📜 Respostas enviadas</button>
+              </div>
+            </div>
+            <div id="cm-queue" class="loading"><div class="spinner"></div>Carregando fila...</div>
+          </div>
+
+          <div class="card" id="cm-replied-card" style="display:none;">
+            <div class="card-header">
+              <span class="card-title">📜 Respostas Enviadas</span>
+              <button class="btn btn-sm" onclick="document.getElementById('cm-replied-card').style.display='none'">Fechar</button>
+            </div>
+            <div id="cm-replied"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-view: Amazon Links Audit -->
+      <div id="yt-sub-links" style="display:none;">
+        <div class="grid" style="grid-template-columns: 1fr;">
+          <div class="card">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+              <div>
+                <span class="card-title">🔗 Auditoria de Links Amazon</span>
+                <span id="az-stats" style="margin-left:12px; font-size:12px; color:var(--g3);"></span>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-sm" onclick="azLoad()">🔄 Auditar agora</button>
+                <button class="btn btn-sm" onclick="azFilter='issues';azRender()" id="az-btn-issues">⚠️ Só com problema</button>
+                <button class="btn btn-sm" onclick="azFilter='all';azRender()" id="az-btn-all">Todos</button>
+                <button class="btn btn-sm" onclick="azAppendMilgram()" style="background:var(--capital-green); color:#fff;">📚 Adicionar livro Milgram (2 shorts)</button>
+              </div>
+            </div>
+            <div id="az-list" class="loading"><div class="spinner"></div>Clique em "Auditar agora" para escanear...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Projects Tab (Departamentos) ═══ -->
+    <div class="section" id="sec-projects">
+      <!-- Company Header -->
+      <div class="card" style="margin-bottom:16px;border-color:var(--g3)">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:18px;font-weight:300;color:var(--white);">Vertex Company</div>
+            <div style="font-size:12px;color:var(--g3);margin-top:4px;">Meta: R$40.000/mês em receita digital até Dez/2026</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;color:var(--g3);text-transform:uppercase;letter-spacing:1px;">Departamentos</div>
+            <div style="font-size:24px;font-weight:300;color:var(--white);">5</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <!-- DEPT: Content -->
+        <div class="card project-card" onclick="openDept('content')">
+          <div class="card-header">
+            <span class="card-title">🎬 Content</span>
+            <span class="card-badge badge-green">Ativo</span>
+          </div>
+          <p style="font-size:13px;color:var(--g2);margin-bottom:12px">YouTube Segredos da Mente (PT), Secrets of the Mind (EN), Shorts, Instagram. Pipeline completo automatizado.</p>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="project-tag">883 inscritos</span>
+            <span class="project-tag">192K views/28d</span>
+            <span class="project-tag">22 vídeos</span>
+            <span class="project-tag">V23-V26 pendentes</span>
+          </div>
+          <div class="project-actions">
+            <button class="btn btn-sm" onclick="event.stopPropagation();triggerAction('open-cowork')">Abrir no Claude</button>
+            <button class="btn btn-sm" onclick="event.stopPropagation();triggerAction('open-youtube-studio')">YouTube Studio</button>
+            <button class="btn btn-sm" onclick="event.stopPropagation();switchToMemory('vertex-youtube')">Memory</button>
+          </div>
+        </div>
+
+        <!-- DEPT: Products -->
+        <div class="card project-card" onclick="openDept('products')">
+          <div class="card-header">
+            <span class="card-title">📦 Products</span>
+            <span class="card-badge badge-yellow">Planejado</span>
+          </div>
+          <p style="font-size:13px;color:var(--g2);margin-bottom:12px">E-books, cursos online, apps mobile, SaaS B2B. Reutilizar conteúdo YouTube como base.</p>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="project-tag">5 ideias no backlog</span>
+            <span class="project-tag">E-book Q3</span>
+            <span class="project-tag">App Q4</span>
+          </div>
+          <div class="project-actions">
+            <button class="btn btn-sm" onclick="event.stopPropagation();triggerAction('open-cowork')">Abrir no Claude</button>
+            <button class="btn btn-sm" onclick="event.stopPropagation();switchToMemory('products')">Memory</button>
+          </div>
+        </div>
+
+        <!-- DEPT: Finance -->
+        <div class="card project-card" onclick="openDept('finance')">
+          <div class="card-header">
+            <span class="card-title">💰 Finance</span>
+            <span class="card-badge badge-yellow">Planejado</span>
+          </div>
+          <p style="font-size:13px;color:var(--g2);margin-bottom:12px">Revenue tracking, custos, projeções. YouTube AdSense, Amazon Associates, produtos digitais.</p>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="project-tag">Receita: R$0/mês</span>
+            <span class="project-tag">Meta: R$40K</span>
+            <span class="project-tag">Pré-YPP</span>
+          </div>
+          <div class="project-actions">
+            <button class="btn btn-sm" onclick="event.stopPropagation();triggerAction('open-cowork')">Abrir no Claude</button>
+            <button class="btn btn-sm" onclick="event.stopPropagation();switchToMemory('revenue')">Memory</button>
+          </div>
+        </div>
+
+        <!-- DEPT: Growth -->
+        <div class="card project-card" onclick="openDept('growth')">
+          <div class="card-header">
+            <span class="card-title">📈 Growth</span>
+            <span class="card-badge badge-yellow">Planejado</span>
+          </div>
+          <p style="font-size:13px;color:var(--g2);margin-bottom:12px">SEO, social media expansion (TikTok, Instagram Reels), partnerships, email list, blog.</p>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="project-tag">YouTube ativo</span>
+            <span class="project-tag">TikTok Q2</span>
+            <span class="project-tag">Blog Q3</span>
+          </div>
+          <div class="project-actions">
+            <button class="btn btn-sm" onclick="event.stopPropagation();triggerAction('open-cowork')">Abrir no Claude</button>
+            <button class="btn btn-sm" onclick="event.stopPropagation();switchToMemory('growth')">Memory</button>
+          </div>
+        </div>
+
+        <!-- DEPT: R&D -->
+        <div class="card project-card" onclick="openDept('rd')">
+          <div class="card-header">
+            <span class="card-title">🔬 R&D</span>
+            <span class="card-badge badge-blue">Experimentos</span>
+          </div>
+          <p style="font-size:13px;color:var(--g2);margin-bottom:12px">Novos formatos, A/B tests, AI experiments, protótipos de produto, market research.</p>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="project-tag">Teste duração</span>
+            <span class="project-tag">AI narration</span>
+            <span class="project-tag">MVP app</span>
+          </div>
+          <div class="project-actions">
+            <button class="btn btn-sm" onclick="event.stopPropagation();triggerAction('open-cowork')">Abrir no Claude</button>
+            <button class="btn btn-sm" onclick="event.stopPropagation();switchToMemory('strategy')">Memory</button>
+          </div>
+        </div>
+
+        <!-- Sistema (meta-dept) -->
+        <div class="card project-card" onclick="openDept('sistema')">
+          <div class="card-header">
+            <span class="card-title">🔧 Sistema</span>
+            <span class="card-badge badge-green">Ativo</span>
+          </div>
+          <p style="font-size:13px;color:var(--g2);margin-bottom:12px">CLAUDE.md, skills, Centro de Comando, revisão semanal, memória, infraestrutura.</p>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="project-tag">Dashboard online</span>
+            <span class="project-tag" id="memory-count-tag">— memory files</span>
+          </div>
+          <div class="project-actions">
+            <button class="btn btn-sm" onclick="event.stopPropagation();triggerAction('open-cowork')">Abrir no Claude</button>
+            <button class="btn btn-sm" onclick="event.stopPropagation();switchToMemory('aprendizados')">Memory</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- How it works -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-header">
+          <span class="card-title">Como funciona a Vertex Company</span>
+        </div>
+        <div style="font-size:13px;color:var(--g2);line-height:1.8">
+          <p><strong style="color:var(--white)">CEO</strong> = Você (Rafael) — define estratégia, revisa semanalmente</p>
+          <p><strong style="color:var(--white)">COO</strong> = Claude — executa tarefas, atualiza memória, segue o CLAUDE.md</p>
+          <p style="margin-top:8px">Cada departamento tem seu <strong style="color:var(--white)">memory file</strong> (base de dados persistente).</p>
+          <p>Todo chat no Cowork lê o <strong style="color:var(--white)">CLAUDE.md</strong> (manual da empresa) automaticamente.</p>
+          <p>O <strong style="color:var(--white)">Dashboard</strong> é o painel do CEO — status de tudo num lugar só.</p>
+          <p style="margin-top:8px;color:var(--g3)">Fluxo: Dashboard (ver status) → Claude Desktop (executar) → Memory (persistir) → Dashboard (verificar)</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Tasks Tab ═══ -->
+    <div class="section" id="sec-tasks">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Todas as Tarefas</span>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-sm" onclick="loadTasks()">↻ Recarregar</button>
+          </div>
+        </div>
+        <div id="all-tasks"></div>
+      </div>
+    </div>
+
+    <!-- ═══ Videos Tab ═══ -->
+    <div class="section" id="sec-videos">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Catálogo de Vídeos</span>
+          <button class="btn btn-sm" onclick="loadVideos()">↻ Recarregar</button>
+        </div>
+        <div id="videos-list" class="loading"><div class="spinner"></div>Carregando...</div>
+      </div>
+    </div>
+
+    <!-- ═══ Memory Tab ═══ -->
+    <div class="section" id="sec-memory">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Arquivos de Memória</span>
+          <button class="btn btn-sm btn-primary" id="save-memory-btn" onclick="saveMemory()" style="display:none">Salvar</button>
+        </div>
+        <div class="memory-grid" id="memory-grid"></div>
+        <textarea class="editor-area" id="memory-editor" style="display:none" oninput="onMemoryEdit()"></textarea>
+        <div class="editor-toolbar" id="editor-toolbar" style="display:none">
+          <span class="save-status" id="save-status"></span>
+          <button class="btn btn-sm" onclick="closeEditor()">Fechar Editor</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Actions Tab ═══ -->
+    <div class="section" id="sec-actions">
+      <div class="grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🚀 Ferramentas</span>
+          </div>
+          <div class="actions-grid">
+            <div class="action-btn" onclick="triggerAction('open-cowork')">
+              <div class="action-icon">🤖</div>
+              <div class="action-label">Claude Desktop</div>
+            </div>
+            <div class="action-btn" onclick="triggerAction('open-youtube-studio')">
+              <div class="action-icon">📺</div>
+              <div class="action-label">YouTube Studio</div>
+            </div>
+            <div class="action-btn" onclick="triggerAction('open-leonardo')">
+              <div class="action-icon">🎨</div>
+              <div class="action-label">Leonardo AI</div>
+            </div>
+            <div class="action-btn" onclick="triggerAction('open-elevenlabs')">
+              <div class="action-icon">🎙️</div>
+              <div class="action-label">ElevenLabs</div>
+            </div>
+            <div class="action-btn" onclick="triggerAction('open-instagram')">
+              <div class="action-icon">📱</div>
+              <div class="action-label">Instagram</div>
+            </div>
+            <div class="action-btn" onclick="triggerAction('backup-system')">
+              <div class="action-icon">💾</div>
+              <div class="action-label">Backup Sistema</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📜 Log de Ações</span>
+          </div>
+          <div id="actions-log"><div class="empty">Nenhuma ação registrada</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ── Config ──────────────────────────────────────────────
+    const API = location.origin + '/api/centro-comando';
+    // MISSING_ENDPOINTS: friendly shim para endpoints que ainda não existem no backend Replit.
+    // Funções read-only que faltam retornam []; funções de escrita mostram alert amigável.
+    const MISSING_READ = new Set([
+      '/analytics/overview',
+      '/comments/replied',
+      '/youtube/refresh',
+    ]);
+    const MISSING_WRITE = new Set([
+      '/actions/log',
+      '/amazon/append-milgram',
+      '/amazon/fix',
+      '/comments/approve',
+      '/comments/approve-bulk',
+      '/comments/reject',
+      '/comments/scan',
+      '/tasks/add',
+    ]);
+    const _origFetch = window.fetch.bind(window);
+    window.fetch = async function(resource, opts) {
+      const url = typeof resource === 'string' ? resource : resource.url;
+      for (const p of MISSING_READ) {
+        if (url.includes(p)) {
+          return new Response(JSON.stringify({ items: [], data: [], total: 0, comments: [], videos: [] }), {
+            status: 200, headers: {'Content-Type':'application/json'}
+          });
+        }
+      }
+      for (const p of MISSING_WRITE) {
+        if (url.includes(p)) {
+          alert('🚧 Função em breve — esse endpoint ainda não foi implementado no backend.\n\nPath: ' + url.replace(location.origin, ''));
+          return new Response(JSON.stringify({ ok: false, reason: 'not_implemented' }), {
+            status: 200, headers: {'Content-Type':'application/json'}
+          });
+        }
+      }
+      return _origFetch(resource, opts);
+    };
+
+    let tasksData = [];
+    let memoryFiles = [];
+    let currentMemoryFile = null;
+    let memoryDirty = false;
+
+    // ── Init ────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      updateDateTime();
+      setInterval(updateDateTime, 60000);
+      setupTabs();
+      loadAll();
+      // Auto-refresh every 30s
+      setInterval(loadAll, 30000);
+    });
+
+    function loadAll() {
+      loadSystem();
+      loadTasks();
+      loadYouTube();
+      loadSessionsActivity();
+    }
+
+    // ── DateTime ────────────────────────────────────────────
+    function updateDateTime() {
+      const now = new Date();
+      const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+      const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      document.getElementById('datetime').textContent =
+        `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} · ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+    }
+
+    // ── Tabs ────────────────────────────────────────────────
+    function setupTabs() {
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+          tab.classList.add('active');
+          document.getElementById('sec-' + tab.dataset.tab).classList.add('active');
+
+          // Lazy load
+          if (tab.dataset.tab === 'youtube') loadYouTube();
+          if (tab.dataset.tab === 'videos') loadVideos();
+          if (tab.dataset.tab === 'memory') loadMemory();
+          if (tab.dataset.tab === 'actions') loadActionsLog();
+        });
+      });
+    }
+
+    // ── Comments Agent ──────────────────────────────────────
+    function cmEscape(s) { return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+    async function cmLoadQueue() {
+      const el = document.getElementById('cm-queue');
+      el.innerHTML = '<div class="loading"><div class="spinner"></div>Carregando fila...</div>';
+      try {
+        const res = await fetch(`${API}/youtube/comments/queue`);
+        const data = await res.json();
+        const byCat = data.byCategory || {};
+        document.getElementById('cm-stats').textContent =
+          `${data.count} pendentes · ${byCat.positive||0} positivos · ${byCat.neutral||0} neutros · ${byCat.question||0} perguntas · ${byCat['content-request']||0} pedidos · ${byCat.negative||0} negativos`;
+
+        if (!data.count) {
+          el.innerHTML = '<div class="empty">✨ Fila vazia. Clique em "Escanear agora" para buscar comentários novos.</div>';
+          return;
+        }
+
+        el.innerHTML = data.queue.map(q => `
+          <div class="cm-item" data-id="${cmEscape(q.id)}">
+            <div class="cm-meta">
+              <div>
+                <span class="cm-badge ${q.category}">${q.category}</span>
+                <span class="cm-author">${cmEscape(q.author)}</span>
+                <span class="cm-video">· ${cmEscape(q.videoTitle.slice(0, 55))}${q.videoTitle.length>55?'…':''}</span>
+              </div>
+              <div>${new Date(q.publishedAt).toLocaleString('pt-BR')} · ❤ ${q.likeCount||0}</div>
+            </div>
+            <div class="cm-text">${cmEscape(q.text)}</div>
+            <div class="cm-reply-label">Resposta sugerida (edite se precisar)</div>
+            <textarea class="cm-reply-input" id="reply-${cmEscape(q.id)}">${cmEscape(q.suggestedReply)}</textarea>
+            <div class="cm-actions">
+              <button class="btn btn-sm cm-btn-approve" onclick="cmApprove('${cmEscape(q.id)}')">✓ Aprovar e postar</button>
+              <button class="btn btn-sm cm-btn-reject" onclick="cmReject('${cmEscape(q.id)}')">✗ Descartar</button>
+              <a class="btn btn-sm" href="https://www.youtube.com/watch?v=${cmEscape(q.videoId)}&lc=${cmEscape(q.id)}" target="_blank">Ver no YouTube</a>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        el.innerHTML = `<div class="empty" style="color:#ff6b6b">Erro: ${cmEscape(e.message)}</div>`;
+      }
+    }
+
+    async function cmScan() {
+      const btn = document.getElementById('cm-btn-scan');
+      btn.disabled = true; btn.textContent = '🔄 Escaneando...';
+      try {
+        const res = await fetch(`${API}/comments/scan`, { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        toast(`Scan: ${data.added} novos · ${data.scanned} analisados · ${data.skipped} pulados`);
+        cmLoadQueue();
+      } catch (e) { toast(`Erro: ${e.message}`); }
+      btn.disabled = false; btn.textContent = '🔄 Escanear agora';
+    }
+
+    async function cmApprove(id) {
+      const textarea = document.getElementById(`reply-${id}`);
+      const editedText = textarea ? textarea.value.trim() : '';
+      if (!editedText) { toast('Resposta vazia'); return; }
+      try {
+        const res = await fetch(`${API}/comments/approve`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ id, editedText })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        toast(`✓ Resposta postada (${data.queueRemaining} restantes)`);
+        const el = document.querySelector(`.cm-item[data-id="${id}"]`);
+        if (el) { el.style.opacity = '0.3'; setTimeout(() => cmLoadQueue(), 400); }
+      } catch (e) { toast(`Erro: ${e.message}`); }
+    }
+
+    async function cmReject(id) {
+      try {
+        const res = await fetch(`${API}/comments/reject`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        toast(`✗ Descartado (${data.queueRemaining} restantes)`);
+        cmLoadQueue();
+      } catch (e) { toast(`Erro: ${e.message}`); }
+    }
+
+    async function cmApproveCategory(category) {
+      if (!confirm(`Aprovar e postar TODAS as respostas da categoria "${category}"?`)) return;
+      try {
+        const res = await fetch(`${API}/comments/approve-bulk`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ categories: [category] })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        const okCount = (data.results || []).filter(r => r.ok).length;
+        const failCount = (data.results || []).filter(r => !r.ok).length;
+        toast(`✓ ${okCount} postadas${failCount?` · ${failCount} falharam`:''}`);
+        cmLoadQueue();
+      } catch (e) { toast(`Erro: ${e.message}`); }
+    }
+
+    async function cmLoadReplied() {
+      const card = document.getElementById('cm-replied-card');
+      const el = document.getElementById('cm-replied');
+      card.style.display = 'block';
+      el.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+      try {
+        const res = await fetch(`${API}/comments/replied`);
+        const data = await res.json();
+        if (!data.count) { el.innerHTML = '<div class="empty">Nenhuma resposta ainda</div>'; return; }
+        el.innerHTML = data.replied.map(r => `
+          <div class="cm-item">
+            <div class="cm-meta">
+              <div>
+                ${r.category ? `<span class="cm-badge ${r.category}">${r.category}</span>` : ''}
+                <span class="cm-author">${cmEscape(r.author || 'manual')}</span>
+                ${r.videoTitle ? `<span class="cm-video">· ${cmEscape(r.videoTitle.slice(0,55))}</span>` : ''}
+              </div>
+              <div>${new Date(r.repliedAt).toLocaleString('pt-BR')}${r.edited?' · editada':''}</div>
+            </div>
+            ${r.text ? `<div class="cm-text">${cmEscape(r.text)}</div>` : ''}
+            <div class="cm-reply-label">Resposta enviada</div>
+            <div class="cm-text" style="border-left-color: #1A7A4A;">${cmEscape(r.replyText)}</div>
+          </div>
+        `).join('');
+      } catch (e) { el.innerHTML = `<div class="empty" style="color:#ff6b6b">Erro: ${cmEscape(e.message)}</div>`; }
+    }
+
+    // ── System KPIs ─────────────────────────────────────────
+    async function loadSystem() {
+      try {
+        const res = await fetch(`${API}/system`);
+        const data = await res.json();
+        document.getElementById('kpi-tasks-pending').textContent = data.tasksPending;
+        document.getElementById('kpi-tasks-done').textContent = `${data.tasksDone} concluídas`;
+        document.getElementById('kpi-memory').textContent = `${data.memoryPopulated}/${data.memoryFiles}`;
+        document.getElementById('kpi-memory-sub').textContent = `${data.memoryPopulated} preenchidos`;
+      } catch (e) { console.error('System load error:', e); }
+    }
+
+    // ── Atividade por Departamento (Sessões Claude) ─────────
+    const DEPT_ICONS = {
+      'content-youtube': '🎬', 'content': '🎬',
+      'products-ideas': '📦', 'products': '📦',
+      'finance-metrics': '💰', 'finance': '💰',
+      'growth-strategy': '📈', 'growth': '📈',
+      'rd-experiments': '🔬', 'rd': '🔬',
+      'mentor': '🎓'
+    };
+    function deptIcon(name) {
+      const k = Object.keys(DEPT_ICONS).find(k => name.toLowerCase().includes(k));
+      return k ? DEPT_ICONS[k] : '📁';
+    }
+    function ageTier(mtime) {
+      const days = (Date.now() - new Date(mtime).getTime()) / 86400000;
+      if (days <= 3) return { dot: '🟢', label: days < 1 ? 'Hoje' : `${Math.floor(days)}d atrás`, color: 'var(--green)' };
+      if (days <= 7) return { dot: '🟡', label: `${Math.floor(days)}d atrás`, color: 'var(--yellow)' };
+      return { dot: '🔴', label: `${Math.floor(days)}d atrás`, color: 'var(--red)' };
+    }
+    // Cache do conteúdo por arquivo (para tooltip)
+    window._memoryCache = {};
+    // Hash do estado (usado para detectar mudanças e disparar toast)
+    window._memoryStateHash = null;
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    function previewFrom(content) {
+      if (!content) return '(vazio)';
+      // Tira headers markdown e pega primeiras linhas úteis
+      const lines = content.split('\n').map(l => l.trim())
+        .filter(l => l && !l.startsWith('#') && !l.startsWith('---'));
+      return lines.slice(0, 6).join('\n').slice(0, 420);
+    }
+
+    function renderTimeline(files) {
+      const el = document.getElementById('sessions-timeline');
+      if (!el) return;
+      const now = Date.now();
+      const dayMs = 86400000;
+      // Conta updates por dia (últimos 30 dias)
+      const buckets = new Array(30).fill(0);
+      files.forEach(f => {
+        const age = (now - new Date(f.modified).getTime()) / dayMs;
+        const idx = 29 - Math.floor(age); // 0 = há 30d, 29 = hoje
+        if (idx >= 0 && idx < 30) buckets[idx]++;
+      });
+      const max = Math.max(1, ...buckets);
+      el.innerHTML = buckets.map((n, i) => {
+        const h = Math.max(4, Math.round((n / max) * 32));
+        const opacity = n === 0 ? 0.12 : 0.4 + (n/max) * 0.6;
+        const dayLabel = i === 29 ? 'Hoje' : `há ${29 - i}d`;
+        const bg = n === 0 ? 'rgba(255,255,255,0.08)' : `rgba(58,141,255,${opacity})`;
+        return `<div title="${dayLabel} · ${n} atualizaç${n===1?'ão':'ões'}" style="align-self:end;background:${bg};border-radius:3px;height:${h}px;transition:all 0.2s;cursor:default;"></div>`;
+      }).join('');
+    }
+
+    function renderStaleAlert(files) {
+      const banner = document.getElementById('stale-alert');
+      if (!banner) return;
+      const stale = files.filter(f => (Date.now() - new Date(f.modified).getTime()) / 86400000 > 7);
+      if (stale.length === 0) { banner.style.display = 'none'; return; }
+      banner.style.display = 'block';
+      document.getElementById('stale-title').textContent = `${stale.length} departamento${stale.length>1?'s':''} sem update há mais de 7 dias`;
+      document.getElementById('stale-body').textContent = stale.map(s => s.name).join(' · ');
+    }
+
+    async function loadSessionsActivity() {
+      try {
+        const res = await fetch(`${API}/memory`);
+        const files = await res.json();
+        if (!Array.isArray(files)) return;
+
+        // Detecta mudança desde última carga (toast notification)
+        const hash = files.map(f => `${f.name}:${f.modified}`).join('|');
+        if (window._memoryStateHash && window._memoryStateHash !== hash) {
+          const changed = files.filter(f => {
+            const prev = window._memoryCache[f.name];
+            return !prev || prev.modified !== f.modified;
+          });
+          if (changed.length) showToast(`🧠 Memory atualizado: ${changed.map(c=>c.name).join(', ')}`);
+        }
+        window._memoryStateHash = hash;
+        files.forEach(f => { window._memoryCache[f.name] = f; });
+
+        let freshCount = 0;
+        const html = files.map(f => {
+          const age = ageTier(f.modified);
+          const populated = f.size > 200;
+          if (age.dot === '🟢') freshCount++;
+          const preview = escapeHtml(previewFrom(f.content));
+          return `<div data-mem="${f.name}" data-preview="${preview}"
+              onclick="switchTab('memory'); setTimeout(()=>openMemoryFile('${f.name}'),80)"
+              onmouseenter="sessionsTooltipShow(event, this)"
+              onmousemove="sessionsTooltipMove(event)"
+              onmouseleave="sessionsTooltipHide()"
+              style="cursor:pointer;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:14px;transition:all 0.2s">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <span style="font-size:18px">${deptIcon(f.name)}</span>
+              <span style="font-size:13px;font-weight:600;color:var(--white);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span>
+              <span>${age.dot}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:#A8A8A8;font-weight:500;">
+              <span>${age.label}</span>
+              <span>${populated ? (f.size/1024).toFixed(1) + ' KB' : 'vazio'}</span>
+            </div>
+          </div>`;
+        }).join('');
+        document.getElementById('sessions-grid').innerHTML = html || '<div style="color:#A0A0A0;padding:16px;text-align:center;">Nenhum memory file encontrado</div>';
+        const tag = document.getElementById('sessions-fresh-count');
+        if (tag) tag.textContent = `${freshCount}/${files.length} atualizados (3d)`;
+        const ls = document.getElementById('sessions-last-sync');
+        if (ls) ls.textContent = `Sincronizado ${new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}`;
+
+        renderTimeline(files);
+        renderStaleAlert(files);
+      } catch (e) { console.error('Sessions load error:', e); }
+    }
+
+    // Poll a cada 30s para detectar mudanças feitas por outras sessões Claude
+    setInterval(() => { if (!document.hidden) loadSessionsActivity(); }, 30000);
+
+    // Tooltip de preview (hover card)
+    function sessionsTooltipShow(evt, el) {
+      const tip = document.getElementById('sessions-tooltip');
+      if (!tip) return;
+      const name = el.dataset.mem;
+      const preview = el.dataset.preview;
+      tip.innerHTML = `<div style="font-size:11px;color:#A0A0A0;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:8px;">${deptIcon(name)} ${name}.md</div><div style="color:#E8E8E8;font-size:12px;line-height:1.55;">${preview || '(sem conteúdo)'}</div><div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1);font-size:10px;color:#8E8E8E;font-family:var(--font);">clique para abrir</div>`;
+      tip.style.display = 'block';
+      sessionsTooltipMove(evt);
+    }
+    function sessionsTooltipMove(evt) {
+      const tip = document.getElementById('sessions-tooltip');
+      if (!tip || tip.style.display === 'none') return;
+      const pad = 14;
+      const x = Math.min(evt.clientX + pad, window.innerWidth - tip.offsetWidth - pad);
+      const y = Math.min(evt.clientY + pad, window.innerHeight - tip.offsetHeight - pad);
+      tip.style.left = x + 'px';
+      tip.style.top = y + 'px';
+    }
+    function sessionsTooltipHide() {
+      const tip = document.getElementById('sessions-tooltip');
+      if (tip) tip.style.display = 'none';
+    }
+
+    // Toast (notificação no UI — versão in-app do "webhook")
+    function showToast(msg, type = 'info') {
+      const id = 'vx-toast-container';
+      let ctn = document.getElementById(id);
+      if (!ctn) {
+        ctn = document.createElement('div');
+        ctn.id = id;
+        ctn.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:10001;display:flex;flex-direction:column;gap:8px;';
+        document.body.appendChild(ctn);
+      }
+      const t = document.createElement('div');
+      const bg = type === 'error' ? '#E53935' : type === 'success' ? '#1A7A4A' : '#000';
+      t.style.cssText = `background:${bg};color:#fff;padding:12px 18px;border-radius:12px;font-size:13px;font-weight:500;box-shadow:0 12px 40px rgba(0,0,0,0.3);max-width:360px;opacity:0;transform:translateY(8px);transition:all 0.25s;`;
+      t.textContent = msg;
+      ctn.appendChild(t);
+      requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translateY(0)'; });
+      setTimeout(() => {
+        t.style.opacity = '0'; t.style.transform = 'translateY(8px)';
+        setTimeout(() => t.remove(), 250);
+      }, 4000);
+    }
+    function switchTab(name) {
+      const btn = document.querySelector(`.tab[data-tab="${name}"]`);
+      if (btn) btn.click();
+    }
+
+    // ── YouTube (Data API em tempo real) ────────────────────
+    let ytData = null;
+    let ytFilter = 'longform'; // 'longform' | 'shorts' | 'all'
+
+    function durationSeconds(iso) {
+      const m = iso?.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+      if (!m) return 0;
+      return (parseInt(m[1] || 0) * 3600) + (parseInt(m[2] || 0) * 60) + parseInt(m[3] || 0);
+    }
+    function isShort(v) { return durationSeconds(v.duration) <= 180; }
+
+    function setYtFilter(f) {
+      ytFilter = f;
+      document.querySelectorAll('.yt-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+      const title = f === 'shorts' ? '⚡ Performance Shorts (Tempo Real)'
+                  : f === 'all' ? '📊 Performance Todos (Tempo Real)'
+                  : '📊 Performance Long-form (Tempo Real)';
+      document.getElementById('yt-table-title').textContent = title;
+      renderYouTubeTable();
+    }
+
+    function setYtSubtab(name) {
+      document.querySelectorAll('.yt-subtab').forEach(b => b.classList.toggle('active', b.dataset.subtab === name));
+      document.getElementById('yt-sub-performance').style.display = (name === 'performance') ? '' : 'none';
+      document.getElementById('yt-sub-comments').style.display = (name === 'comments') ? '' : 'none';
+      document.getElementById('yt-sub-links').style.display = (name === 'links') ? '' : 'none';
+      if (name === 'comments' && typeof cmLoadQueue === 'function') cmLoadQueue();
+      if (name === 'links' && typeof azRender === 'function' && !azData) azLoad();
+    }
+
+    // ── Amazon Links Audit ────────────────────────────────
+    let azData = null;
+    let azFilter = 'issues'; // 'issues' | 'all'
+
+    async function azLoad() {
+      const el = document.getElementById('az-list');
+      el.className = 'loading';
+      el.innerHTML = '<div class="spinner"></div>Auditando descrições de todos os vídeos (pode demorar 10-20s)...';
+      try {
+        const r = await fetch(`${API}/amazon/audit`);
+        const data = await r.json();
+        if (data.error) { el.innerHTML = `<div style="color:var(--red)">Erro: ${data.error}</div>`; return; }
+        azData = data;
+        azRender();
+      } catch (e) {
+        el.innerHTML = `<div style="color:var(--red)">Erro: ${e.message}</div>`;
+      }
+    }
+
+    function azRender() {
+      if (!azData) return;
+      const el = document.getElementById('az-list');
+      el.className = '';
+      const stats = document.getElementById('az-stats');
+      stats.textContent = `${azData.total} vídeos · ${azData.withIssues} com problema`;
+      const items = azFilter === 'issues' ? azData.items.filter(i => i.issues.length > 0) : azData.items;
+      if (!items.length) { el.innerHTML = '<div style="padding:20px;color:var(--g3);text-align:center">Nenhum vídeo encontrado neste filtro.</div>'; return; }
+      el.innerHTML = items.map(it => {
+        const badge = it.isShort ? '<span style="background:rgba(123,97,255,0.15);color:var(--violet);padding:2px 6px;border-radius:3px;font-size:10px;margin-right:6px;">SHORT</span>' : '<span style="background:rgba(58,141,255,0.15);color:var(--blue);padding:2px 6px;border-radius:3px;font-size:10px;margin-right:6px;">LONG</span>';
+        const issuesHtml = it.issues.length ? it.issues.map(iss => {
+          const map = { no_amazon_link: '❌ Sem link Amazon', placeholder_in_desc: '⚠️ [SUBSTITUIR LINK] na descrição', missing_affiliate_tag: '⚠️ Link sem tag vertex034-20' };
+          return `<span style="background:rgba(255,90,90,0.15);color:#ff5a5a;padding:2px 6px;border-radius:3px;font-size:10px;margin-right:4px;">${map[iss] || iss}</span>`;
+        }).join('') : '<span style="color:var(--green);font-size:11px;">✓ OK</span>';
+        const linksHtml = it.links.map((l, idx) => `
+          <div style="margin:6px 0;padding:8px;background:var(--g4);border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:11px;">
+            <div style="word-break:break-all;color:var(--g2);">${cmEscape(l.url)}</div>
+            <div style="margin-top:4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              ${l.asin ? `<span style="color:var(--g3);font-size:10px;">ASIN: ${l.asin}</span>` : ''}
+              ${l.hasTag ? '<span style="color:var(--green);font-size:10px;">✓ tag</span>' : '<span style="color:#ff5a5a;font-size:10px;">⚠ sem tag</span>'}
+              <button class="btn btn-sm" style="margin-left:auto;font-size:10px;padding:2px 8px;" onclick="azFix('${it.videoId}', ${idx})">Substituir</button>
+            </div>
+          </div>
+        `).join('');
+        return `
+          <div style="border-bottom:1px solid var(--g4);padding:14px 4px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+              <div style="flex:1;">
+                <div style="font-size:13px;color:var(--white);margin-bottom:4px;">
+                  ${badge}<a href="${it.url}" target="_blank" style="color:var(--white);text-decoration:none;">${cmEscape(it.title)}</a>
+                </div>
+                <div style="font-size:11px;color:var(--g3);">${it.linkCount} link(s) · ${new Date(it.publishedAt).toLocaleDateString('pt-BR')}</div>
+                <div style="margin-top:6px;">${issuesHtml}</div>
+              </div>
+            </div>
+            ${linksHtml || '<div style="color:var(--g3);font-size:11px;margin-top:8px;font-style:italic;">(nenhum link Amazon encontrado)</div>'}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function azFix(videoId, linkIdx) {
+      const item = azData.items.find(i => i.videoId === videoId);
+      if (!item) return;
+      const oldUrl = item.links[linkIdx]?.url;
+      if (!oldUrl) return;
+      const newUrl = prompt(`Substituir link Amazon\n\nAtual:\n${oldUrl}\n\nCole o novo link (com tag vertex034-20):`, '');
+      if (!newUrl || newUrl === oldUrl) return;
+      try {
+        const r = await fetch(`${API}/amazon/fix`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ videoId, oldUrl, newUrl: newUrl.trim() })
+        });
+        const data = await r.json();
+        if (data.error) { alert('Erro: ' + data.error); return; }
+        alert('✓ Link atualizado. Re-auditando...');
+        azLoad();
+      } catch (e) { alert('Erro: ' + e.message); }
+    }
+
+    async function azAppendMilgram() {
+      if (!confirm('Adicionar bloco "📚 LIVRO CITADO: Milgram" no fim da descrição dos 2 shorts de Milgram?\n\n(AEGxHJvj_Bg + I4mXBwfqrRE)')) return;
+      try {
+        const r = await fetch(`${API}/amazon/append-milgram`, { method: 'POST' });
+        const data = await r.json();
+        if (data.error) { alert('Erro: ' + data.error); return; }
+        const lines = data.results.map(x => {
+          if (x.skipped) return `⏭️  ${x.id}: já tem o link`;
+          if (x.ok) return `✅ ${x.title || x.id}: adicionado`;
+          return `❌ ${x.id}: ${x.error}`;
+        });
+        alert(lines.join('\n'));
+        azLoad();
+      } catch (e) { alert('Erro: ' + e.message); }
+    }
+
+    async function loadYouTube() {
+      try {
+        const res = await fetch(`${API}/youtube/metrics`);
+        ytData = await res.json();
+        if (ytData.error) { console.error('YT error:', ytData.error); return; }
+        renderYouTubeKPIs();
+        renderYouTubeTable();
+        renderYouTubeTop5();
+        renderYouTubeTop5Shorts();
+        renderYouTubeRecent();
+        // Also update main dashboard KPIs
+        if (ytData.channel) {
+          const kSubs = document.getElementById('kpi-subs');
+          if (kSubs) kSubs.textContent = fmtNum(ytData.channel.subscribers);
+        }
+        // Views 28d: usar Analytics API real (não soma lifetime)
+        try {
+          const a28 = await fetch(`${API}/analytics/overview?days=28`).then(r => r.json());
+          const kViews = document.getElementById('kpi-views');
+          // Analytics retorna rows[[views, minutes, ...]] — views é coluna 0
+          const v28 = a28?.rows?.[0]?.[0];
+          if (kViews && v28 != null) kViews.textContent = fmtNum(v28);
+        } catch (_) { /* fallback: deixa vazio */ }
+      } catch (e) { console.error('YouTube load error:', e); }
+    }
+
+    async function refreshYouTube() {
+      document.getElementById('yt-videos-table').innerHTML = '<div class="loading"><div class="spinner"></div>Atualizando...</div>';
+      try {
+        const res = await fetch(`${API}/youtube/refresh`);
+        ytData = await res.json();
+        renderYouTubeKPIs();
+        renderYouTubeTable();
+        renderYouTubeTop5();
+        renderYouTubeTop5Shorts();
+        renderYouTubeRecent();
+        toast('Dados YouTube atualizados');
+      } catch (e) { toast('Erro: ' + e.message); }
+    }
+
+    function fmtNum(n) {
+      if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+      if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+      return n.toString();
+    }
+
+    function fmtDuration(iso) {
+      const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+      if (!m) return '—';
+      const h = parseInt(m[1] || 0), min = parseInt(m[2] || 0), s = parseInt(m[3] || 0);
+      if (h > 0) return `${h}:${min.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+      return `${min}:${s.toString().padStart(2,'0')}`;
+    }
+
+    function renderYouTubeKPIs() {
+      if (!ytData?.channel) return;
+      document.getElementById('yt-subs').textContent = fmtNum(ytData.channel.subscribers);
+      document.getElementById('yt-total-views').textContent = fmtNum(ytData.channel.totalViews);
+
+      const longform = ytData.videos.filter(v => !isShort(v));
+      const shorts = ytData.videos.filter(v => isShort(v));
+      const longViews = longform.reduce((s, v) => s + v.views, 0);
+      const shortViews = shorts.reduce((s, v) => s + v.views, 0);
+
+      document.getElementById('yt-longform-count').textContent = longform.length;
+      document.getElementById('yt-longform-views').textContent = fmtNum(longViews) + ' views';
+      document.getElementById('yt-shorts-count').textContent = shorts.length;
+      document.getElementById('yt-shorts-views').textContent = fmtNum(shortViews) + ' views';
+
+      const upd = new Date(ytData.lastUpdate);
+      document.getElementById('yt-last-update').textContent =
+        `Atualizado ${upd.getHours().toString().padStart(2,'0')}:${upd.getMinutes().toString().padStart(2,'0')}`;
+    }
+
+    function renderYouTubeTable() {
+      if (!ytData?.videos?.length) {
+        document.getElementById('yt-videos-table').innerHTML = '<div class="empty">Nenhum vídeo</div>';
+        return;
+      }
+      let videos = ytData.videos;
+      if (ytFilter === 'longform') videos = videos.filter(v => !isShort(v));
+      else if (ytFilter === 'shorts') videos = videos.filter(v => isShort(v));
+
+      if (!videos.length) {
+        document.getElementById('yt-videos-table').innerHTML = '<div class="empty">Nenhum vídeo nesse filtro</div>';
+        return;
+      }
+      const maxViews = Math.max(...videos.map(v => v.views));
+      let html = `<table class="videos-table">
+        <thead><tr><th>#</th><th>Tipo</th><th>Título</th><th>Views</th><th>Likes</th><th>Duração</th><th>Publicado</th><th></th></tr></thead><tbody>`;
+      for (let i = 0; i < videos.length; i++) {
+        const v = videos[i];
+        const pct = maxViews > 0 ? Math.round(v.views / maxViews * 100) : 0;
+        const barColor = pct > 60 ? 'var(--green)' : pct > 30 ? 'var(--blue)' : 'var(--g3)';
+        const date = new Date(v.publishedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+        const typeLabel = isShort(v)
+          ? '<span class="yt-type-badge yt-type-short">SHORT</span>'
+          : '<span class="yt-type-badge yt-type-long">LONG</span>';
+        html += `<tr>
+          <td><span class="yt-rank">${i + 1}</span></td>
+          <td>${typeLabel}</td>
+          <td style="max-width:300px">
+            <div style="font-size:13px;color:var(--g1);margin-bottom:3px">${v.title.length > 50 ? v.title.slice(0,50) + '…' : v.title}</div>
+            <div class="yt-bar-track"><div class="yt-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+          </td>
+          <td style="font-family:monospace;color:var(--white)">${fmtNum(v.views)}</td>
+          <td style="font-family:monospace">${fmtNum(v.likes)}</td>
+          <td style="font-family:monospace">${fmtDuration(v.duration)}</td>
+          <td style="color:var(--g3)">${date}</td>
+          <td><a href="https://youtube.com/watch?v=${v.id}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:11px">↗</a></td>
+        </tr>`;
+      }
+      html += '</tbody></table>';
+      document.getElementById('yt-videos-table').innerHTML = html;
+    }
+
+    function renderYouTubeTop5() {
+      const el = document.getElementById('yt-top5');
+      if (!ytData?.videos?.length) { el.innerHTML = '<div class="empty">—</div>'; return; }
+      const top = ytData.videos.filter(v => !isShort(v)).slice(0, 5);
+      if (!top.length) { el.innerHTML = '<div class="empty">Nenhum long-form</div>'; return; }
+      const maxViews = top[0]?.views || 1;
+      let html = '';
+      for (const v of top) {
+        const pct = Math.round(v.views / maxViews * 100);
+        html += `<div class="yt-bar-container">
+          <div class="yt-bar-label">
+            <span>${v.title.length > 35 ? v.title.slice(0,35) + '…' : v.title}</span>
+            <span>${fmtNum(v.views)}</span>
+          </div>
+          <div class="yt-bar-track"><div class="yt-bar-fill" style="width:${pct}%;background:var(--blue)"></div></div>
+        </div>`;
+      }
+      el.innerHTML = html;
+    }
+
+    function renderYouTubeTop5Shorts() {
+      const el = document.getElementById('yt-top5-shorts');
+      if (!el) return;
+      if (!ytData?.videos?.length) { el.innerHTML = '<div class="empty">—</div>'; return; }
+      const top = ytData.videos.filter(v => isShort(v)).slice(0, 5);
+      if (!top.length) { el.innerHTML = '<div class="empty">Nenhum short ainda</div>'; return; }
+      const maxViews = top[0]?.views || 1;
+      let html = '';
+      for (const v of top) {
+        const pct = Math.round(v.views / maxViews * 100);
+        html += `<div class="yt-bar-container">
+          <div class="yt-bar-label">
+            <span>${v.title.length > 35 ? v.title.slice(0,35) + '…' : v.title}</span>
+            <span>${fmtNum(v.views)}</span>
+          </div>
+          <div class="yt-bar-track"><div class="yt-bar-fill" style="width:${pct}%;background:var(--green)"></div></div>
+        </div>`;
+      }
+      el.innerHTML = html;
+    }
+
+    function renderYouTubeRecent() {
+      const el = document.getElementById('yt-recent');
+      if (!ytData?.videos?.length) { el.innerHTML = '<div class="empty">—</div>'; return; }
+      const recent = [...ytData.videos].sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt)).slice(0, 5);
+      let html = '';
+      for (const v of recent) {
+        const days = Math.floor((Date.now() - new Date(v.publishedAt)) / 86400000);
+        const daysText = days === 0 ? 'Hoje' : days === 1 ? 'Ontem' : `${days}d atrás`;
+        html += `<div class="yt-bar-container">
+          <div class="yt-bar-label">
+            <span>${v.title.length > 30 ? v.title.slice(0,30) + '…' : v.title}</span>
+            <span>${fmtNum(v.views)} · ${daysText}</span>
+          </div>
+        </div>`;
+      }
+      el.innerHTML = html;
+    }
+
+    // ── Tasks ───────────────────────────────────────────────
+    async function loadTasks() {
+      try {
+        const res = await fetch(`${API}/tasks`);
+        const data = await res.json();
+        tasksData = data.sections;
+        renderDashboardTasks();
+        renderAllTasks();
+      } catch (e) { console.error('Tasks load error:', e); }
+    }
+
+    function renderDashboardTasks() {
+      // YouTube section for dashboard
+      const ytSection = tasksData.find(s => s.title.includes('YOUTUBE'));
+      const ytEl = document.getElementById('yt-tasks');
+      if (ytSection) {
+        let html = '';
+        for (const sub of ytSection.subsections) {
+          if (sub.title.includes('Concluído')) continue;
+          html += `<div class="task-section-title">${sub.title}</div>`;
+          for (const t of sub.tasks) {
+            html += taskHTML(t, 'YOUTUBE', sub.title);
+          }
+        }
+        for (const t of ytSection.tasks) {
+          html += taskHTML(t, 'YOUTUBE');
+        }
+        ytEl.innerHTML = html || '<div class="empty">Nenhuma tarefa</div>';
+      }
+
+      // Other sections
+      const otherEl = document.getElementById('other-tasks');
+      let otherHTML = '';
+      for (const sec of tasksData) {
+        if (sec.title.includes('YOUTUBE')) continue;
+        const pending = [...sec.tasks, ...sec.subsections.flatMap(s => s.tasks)].filter(t => !t.done);
+        if (!pending.length) continue;
+        otherHTML += `<div class="task-section-title">${sec.title}</div>`;
+        for (const t of pending) {
+          otherHTML += taskHTML(t, sec.title);
+        }
+      }
+      otherEl.innerHTML = otherHTML || '<div class="empty">Tudo em dia ✓</div>';
+    }
+
+    function renderAllTasks() {
+      const el = document.getElementById('all-tasks');
+      let html = '';
+      for (const sec of tasksData) {
+        html += `<div class="task-section-title">${sec.title}</div>`;
+        for (const t of sec.tasks) html += taskHTML(t, sec.title);
+        for (const sub of sec.subsections) {
+          if (sub.tasks.length) html += `<div class="task-section-title" style="margin-left:12px;font-size:10px">${sub.title}</div>`;
+          for (const t of sub.tasks) html += taskHTML(t, sec.title, sub.title);
+        }
+        // Add task input
+        html += `<div class="add-task">
+          <input type="text" placeholder="Nova tarefa..." onkeydown="if(event.key==='Enter')addTask('${sec.title.replace(/'/g,"\\'")}',this)">
+          <button class="btn btn-sm" onclick="addTask('${sec.title.replace(/'/g,"\\'")}',this.previousElementSibling)">+</button>
+        </div>`;
+      }
+      el.innerHTML = html;
+    }
+
+    function taskHTML(task, section, subsection) {
+      const id = btoa(encodeURIComponent(task.text)).slice(0, 20);
+      return `<div class="task-item" onclick="toggleTask('${section}','${subsection||''}','${task.text.replace(/'/g,"\\'")}')">
+        <div class="task-check ${task.done ? 'done' : ''}"></div>
+        <span class="task-text ${task.done ? 'done' : ''}">${task.text}</span>
+      </div>`;
+    }
+
+    async function toggleTask(section, subsection, text) {
+      for (const sec of tasksData) {
+        if (!sec.title.includes(section.replace(/^[^\w]*/, '').split(' ')[0])) continue;
+        const allTasks = [...sec.tasks];
+        for (const sub of sec.subsections) allTasks.push(...sub.tasks);
+        const task = allTasks.find(t => t.text === text);
+        if (task) { task.done = !task.done; break; }
+      }
+      renderDashboardTasks();
+      renderAllTasks();
+      await fetch(`${API}/tasks`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sections: tasksData })
+      });
+      loadSystem();
+      toast('Tarefa atualizada');
+    }
+
+    async function addTask(sectionTitle, input) {
+      const text = input.value.trim();
+      if (!text) return;
+      // Find matching section keyword
+      const keyword = sectionTitle.replace(/[^A-Za-zÀ-ÿ ]/g, '').trim().split(' ')[0];
+      await fetch(`${API}/tasks/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ section: keyword, text })
+      });
+      input.value = '';
+      loadTasks();
+      loadSystem();
+      toast('Tarefa adicionada');
+    }
+
+    // ── Videos ──────────────────────────────────────────────
+    async function loadVideos() {
+      const el = document.getElementById('videos-list');
+      try {
+        const res = await fetch(`${API}/youtube/videos`);
+        const videos = await res.json();
+        document.getElementById('kpi-videos').textContent = videos.length;
+
+        if (!videos.length) { el.innerHTML = '<div class="empty">Nenhum vídeo encontrado</div>'; return; }
+
+        let html = `<table class="videos-table">
+          <thead><tr>
+            <th>#</th><th>Nome</th><th>🎬</th><th>🖼️</th><th>🇺🇸</th><th>📱</th><th>Arquivos</th><th></th>
+          </tr></thead><tbody>`;
+
+        for (const v of videos.reverse()) {
+          html += `<tr>
+            <td>${v.number}</td>
+            <td>${v.name}</td>
+            <td><span class="status-icon">${v.hasVideo ? '✅' : '❌'}</span></td>
+            <td><span class="status-icon">${v.hasThumb ? '✅' : '❌'}</span></td>
+            <td><span class="status-icon">${v.hasEN ? '✅' : '❌'}</span></td>
+            <td><span class="status-icon">${v.hasInsta ? '✅' : '❌'}</span></td>
+            <td>${v.files}</td>
+            <td><button class="btn btn-sm" onclick="triggerAction('open-video-folder',{folder:'${v.folder.replace(/'/g,"\\'")}'})" title="Abrir pasta">📂</button></td>
+          </tr>`;
+        }
+        html += '</tbody></table>';
+        el.innerHTML = html;
+      } catch (e) {
+        el.innerHTML = `<div class="empty">Erro ao carregar: ${e.message}</div>`;
+      }
+    }
+
+    // ── Memory ──────────────────────────────────────────────
+    async function loadMemory() {
+      try {
+        const res = await fetch(`${API}/memory`);
+        memoryFiles = await res.json();
+        renderMemoryGrid();
+        // Update memory count in dept card
+        const tag = document.getElementById('memory-count-tag');
+        if (tag) tag.textContent = `${memoryFiles.length} memory files`;
+      } catch (e) { console.error('Memory load error:', e); }
+    }
+
+    function renderMemoryGrid() {
+      const el = document.getElementById('memory-grid');
+      let html = '';
+      for (const f of memoryFiles) {
+        const isPopulated = f.size > 200;
+        html += `<div class="memory-card ${currentMemoryFile === f.name ? 'active' : ''}" onclick="openMemoryFile('${f.name}')">
+          <div class="memory-name">${f.name}</div>
+          <div class="memory-meta">
+            ${isPopulated ? '🟢' : '🔴'} ${(f.size / 1024).toFixed(1)} KB ·
+            ${new Date(f.modified).toLocaleDateString('pt-BR')}
+          </div>
+        </div>`;
+      }
+      el.innerHTML = html;
+    }
+
+    async function openMemoryFile(name) {
+      if (memoryDirty && !confirm('Descartar alterações não salvas?')) return;
+      currentMemoryFile = name;
+      try {
+        const res = await fetch(`${API}/files/memory/${name}`);
+        const data = await res.json();
+        document.getElementById('memory-editor').style.display = 'block';
+        document.getElementById('memory-editor').value = data.content;
+        document.getElementById('editor-toolbar').style.display = 'flex';
+        document.getElementById('save-memory-btn').style.display = 'inline-block';
+        document.getElementById('save-status').textContent = `Editando: ${name}.md`;
+        memoryDirty = false;
+        renderMemoryGrid();
+      } catch (e) { toast('Erro ao abrir arquivo'); }
+    }
+
+    function onMemoryEdit() { memoryDirty = true; document.getElementById('save-status').textContent = '● Não salvo'; }
+
+    async function saveMemory() {
+      if (!currentMemoryFile) return;
+      const content = document.getElementById('memory-editor').value;
+      try {
+        await fetch(`${API}/files/memory/${currentMemoryFile}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content })
+        });
+        memoryDirty = false;
+        document.getElementById('save-status').textContent = 'Salvo ✓';
+        toast('Arquivo salvo');
+        loadMemory();
+        loadSystem();
+      } catch (e) { toast('Erro ao salvar'); }
+    }
+
+    function closeEditor() {
+      if (memoryDirty && !confirm('Descartar alterações?')) return;
+      document.getElementById('memory-editor').style.display = 'none';
+      document.getElementById('editor-toolbar').style.display = 'none';
+      document.getElementById('save-memory-btn').style.display = 'none';
+      currentMemoryFile = null;
+      memoryDirty = false;
+      renderMemoryGrid();
+    }
+
+    // ── Actions ─────────────────────────────────────────────
+    async function triggerAction(action, params) {
+      try {
+        const res = await fetch(`${API}/trigger`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, params })
+        });
+        const data = await res.json();
+        toast(data.message || `${action} triggered`);
+      } catch (e) { toast('Erro: ' + e.message); }
+    }
+
+    async function loadActionsLog() {
+      try {
+        const res = await fetch(`${API}/actions/log`);
+        const entries = await res.json();
+        const el = document.getElementById('actions-log');
+        if (!entries.length) { el.innerHTML = '<div class="empty">Nenhuma ação registrada</div>'; return; }
+        let html = '';
+        for (const e of entries.reverse()) {
+          const time = e.timestamp ? new Date(e.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—';
+          html += `<div class="log-entry">
+            <span class="log-time">${time}</span>
+            <span class="log-action">${e.action || e.raw}</span>
+            <span class="log-status">${e.status || ''}</span>
+          </div>`;
+        }
+        el.innerHTML = html;
+      } catch (e) { console.error('Log error:', e); }
+    }
+
+    // ── Toast ───────────────────────────────────────────────
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 2500);
+    }
+
+    // ── Departments / Projects ─────────────────────────────
+    function openDept(id) {
+      triggerAction('open-cowork');
+      toast(`Abrindo Claude... Crie uma tarefa para o departamento.`);
+    }
+
+    function switchToMemory(fileName) {
+      // Switch to memory tab and open specific file
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      const memTab = document.querySelector('[data-tab="memory"]');
+      memTab.classList.add('active');
+      document.getElementById('sec-memory').classList.add('active');
+      loadMemory().then(() => {
+        openMemoryFile(fileName);
+      });
+    }
+
+    // Update revenue display
+    function updateRevenue(amount) {
+      const el = document.getElementById('kpi-revenue');
+      const bar = document.getElementById('revenue-bar');
+      const pct = document.getElementById('revenue-pct');
+      if (el) el.textContent = `R$${amount.toLocaleString('pt-BR')}`;
+      const percent = Math.min(100, (amount / 40000) * 100);
+      if (bar) bar.style.width = percent + '%';
+      if (pct) pct.textContent = percent.toFixed(1) + '%';
+    }
+
+    // ── Service Worker (desativado — causa cache problems no dev) ──
+    // Para reativar quando em produção com Tailscale:
+    // if ('serviceWorker' in navigator) {
+    //   navigator.serviceWorker.register('/sw.js').catch(() => {});
+    // }
+  </script>
+</body>
+</html>
