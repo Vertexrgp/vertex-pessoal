@@ -650,4 +650,315 @@ router.post("/centro-comando/trigger", async (req, res) => {
   }
 });
 
+// ────────────────────────────────────────────────────────────────────
+// ONDA 1 — Endpoints adicionais do Centro de Comando
+// Inserir ANTES de `export default router;` em
+// artifacts/api-server/src/routes/centro-comando.ts
+// ────────────────────────────────────────────────────────────────────
+
+// GET /api/centro-comando/analytics/overview?days=28
+// Overview combinando YouTube API (channel stats) + brain (CLAUDE.md) + tasks + memory.
+// Não usa YouTube Analytics API (requer OAuth) — usa Data API v3 (API key).
+router.get("/centro-comando/analytics/overview", async (req, res) => {
+  try {
+    const days = parseInt(String(req.query.days || "28")) || 28;
+
+    // Brain + tasks + memory do DB
+    const [brainRow] = await db
+      .select()
+      .from(centroComandoFiles)
+      .where(
+        and(
+          eq(centroComandoFiles.userId, DEFAULT_USER_ID),
+          eq(centroComandoFiles.fileKey, "brain")
+        )
+      );
+    const [tasksRow] = await db
+      .select()
+      .from(centroComandoFiles)
+      .where(
+        and(
+          eq(centroComandoFiles.userId, DEFAULT_USER_ID),
+          eq(centroComandoFiles.fileKey, "tasks")
+        )
+      );
+    const memoryRows = await db
+      .select()
+      .from(centroComandoFiles)
+      .where(
+        and(
+          eq(centroComandoFiles.userId, DEFAULT_USER_ID),
+          eq(centroComandoFiles.category, "memory")
+        )
+      );
+
+    const brainMetrics = parseBrainMetrics(brainRow?.content || "");
+    const taskMetrics = parseTasks(tasksRow?.content || "");
+
+    // YouTube Data API — channel + últimos `days` dias de vídeos
+    let liveSubs = 0;
+    let liveViewsTotal = 0;
+    let liveVideoCount = 0;
+    let last28Views = 0;
+    let last28Videos: any[] = [];
+
+    if (YOUTUBE_API_KEY) {
+      try {
+        const ch = await fetchYoutube(
+          `channels?part=statistics&id=${YT_CHANNEL_ID}`
+        );
+        const stats = ch.items?.[0]?.statistics || {};
+        liveSubs = parseInt(stats.subscriberCount || 0);
+        liveViewsTotal = parseInt(stats.viewCount || 0);
+        liveVideoCount = parseInt(stats.videoCount || 0);
+
+        const sinceISO = new Date(Date.now() - days * 86400000).toISOString();
+        const search = await fetchYoutube(
+          `search?part=snippet&channelId=${YT_CHANNEL_ID}&type=video&order=date&maxResults=50&publishedAfter=${sinceISO}`
+        );
+        const ids = (search.items || [])
+          .map((v: any) => v.id?.videoId)
+          .filter(Boolean)
+          .join(",");
+        if (ids) {
+          const vd = await fetchYoutube(
+            `videos?part=statistics,snippet&id=${ids}`
+          );
+          last28Videos = (vd.items || []).map((v: any) => ({
+            id: v.id,
+            title: v.snippet?.title,
+            published_at: v.snippet?.publishedAt,
+            views: parseInt(v.statistics?.viewCount || 0),
+            likes: parseInt(v.statistics?.likeCount || 0),
+            comments: parseInt(v.statistics?.commentCount || 0),
+          }));
+          last28Views = last28Videos.reduce(
+            (s, v) => s + (v.views || 0),
+            0
+          );
+        }
+      } catch (e: any) {
+        console.warn("analytics/overview youtube fail:", e?.message);
+      }
+    }
+
+    return res.json({
+      days,
+      // Canal (live)
+      subscribers: liveSubs || brainMetrics.subscribers,
+      subscribers_source: liveSubs ? "youtube_api" : "brain",
+      total_views: liveViewsTotal,
+      video_count: liveVideoCount,
+      // Janela
+      views_window: last28Views,
+      videos_window: last28Videos.length,
+      top_videos: last28Videos
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 5),
+      // Brain (estado do CLAUDE.md)
+      brain_subscribers: brainMetrics.subscribers,
+      brain_views28d: brainMetrics.views28d,
+      videos_published: brainMetrics.videos_published,
+      videos_produced: brainMetrics.videos_produced,
+      // Tarefas + memória
+      tasks_pending: taskMetrics.pending,
+      tasks_done: taskMetrics.done,
+      memory_files: memoryRows.length,
+      lastSync: brainRow?.syncedAt || null,
+      generated_at: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    console.error("analytics/overview error:", err?.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/centro-comando/tasks/add
+// Body: { section: string, text: string }
+// Faz append de uma task ao conteúdo do fileKey="tasks" no DB.
+router.post("/centro-comando/tasks/add", async (req, res) => {
+  try {
+    const body = req.body as { section?: string; text?: string };
+    if (!body?.section || !body?.text) {
+      return res.status(400).json({ error: "section e text são obrigatórios" });
+    }
+
+    const [tasksRow] = await db
+      .select()
+      .from(centroComandoFiles)
+      .where(
+        and(
+          eq(centroComandoFiles.userId, DEFAULT_USER_ID),
+          eq(centroComandoFiles.fileKey, "tasks")
+        )
+      );
+
+    const current = tasksRow?.content || "# TASKS\n\n## 🔥 Esta Semana\n\n## 📋 Backlog\n";
+    const lines = current.split("\n");
+
+    // Acha a seção que contém `body.section` no título (## ...)
+    let insertIdx = -1;
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i];
+      if (l.startsWith("## ") && l.includes(body.section)) {
+        // insere na 1ª linha em branco depois do cabeçalho, ou antes da próxima `## `
+        let j = i + 1;
+        while (j < lines.length && !lines[j].startsWith("## ")) j++;
+        // volta até achar última não-vazia
+        let k = j - 1;
+        while (k > i && lines[k].trim() === "") k--;
+        insertIdx = k + 1;
+        break;
+      }
+    }
+    if (insertIdx === -1) {
+      // Seção não existe — cria no final
+      lines.push("", `## ${body.section}`, "");
+      insertIdx = lines.length;
+    }
+
+    const newTask = `- [ ] ${body.text}`;
+    lines.splice(insertIdx, 0, newTask);
+    const updated = lines.join("\n");
+    const hash = sha256(updated);
+    const bytes = Buffer.byteLength(updated, "utf8");
+
+    if (tasksRow) {
+      await db
+        .update(centroComandoFiles)
+        .set({
+          content: updated,
+          contentHash: hash,
+          source: "centro-comando-ui",
+          syncedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(centroComandoFiles.id, tasksRow.id));
+    } else {
+      await db.insert(centroComandoFiles).values({
+        userId: DEFAULT_USER_ID,
+        fileKey: "tasks",
+        category: "tasks",
+        content: updated,
+        contentHash: hash,
+        source: "centro-comando-ui",
+      });
+    }
+
+    await db.insert(centroComandoSyncLog).values({
+      userId: DEFAULT_USER_ID,
+      fileKey: "tasks",
+      action: "task-add",
+      bytesBefore: tasksRow ? Buffer.byteLength(tasksRow.content, "utf8") : 0,
+      bytesAfter: bytes,
+      source: "centro-comando-ui",
+      message: `section="${body.section}" text="${body.text.slice(0, 80)}"`,
+    });
+
+    return res.json({
+      ok: true,
+      section: body.section,
+      text: body.text,
+      total_pending: (updated.match(/^-\s*\[\s\]/gm) || []).length,
+    });
+  } catch (err: any) {
+    console.error("tasks/add error:", err?.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/centro-comando/actions/log
+// Body: { action: string, details?: any }
+// Registra ação no sync_log (linha action="ui-action").
+// GET retorna as últimas 50 ações.
+router.post("/centro-comando/actions/log", async (req, res) => {
+  try {
+    const body = req.body as { action?: string; details?: any };
+    if (!body?.action) {
+      return res.status(400).json({ error: "action é obrigatória" });
+    }
+
+    const msg =
+      typeof body.details === "string"
+        ? body.details
+        : JSON.stringify(body.details || {}).slice(0, 500);
+
+    await db.insert(centroComandoSyncLog).values({
+      userId: DEFAULT_USER_ID,
+      fileKey: `action:${body.action}`,
+      action: "ui-action",
+      bytesBefore: 0,
+      bytesAfter: 0,
+      source: "centro-comando-ui",
+      message: msg,
+    });
+
+    return res.json({ ok: true, logged_at: new Date().toISOString() });
+  } catch (err: any) {
+    console.error("actions/log POST error:", err?.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/centro-comando/actions/log", async (_req, res) => {
+  try {
+    const rows = await db
+      .select()
+      .from(centroComandoSyncLog)
+      .where(
+        and(
+          eq(centroComandoSyncLog.userId, DEFAULT_USER_ID),
+          eq(centroComandoSyncLog.action, "ui-action")
+        )
+      )
+      .orderBy(desc(centroComandoSyncLog.createdAt))
+      .limit(50);
+    return res.json({ actions: rows, count: rows.length });
+  } catch (err: any) {
+    console.error("actions/log GET error:", err?.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/centro-comando/youtube/refresh
+// Força re-fetch dos dados do YouTube. Como não temos cache in-memory
+// neste servidor (fetch é direto), apenas re-consulta stats e devolve.
+router.post("/centro-comando/youtube/refresh", async (_req, res) => {
+  try {
+    if (!YOUTUBE_API_KEY) {
+      return res
+        .status(503)
+        .json({ error: "YOUTUBE_API_KEY não configurada" });
+    }
+    const ch = await fetchYoutube(
+      `channels?part=statistics,snippet&id=${YT_CHANNEL_ID}`
+    );
+    const stats = ch.items?.[0]?.statistics || {};
+    const snippet = ch.items?.[0]?.snippet || {};
+
+    await db.insert(centroComandoSyncLog).values({
+      userId: DEFAULT_USER_ID,
+      fileKey: "youtube:refresh",
+      action: "ui-action",
+      bytesBefore: 0,
+      bytesAfter: 0,
+      source: "centro-comando-ui",
+      message: `subs=${stats.subscriberCount} views=${stats.viewCount}`,
+    });
+
+    return res.json({
+      ok: true,
+      refreshed_at: new Date().toISOString(),
+      channel_id: YT_CHANNEL_ID,
+      title: snippet.title || "Vertex - Segredos da Mente",
+      subscribers: parseInt(stats.subscriberCount || 0),
+      total_views: parseInt(stats.viewCount || 0),
+      video_count: parseInt(stats.videoCount || 0),
+    });
+  } catch (err: any) {
+    console.error("youtube/refresh error:", err?.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
